@@ -5,7 +5,7 @@
 ## แนะนำให้ใช้ Python Virtual Environment สำหรับการทำงานของโปรแกรม
 ## Mac ,Linux ที่ใช้ Python3
 
-### To activate
+### To create virtual environment and activate
 ```
 python3 -m venv ./.venv
 source .venv
@@ -17,7 +17,7 @@ deactivate
 ```
 ## Windows 
 
-### To activate
+### To create virtual environment and activate
 ```
 python -m venv ./.venv
 .venv\Scripts\activate
