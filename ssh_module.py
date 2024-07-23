@@ -34,10 +34,10 @@ class ssh_connection:
             self.timeout = timeout
 
         if banner_timeout == None:
-            self.banner_timeout = 5
+            self.banner_timeout = 10
         else:
             self.banner_timeout = banner_timeout
-
+    
     def connect_to_device(self):
         try:
             self.connect.set_missing_host_key_policy(self.policy)
@@ -58,9 +58,10 @@ class ssh_connection:
             return e
 
     def find_prompt(self, output):
-        last_line = output.splitlines()[-1].strip()
-        if re.match(r"([\w-]+)(>|(?:\(config.*\))*#)", last_line):
-            return True
+        if output != "":
+            last_line = output.splitlines()[-1].strip()
+            if re.match(r"([\w-]+)(>|(?:\(config.*\))*#)", last_line):
+                return True
         return False
 
     def send_command(self, command):
@@ -106,7 +107,7 @@ class ssh_connection:
         return
 
     def start_get_data(self):
-        console_name = self.send_command("")
+        console_name = self.send_command("").splitlines()[-1].strip()
         if console_name[-1] == ">":
             try:
                 if self.enable_device(self.enable_password) == False:
@@ -118,7 +119,7 @@ class ssh_connection:
                 print(e)
                 return
         try:
-            command_list = ["ter le 0", "show int gi 1/0/24"]
+            command_list = ["ter le 0", "show run"]
             for command in command_list:
                 result = self.send_command(command=command)
             print("***\n", result, "\n***")
