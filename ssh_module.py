@@ -1,9 +1,10 @@
 import re as re
 from time import sleep
 import paramiko as para
+from communication import common_function
 
 
-class ssh_connection:
+class ssh_connection(common_function):
     connect = para.SSHClient()
     policy = para.AutoAddPolicy()
     session = None
@@ -37,7 +38,7 @@ class ssh_connection:
             self.banner_timeout = 10
         else:
             self.banner_timeout = banner_timeout
-    
+
     def connect_to_device(self):
         try:
             self.connect.set_missing_host_key_policy(self.policy)
@@ -56,13 +57,6 @@ class ssh_connection:
         except para.SSHException as e:
             print(e)
             return e
-
-    def find_prompt(self, output):
-        if output != "":
-            last_line = output.splitlines()[-1].strip()
-            if re.match(r"([\w-]+)(>|(?:\(config.*\))*#)", last_line):
-                return True
-        return False
 
     def send_command(self, command):
         cmd_output = ""
@@ -92,21 +86,18 @@ class ssh_connection:
                 return False
         return True
 
-    def get_output(self):
-        return self.session.recv(65535).decode("utf-8").rstrip()
-
-    def check_error(self, output):
-        # หาคำว่า invalid หรือ command not found ถ้ามี ให้return True ถ้าไม่มี return false
+    def get_output(self, is_stript: bool = False):
         return (
-            re.search(r"invalid|command not found", output, flags=re.IGNORECASE)
-            is not None
+            self.session.recv(65535).decode("utf-8")
+            if is_stript
+            else self.session.recv(65535).decode("utf-8").strip()
         )
 
     def get_hostname(self):
         console_name = self.send_command("")
         return
 
-    def start_get_data(self):
+    def start_get_data(self, command_list):
         console_name = self.send_command("").splitlines()[-1].strip()
         if console_name[-1] == ">":
             try:
@@ -119,16 +110,16 @@ class ssh_connection:
                 print(e)
                 return
         try:
-            command_list = ["ter le 0", "show run"]
-            for command in command_list:
-                result = self.send_command(command=command)
-            print("***\n", result, "\n***")
+            result=""
+            with open("myfile.txt", "w") as file:
+                for command in command_list:
+                    result += self.send_command(command)
+                print("***\n", result, "\n***")
+                # Write the string to the file
+                file.write(result)
         except ErrorCommand as e:
             print(e)
             return
-
-    def get_tech_support(self):
-        return connection.send_command("show tech")
 
 
 class ErrorCommand(Exception):
@@ -152,5 +143,5 @@ if __name__ == "__main__":
     )
     connection.connect_to_device()
     if connection.session != None:
-        connection.start_get_data()
+        connection.start_get_data(["ter le 0", "show tech-s"])
         connection.session.close()
