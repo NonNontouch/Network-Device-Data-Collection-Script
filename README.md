@@ -8,7 +8,7 @@
 ### To activate
 ```
 python3 -m venv ./.venv
-source .venv
+source .venv/
 python3 -m pip install -r requirement.txt  
 ```
 ### To deactivate
