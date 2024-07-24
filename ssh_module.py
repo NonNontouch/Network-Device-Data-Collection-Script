@@ -2,6 +2,7 @@ import re as re
 from time import sleep
 import paramiko as para
 from communication import common_function
+from communication import Error
 
 
 class ssh_connection(common_function):
@@ -68,7 +69,7 @@ class ssh_connection(common_function):
             if self.find_prompt(_output):
                 break
         if self.check_error(_output):
-            raise ErrorCommand(command)
+            raise Error.ErrorCommand(command)
         return cmd_output
 
     def enable_device(self, password: str):
@@ -86,12 +87,10 @@ class ssh_connection(common_function):
                 return False
         return True
 
-    def get_output(self, is_stript: bool = False):
-        return (
+    def get_output(self):
+        return self.remove_control_char(
             self.session.recv(65535).decode("utf-8")
-            if is_stript
-            else self.session.recv(65535).decode("utf-8").strip()
-        )
+        ).strip()
 
     def get_hostname(self):
         console_name = self.send_command("")
@@ -102,36 +101,25 @@ class ssh_connection(common_function):
         if console_name[-1] == ">":
             try:
                 if self.enable_device(self.enable_password) == False:
-                    raise ErroeEnablePassword
+                    raise Error.ErroeEnablePassword
             except TypeError as e:
                 print(e)
                 return
-            except ErroeEnablePassword as e:
+            except Error.ErroeEnablePassword as e:
                 print(e)
                 return
         try:
-            result=""
+            result = ""
             with open("myfile.txt", "w") as file:
                 for command in command_list:
                     result += self.send_command(command)
                 print("***\n", result, "\n***")
                 # Write the string to the file
                 file.write(result)
-        except ErrorCommand as e:
+        except Error.ErrorCommand as e:
             print(e)
             return
 
-
-class ErrorCommand(Exception):
-    def __init__(self, command):
-        self.message = f"An error occurred while executing the '{command}'"  # Added closing quotation mark
-        super().__init__(self.message)
-
-
-class ErroeEnablePassword(Exception):
-    def __init__(self, message="An error occurred while using given enable password"):
-        self.message = message
-        super().__init__(self.message)
 
 
 if __name__ == "__main__":
