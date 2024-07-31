@@ -1,4 +1,3 @@
-import re as re
 from time import sleep
 import paramiko as para
 from communication import common_function
@@ -92,11 +91,7 @@ class ssh_connection(common_function):
             self.session.recv(65535).decode("utf-8")
         ).strip()
 
-    def get_hostname(self):
-        console_name = self.send_command("")
-        return
-
-    def start_get_data(self, command_list):
+    def send_list_command(self, command_list):
         console_name = self.send_command("").splitlines()[-1].strip()
         if console_name[-1] == ">":
             try:
@@ -119,17 +114,4 @@ class ssh_connection(common_function):
         except Error.ErrorCommand as e:
             print(e)
             return
-
-
-
-if __name__ == "__main__":
-    connection = ssh_connection(
-        hostname="10.10.40.223",
-        username="non",
-        password="REDACTED",
-        enable_password="REDACTED",
-    )
-    connection.connect_to_device()
-    if connection.session != None:
-        connection.start_get_data(["ter le 0", "show tech-s"])
-        connection.session.close()
+        self.session.close()
