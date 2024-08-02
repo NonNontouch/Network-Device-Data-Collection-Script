@@ -14,30 +14,22 @@ class ssh_connection(common_function):
         hostname: str,
         username: str,
         password: str,
-        port=None,
-        enable_password=None,
-        timeout=None,
-        banner_timeout=None,
+        port: int = 22,
+        enable_password: str = "",
+        timeout: int = 4,
+        banner_timeout: int = 10,
     ):
         self.hostname = hostname
         self.usename = username
         self.password = password
-        if enable_password != None:
-            self.enable_password = enable_password
-        if port == None:
-            self.port = 22
-        else:
-            self.port = port
 
-        if timeout == None:
-            self.timeout = 4
-        else:
-            self.timeout = timeout
+        self.enable_password = enable_password
 
-        if banner_timeout == None:
-            self.banner_timeout = 10
-        else:
-            self.banner_timeout = banner_timeout
+        self.port = port
+
+        self.timeout = timeout
+
+        self.banner_timeout = banner_timeout
 
     def connect_to_device(self):
         try:
@@ -69,6 +61,7 @@ class ssh_connection(common_function):
                 break
         if self.check_error(_output):
             raise Error.ErrorCommand(command)
+
         return cmd_output
 
     def enable_device(self, password: str):
@@ -91,7 +84,7 @@ class ssh_connection(common_function):
             self.session.recv(65535).decode("utf-8")
         ).strip()
 
-    def send_list_command(self, command_list):
+    def send_list_command(self, command_list: list):
         console_name = self.send_command("").splitlines()[-1].strip()
         if console_name[-1] == ">":
             try:
@@ -105,7 +98,7 @@ class ssh_connection(common_function):
                 return
         try:
             result = ""
-            with open("myfile.txt", "w") as file:
+            with open("output.txt", "w") as file:
                 for command in command_list:
                     result += self.send_command(command)
                 print("***\n", result, "\n***")
@@ -114,4 +107,4 @@ class ssh_connection(common_function):
         except Error.ErrorCommand as e:
             print(e)
             return
-        self.session.close()
+        # self.session.close()
