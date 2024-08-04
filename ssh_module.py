@@ -1,35 +1,26 @@
 from time import sleep
 import paramiko as para
+from communication import communication
 from communication import common_function
 from communication import Error
 
 
-class ssh_connection(common_function):
+class ssh_connection(
+    common_function,
+):
     connect = para.SSHClient()
     policy = para.AutoAddPolicy()
     session = None
 
-    def __init__(
-        self,
-        hostname: str,
-        username: str,
-        password: str,
-        port: int = 22,
-        enable_password: str = "",
-        timeout: int = 4,
-        banner_timeout: int = 10,
-    ):
-        self.hostname = hostname
-        self.usename = username
-        self.password = password
-
-        self.enable_password = enable_password
-
-        self.port = port
-
-        self.timeout = timeout
-
-        self.banner_timeout = banner_timeout
+    def __init__(self, communication: communication):
+        # pass communication object into ssh_module
+        self.hostname = communication.hostname
+        self.usename = communication.username
+        self.password = communication.password
+        self.enable_password = communication.enable_password
+        self.port = communication.port
+        self.timeout = communication.timeout
+        self.banner_timeout = communication.banner_timeout
 
     def connect_to_device(self):
         try:
@@ -80,31 +71,27 @@ class ssh_connection(common_function):
         return True
 
     def get_output(self):
-        return self.remove_control_char(
-            self.session.recv(65535).decode("utf-8")
-        ).strip()
+        return self.remove_control_char(self.session.recv(65535).decode("utf-8"))
 
     def send_list_command(self, command_list: list):
         console_name = self.send_command("").splitlines()[-1].strip()
         if console_name[-1] == ">":
             try:
                 if self.enable_device(self.enable_password) == False:
-                    raise Error.ErroeEnablePassword
+                    raise Error.ErrorEnable_Password
             except TypeError as e:
                 print(e)
                 return
-            except Error.ErroeEnablePassword as e:
+            except Error.ErrorEnable_Password as e:
                 print(e)
                 return
         try:
             result = ""
-            with open("output.txt", "w") as file:
-                for command in command_list:
-                    result += self.send_command(command)
-                print("***\n", result, "\n***")
-                # Write the string to the file
-                file.write(result)
+            for command in command_list:
+                result += self.send_command(command)
+            print("***\n", result, "\n***")
+            return result
+
         except Error.ErrorCommand as e:
             print(e)
-            return
-        # self.session.close()
+            return 
