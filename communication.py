@@ -9,7 +9,7 @@ class communication:
     hostname: str
     username: str
     password: str
-    enablepassword: str = ""
+    enable_password: str = ""
     timeout: int = 4
     banner_timeout: int = 4
     port: int = None
@@ -35,8 +35,8 @@ class communication:
     def set_password(self, password: str):
         self.password = password
 
-    def set_enablepassword(self, enablepassword: str):
-        self.enablepassword = enablepassword
+    def set_enable_password(self, enable_password: str):
+        self.enable_password = enable_password
 
     def set_timeout(self, timeout: int):
         if timeout <= 0:
@@ -51,15 +51,7 @@ class communication:
     def set_ssh_connection(self):
         if self.port == None:
             self.port == 22
-        self.connection = ssh.ssh_connection(
-            hostname=self.hostname,
-            username=self.username,
-            password=self.password,
-            enable_password=self.enablepassword,
-            port=self.port,
-            timeout=self.timeout,
-            banner_timeout=self.banner_timeout,
-        )
+        self.connection = ssh.ssh_connection(self)
         self.connection.connect_to_device()
 
     def send_list_command(self, command_list: list = None):
@@ -133,7 +125,7 @@ class Error:
             self.message = f"An error occurred while executing the '{command}'"
             super().__init__(self.message)
 
-    class ErroeEnablePassword(Exception):
+    class ErrorEnable_Password(Exception):
         def __init__(
             self, message="An error occurred while using given enable password"
         ):
@@ -143,12 +135,15 @@ class Error:
 
 if __name__ == "__main__":
     test = communication()
-    test.set_hostname("REDACTED")
-    test.set_username("REDACTED")
-    test.set_password("REDACTED")
+    test.set_hostname(input("Please input hostname: "))
+    test.set_username(input("Please input username: "))
+    test.set_password(input("Please input password: "))
+    test.set_enable_password(input("Please input enable password (enter if None): "))
     test.set_port(22)
     test.set_ssh_connection()
     test.get_file_list()
     test.get_os_template(test.file_list[1])
     test.get_command_list("os-10")
-    test.send_list_command(["ter le 0", "show processes memory"])
+    test.send_list_command(
+        input("please input list of command ex:(ter len 0,show run) :").split(",")
+    )
