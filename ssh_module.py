@@ -34,12 +34,14 @@ class ssh_connection(
                 banner_timeout=self.banner_timeout,
             )
             self.session = self.connect.invoke_shell()
+            return True, None
         except OSError as e:
             print(e)
-            return e
+            return False, type(e).__name__
+
         except para.SSHException as e:
             print(e)
-            return e
+            return False, type(e).__name__
 
     def send_command(self, command):
         cmd_output = ""
@@ -94,4 +96,4 @@ class ssh_connection(
 
         except Error.ErrorCommand as e:
             print(e)
-            return 
+            return None
