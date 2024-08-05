@@ -18,7 +18,7 @@ class communication:
 
     file_list: set
     os_template: dict
-    command_list: dict
+    command_list: list
     command_list_json: dict
 
     def set_hostname(self, hostname: str):
@@ -49,17 +49,23 @@ class communication:
         self.banner_timeout = banner_timeout
 
     def set_ssh_connection(self):
-        if self.port == None:
-            self.port == 22
         self.connection = ssh.ssh_connection(self)
-        self.connection.connect_to_device()
 
-    def send_list_command(self, command_list: list = None):
-        if command_list != None:
-            self.connection.send_list_command(command_list)
+        result, exception_type = self.connection.connect_to_device()
+        if not result:
+            if exception_type == "OSError":
+                print("OSError occurred:", exception_type)
+            elif exception_type == "para.SSHException":
+                print("SSHException occurred:", exception_type)
+            else:
+                print("Unexpected exception:", exception_type)
+            self.connection = None
+
+    def send_list_command(self, command_list: list = []):
+        if command_list != []:
+            return self.connection.send_list_command(command_list)
         else:
-            self.connection.send_list_command(self.command_list)
-        return
+            return self.connection.send_list_command(self.command_list)
 
     def get_file_list(self):
         folder_path = "./command_template"
@@ -70,8 +76,8 @@ class communication:
             print(f"Error: Folder '{folder_path}' not found.")
             return
 
-    def get_os_template(self, filename: str):
-        file_path = f"./command_template/{filename}"
+    def get_os_template(self, file_name: str):
+        file_path = f"./command_template/{file_name}"
         try:
             with open(file_path, "r") as f:
                 self.os_template = json.load(f)
@@ -135,15 +141,32 @@ class Error:
 
 if __name__ == "__main__":
     test = communication()
-    test.set_hostname(input("Please input hostname: "))
-    test.set_username(input("Please input username: "))
-    test.set_password(input("Please input password: "))
-    test.set_enable_password(input("Please input enable password (enter if None): "))
-    test.set_port(22)
-    test.set_ssh_connection()
-    test.get_file_list()
-    test.get_os_template(test.file_list[1])
-    test.get_command_list("os-10")
-    test.send_list_command(
-        input("please input list of command ex:(ter len 0,show run) :").split(",")
-    )
+    while True:
+        test.set_hostname(input("Please input hostname: "))
+        test.set_username(input("Please input username: "))
+        test.set_password(input("Please input password: "))
+        test.set_enable_password(
+            input("Please input enable password (enter if None): ")
+        )
+        test.set_port(22)
+        test.set_ssh_connection()
+        if test.connection != None:
+            break
+    content = None
+    while content == None:
+        content = test.send_list_command(
+            input(
+                "please input list of command seperate by comma sexample:(ter len 0,show run) : "
+            ).split(",")
+        )
+    while True:
+        file_name = input("Plase input file path: ")
+        try:
+            with open(file_name, "w") as file:
+                file.write(content)
+                print(f"String written to {file_name} successfully.")
+                break
+        except FileNotFoundError:
+            print(f"Error: File or directory not found: {file_name}")
+        except PermissionError:
+            print(f"Error: Permission denied to write to {file_name}")
