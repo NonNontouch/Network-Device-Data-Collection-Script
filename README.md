@@ -20,7 +20,7 @@ deactivate
 ### To create virtual environment and activate
 ```
 python -m venv ./.venv
-.venv\Scripts\activate
+.venv\Scripts\activate.bat
 pip install -r requirement.txt
 ```
 ### To deactivate
