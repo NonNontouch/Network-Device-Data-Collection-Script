@@ -19,7 +19,8 @@ deactivate
 
 ### To create virtual environment and activate
 ```
-python -m venv ./.venv
+python -m venv .\.venv
+.\.venv\bin\Activate.ps1
 .venv\Scripts\activate.bat
 pip install -r requirement.txt
 ```
