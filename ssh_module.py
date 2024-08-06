@@ -34,14 +34,11 @@ class ssh_connection(
                 banner_timeout=self.banner_timeout,
             )
             self.session = self.connect.invoke_shell()
-            return True, None
-        except OSError as e:
-            print(e)
-            return False, type(e).__name__
 
+        except OSError as e:
+            raise e
         except para.SSHException as e:
-            print(e)
-            return False, type(e).__name__
+            raise e
 
     def send_command(self, command):
         cmd_output = ""
@@ -75,25 +72,6 @@ class ssh_connection(
     def get_output(self):
         return self.remove_control_char(self.session.recv(65535).decode("utf-8"))
 
-    def send_list_command(self, command_list: list):
+    def is_enable(self):
         console_name = self.send_command("").splitlines()[-1].strip()
-        if console_name[-1] == ">":
-            try:
-                if self.enable_device(self.enable_password) == False:
-                    raise Error.ErrorEnable_Password
-            except TypeError as e:
-                print(e)
-                return
-            except Error.ErrorEnable_Password as e:
-                print(e)
-                return
-        try:
-            result = ""
-            for command in command_list:
-                result += self.send_command(command)
-            print("***\n", result, "\n***")
-            return result
-
-        except Error.ErrorCommand as e:
-            print(e)
-            return None
+        return True if console_name[-1] == "#" else False
