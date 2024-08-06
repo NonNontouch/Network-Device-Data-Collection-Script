@@ -2,6 +2,7 @@ import os
 import re
 import json
 import ssh_module as ssh
+import paramiko as para
 from string import printable
 
 
@@ -15,11 +16,6 @@ class communication:
     port: int = None
 
     connection = None
-
-    file_list: set
-    os_template: dict
-    command_list: list
-    command_list_json: dict
 
     def set_hostname(self, hostname: str):
         self.hostname = hostname
@@ -50,52 +46,29 @@ class communication:
 
     def set_ssh_connection(self):
         self.connection = ssh.ssh_connection(self)
-
-        result, exception_type = self.connection.connect_to_device()
-        if not result:
-            if exception_type == "OSError":
-                print("OSError occurred:", exception_type)
-            elif exception_type == "para.SSHException":
-                print("SSHException occurred:", exception_type)
-            else:
-                print("Unexpected exception:", exception_type)
+        try:
+            self.connection.connect_to_device()
+        except OSError as e:
+            print(e)
+            self.connection = None
+        except para.SSHException as e:
+            print(e)
             self.connection = None
 
-    def send_list_command(self, command_list: list = []):
-        if command_list != []:
-            return self.connection.send_list_command(command_list)
-        else:
-            return self.connection.send_list_command(self.command_list)
+    def send_list_command(self, command_list_json: dict = {}):
 
-    def get_file_list(self):
-        folder_path = "./command_template"
+        if self.connection.is_enable():
+            command_list_json.pop("Enable Device")
+        command_list = list(command_list_json.values())
         try:
-            self.file_list = os.listdir(folder_path)
+            result = ""
+            for command in command_list:
+                result += self.connection.send_command(command)
+            print("***\n", result, "\n***")
+            return result
 
-        except FileNotFoundError:
-            print(f"Error: Folder '{folder_path}' not found.")
-            return
-
-    def get_os_template(self, file_name: str):
-        file_path = f"./command_template/{file_name}"
-        try:
-            with open(file_path, "r") as f:
-                self.os_template = json.load(f)
-                return self.os_template
-        except FileNotFoundError:
-            print(f"Error: File '{file_path}' not found.")
-            return None
-        except json.JSONDecodeError:
-            print(f"Error: Invalid JSON in file '{file_path}'.")
-            return None
-
-    def get_command_list(self, OS: str):
-        try:
-            self.command_list_json = self.os_template[OS]
-            self.command_list = list(self.command_list_json.values())[:-1]
-            return self.command_list
-        except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error getting command list for OS {OS}: {e}")
+        except Error.ErrorCommand as e:
+            print(e)
             return None
 
 
@@ -124,6 +97,42 @@ class common_function:
         return re.sub(r"[^\x20-\x7E\r\n\t]+", "", ssh_output)
 
 
+class json_file:
+    file_list: set
+    os_template: dict
+    command_list: list
+    command_list_json: dict
+
+    def get_list_of_file(self):
+        folder_path = "./command_template"
+        try:
+            self.file_list = os.listdir(folder_path)
+
+        except FileNotFoundError:
+            print(f"Error: Folder '{folder_path}' not found.")
+            return
+
+    def read_json_file(self, file_name: str):
+        file_path = f"./command_template/{file_name}"
+        try:
+            with open(file_path, "r") as f:
+                self.os_template = json.load(f)
+                return self.os_template
+        except FileNotFoundError:
+            print(f"Error: File '{file_path}' not found.")
+            return None
+        except json.JSONDecodeError:
+            print(f"Error: Invalid JSON in file '{file_path}'.")
+            return None
+
+    def get_command_json(self, OS: str):
+        try:
+            return self.os_template[OS]
+        except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
+            print(f"Error getting command list for OS {OS}: {e}")
+            return None
+
+
 class Error:
     class ErrorCommand(Exception):
         # Class ทำหน้าที่จัดการ Exction ของคำสั่งที่ส่งไปแล้ว อุปกรณ์ไม่เข้าใจ
@@ -140,33 +149,19 @@ class Error:
 
 
 if __name__ == "__main__":
-    test = communication()
-    while True:
-        test.set_hostname(input("Please input hostname: "))
-        test.set_username(input("Please input username: "))
-        test.set_password(input("Please input password: "))
-        test.set_enable_password(
-            input("Please input enable password (enter if None): ")
-        )
-        test.set_port(22)
-        test.set_ssh_connection()
-        if test.connection != None:
-            break
-    content = None
-    while content == None:
-        content = test.send_list_command(
-            input(
-                "please input list of command seperate by comma sexample:(ter len 0,show run) : "
-            ).split(",")
-        )
-    while True:
-        file_name = input("Plase input file path: ")
-        try:
-            with open(file_name, "w") as file:
-                file.write(content)
-                print(f"String written to {file_name} successfully.")
-                break
-        except FileNotFoundError:
-            print(f"Error: File or directory not found: {file_name}")
-        except PermissionError:
-            print(f"Error: Permission denied to write to {file_name}")
+    ssh_con = communication()
+    file = json_file()
+    file.get_list_of_file()
+    file.read_json_file(file.file_list[1])
+
+    ssh_con.set_hostname("")
+    ssh_con.set_username("REDACTED")
+    ssh_con.set_password("REDACTED")
+    # ssh_con.set_enable_password(input("Please input enable password (enter if None): "))
+    ssh_con.set_port(22)
+
+    ssh_con.set_ssh_connection()
+
+    print("Connect Successfuly")
+
+    ssh_con.send_list_command(file.get_command_json("os-10"))
