@@ -1,29 +1,30 @@
 # Network-Device-Data-Collection-Script
 
-## โปรเจคนี้เป็นโปรเจคที่เป็นสคริปเก็บข้อมูลของอุปกรณ์ Network อุปกรณ์ที่รองรับจะถูกนำมาเขียนใน Readme ที่นี่
-
 ## แนะนำให้ใช้ Python Virtual Environment สำหรับการทำงานของโปรแกรม
+## รันคำสั่งนี้ใน Folder เดียวกับโปรแกรม
+
 ## Mac ,Linux ที่ใช้ Python3
 
-### To create virtual environment and activate
+### คำสั่งเพื่อสร้าง Virtual environment, ตืดตั้ง Library ที่จำเป็น และ Activate
 ```
 python3 -m venv ./.venv
-source .venv/
+source .venv/bin/activate
 python3 -m pip install -r requirement.txt  
 ```
-### To deactivate
+### คำสั่ง deactivate
 ```
 deactivate
 ```
+
 ## Windows 
 
-### To create virtual environment and activate
+### คำสั่งเพื่อสร้าง Virtual environment, ตืดตั้ง Library ที่จำเป็น และ Activate
 ```
-python -m venv ./.venv
-.venv\Scripts\activate.bat
+python -m venv .\.venv
+.venv\Scripts\activate
 pip install -r requirement.txt
 ```
-### To deactivate
+### คำสั่ง deactivate
 ```
 deactivate
 ```
@@ -36,4 +37,3 @@ python start.py
 ```
 python3 start.py
 ```
-
