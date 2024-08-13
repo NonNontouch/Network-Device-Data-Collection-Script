@@ -1,12 +1,16 @@
 import os
-import re
+
 import json
-import ssh_module as ssh
+from ssh_module import ssh_connection as ssh
+from regular_expression_handler import data_handling
+from error import Error
+import re as re
+
+# from telnet_module import telnet_connection as telnet
 import paramiko as para
-from string import printable
 
 
-class communication:
+class connection:
     hostname: str
     username: str
     password: str
@@ -45,7 +49,7 @@ class communication:
         self.banner_timeout = banner_timeout
 
     def set_ssh_connection(self):
-        self.connection = ssh.ssh_connection(self)
+        self.connection = ssh(self)
         try:
             self.connection.connect_to_device()
         except OSError as e:
@@ -54,6 +58,12 @@ class communication:
         except para.SSHException as e:
             print(e)
             self.connection = None
+        except Exception as e:
+            print(f"Error connecting to SSH: {e}")
+            self.connection = None
+
+    def set_telnet_connection(self):
+        self.connection = telnet(self)
 
     def send_list_command(self, command_list_json: dict = {}):
 
@@ -65,36 +75,20 @@ class communication:
             for command in command_list:
                 result += self.connection.send_command(command)
             print("***\n", result, "\n***")
-            return result
+            return data_handling.remove_control_char(result)
 
         except Error.ErrorCommand as e:
             print(e)
             return None
 
-
-class common_function:
-
-    def find_prompt(self, output: str):
-        if output != "":
-            last_line = output.splitlines()[-1].strip()
-            if re.match(r"([\w-]+)(>|(?:\(config.*\))*#)", last_line):
-                return True
-        return False
-
-    def check_error(self, output: str):
-        # หาคำว่า invalid หรือ command not found ถ้ามี ให้return True ถ้าไม่มี return false
-        return (
-            re.search(
-                r"invalid|command not found|Unrecognized|Unknown command|Incomplete command|Illegal command",
-                output,
-                flags=re.IGNORECASE,
-            )
-            is not None
-        )
-
-    def remove_control_char(self, ssh_output: str):
-        # ลบ control char ที่ไม่จำเป็น ให้เหลือแค่ \n\r\t
-        return re.sub(r"[^\x20-\x7E\r\n\t]+", "", ssh_output)
+    def get_vlt_number(self, command_json: dict):
+        self.connection.send_command("")
+        raw_vlt_num = self.connection.send_command(command_json["show vlt number"])
+        match = re.search(r"vlt-domain (\d+)", raw_vlt_num)
+        if match:
+            return int(match.group(1))
+        else:
+            return None
 
 
 class json_file:
@@ -133,35 +127,27 @@ class json_file:
             return None
 
 
-class Error:
-    class ErrorCommand(Exception):
-        # Class ทำหน้าที่จัดการ Exction ของคำสั่งที่ส่งไปแล้ว อุปกรณ์ไม่เข้าใจ
-        def __init__(self, command):
-            self.message = f"An error occurred while executing the '{command}'"
-            super().__init__(self.message)
-
-    class ErrorEnable_Password(Exception):
-        def __init__(
-            self, message="An error occurred while using given enable password"
-        ):
-            self.message = message
-            super().__init__(self.message)
-
-
 if __name__ == "__main__":
-    ssh_con = communication()
+    # telnet_con = connection()
+    # telnet_con.set_hostname("REDACTED")
+    # telnet_con.set_username("REDACTED")
+    # telnet_con.set_password("REDACTED")
+    # telnet_con.set_telnet_connection()
+    # telnet_con.set_ssh_connection()
+    ssh_con = connection()
     file = json_file()
     file.get_list_of_file()
     file.read_json_file(file.file_list[1])
 
-    ssh_con.set_hostname("")
+    ssh_con.set_hostname("REDACTED")
     ssh_con.set_username("REDACTED")
     ssh_con.set_password("REDACTED")
     # ssh_con.set_enable_password(input("Please input enable password (enter if None): "))
     ssh_con.set_port(22)
 
     ssh_con.set_ssh_connection()
-
+    if ssh_con.connection == None:
+        exit()
     print("Connect Successfuly")
-
+    ssh_con.get_vlt_number(file.get_command_json("os-10"))
     ssh_con.send_list_command(file.get_command_json("os-10"))
