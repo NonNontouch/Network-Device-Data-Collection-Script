@@ -1,24 +1,25 @@
+import socket
 from time import sleep
 import paramiko as para
-from communication import communication
-from communication import common_function
-from communication import Error
+from error import Error
+from regular_expression_handler import data_handling
 
 
-class ssh_connection(
-    common_function,
-):
+class ssh_connection:
     connect = para.SSHClient()
     policy = para.AutoAddPolicy()
     session = None
 
-    def __init__(self, communication: communication):
+    def __init__(self, communication):
         # pass communication object into ssh_module
         self.hostname = communication.hostname
         self.usename = communication.username
         self.password = communication.password
         self.enable_password = communication.enable_password
-        self.port = communication.port
+        if communication.port == None:
+            self.port = 22
+        else:
+            self.port = communication.port
         self.timeout = communication.timeout
         self.banner_timeout = communication.banner_timeout
 
@@ -34,10 +35,13 @@ class ssh_connection(
                 banner_timeout=self.banner_timeout,
             )
             self.session = self.connect.invoke_shell()
-
+        except socket.error as e:
+            raise e
         except OSError as e:
             raise e
         except para.SSHException as e:
+            raise e
+        except Exception as e:
             raise e
 
     def send_command(self, command):
@@ -47,9 +51,9 @@ class ssh_connection(
         while True:
             _output = self.get_output()
             cmd_output += _output
-            if self.find_prompt(_output):
+            if data_handling.find_prompt(_output):
                 break
-        if self.check_error(_output):
+        if data_handling.check_error(_output):
             raise Error.ErrorCommand(command)
 
         return cmd_output
@@ -69,9 +73,9 @@ class ssh_connection(
                 return False
         return True
 
-    def get_output(self):
-        return self.remove_control_char(self.session.recv(65535).decode("utf-8"))
-
     def is_enable(self):
         console_name = self.send_command("").splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
+
+    def get_output(self):
+        return self.session.recv(65535).decode("utf-8")
