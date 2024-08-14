@@ -2,11 +2,11 @@ import os
 
 import json
 from ssh_module import ssh_connection as ssh
+from telnet_module import telnet_connection as telnet
 from regular_expression_handler import data_handling
 from error import Error
 import re as re
 
-# from telnet_module import telnet_connection as telnet
 import paramiko as para
 
 
@@ -63,19 +63,31 @@ class connection:
             self.connection = None
 
     def set_telnet_connection(self):
+        if self.port == None:
+            self.port = 23
         self.connection = telnet(self)
+        try:
+            self.connection.connect_to_device()
+            self.connection.login()
+        except Exception as e:
+            print(f"Error connecting to Telnet: {e}")
+            self.connection = None
 
     def send_list_command(self, command_list_json: dict = {}):
 
         if self.connection.is_enable():
             command_list_json.pop("Enable Device")
         command_list = list(command_list_json.values())
+        command_list_json = list(command_list_json.keys())
         try:
-            result = ""
-            for command in command_list:
-                result += self.connection.send_command(command)
+            result: dict = {}
+            for i in range(len(command_list_json)):
+                command = command_list[i]
+                result[command_list_json[i]] = data_handling.remove_control_char(
+                    self.connection.send_command(command)
+                )
             print("***\n", result, "\n***")
-            return data_handling.remove_control_char(result)
+            return result
 
         except Error.ErrorCommand as e:
             print(e)
