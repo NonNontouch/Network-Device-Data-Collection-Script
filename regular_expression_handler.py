@@ -24,3 +24,23 @@ class data_handling:
     def remove_control_char(ssh_output: str):
         # ลบ control char ที่ไม่จำเป็น ให้เหลือแค่ \n\r\t
         return re.sub(r"[^\x20-\x7E\r\n\t]+", "", ssh_output)
+
+    def is_ready_input_username(telnet_output: str):
+        return (
+            re.search(
+                r"(?:login|username|user)(?!.*password:pass|Password)",
+                telnet_output,
+                flags=re.IGNORECASE,
+            )
+            is not None
+        )
+
+    def is_ready_input_password(telnet_output: str):
+        return (
+            re.search(
+                r"(?:password:pass|Password)(?!.*login|username|user)",
+                telnet_output,
+                flags=re.IGNORECASE,
+            )
+            is not None
+        )
