@@ -1,6 +1,6 @@
 from telnetlib import Telnet
-from regular_expression_handler import data_handling
-from error import Error
+from ..General_Function.regular_expression_handler import data_handling
+from ..General_Function.error import Error
 from time import sleep
 
 
@@ -29,23 +29,23 @@ class telnet_connection:
     def login(self):
 
         first_message = self.connect.read_until(b":", timeout=4).decode("utf-8")
-        print(first_message)
+        print(first_message, end="")
         if data_handling.is_ready_input_username(first_message):
             self.connect.write(self.to_bytes(self.username))
             password_prompt = self.connect.read_until(
                 b":",
             ).decode("utf-8")
-            print(password_prompt)
+            print(password_prompt, end="")
             if data_handling.is_ready_input_password(password_prompt):
                 self.connect.write(self.to_bytes(self.password))
                 login_result = self.send_command("")
-            print(login_result)
+            print(login_result, end="")
         else:
             while True:
                 if data_handling.is_ready_input_username(self.send_command("")):
                     break
 
-            self.connect.write(self.username.encode("ascii") + b"\n")
+            self.connect.write(self.username.encode("utf-8") + b"\n")
 
             self.connect.write(self.to_bytes(self.password))
 
@@ -61,6 +61,24 @@ class telnet_connection:
         if data_handling.check_error(_output):
             raise Error.ErrorCommand(command)
         return cmd_output
+
+    def is_enable(self):
+        console_name = self.send_command("").splitlines()[-1].strip()
+        return True if console_name[-1] == "#" else False
+
+    def enable_device(self, enable_command: str, password: str):
+        self.connect.write(self.to_bytes(enable_command))
+        sleep(0.3)
+
+        _output = self.connect.read_until(b":").decode("utf-8")
+        for text in ["Password:", "password:"]:
+            if text in _output:
+                _output = self.send_command(password)
+                break
+        if _output[-1] == "#":
+            return
+        else:
+            raise Error.ErrorEnable_Password(self.enable_password)
 
     @staticmethod
     def to_bytes(line):

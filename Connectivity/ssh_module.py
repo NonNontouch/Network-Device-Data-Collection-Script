@@ -1,8 +1,8 @@
 import socket
 from time import sleep
 import paramiko as para
-from error import Error
-from regular_expression_handler import data_handling
+from General_Function import regular_expression_handler as data_handling
+from General_Function import error
 
 
 class ssh_connection:

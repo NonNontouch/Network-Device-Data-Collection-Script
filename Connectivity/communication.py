@@ -1,12 +1,14 @@
 import os
+import sys
+
 
 import json
 from ssh_module import ssh_connection as ssh
 from telnet_module import telnet_connection as telnet
-from regular_expression_handler import data_handling
-from error import Error
-import re as re
+from General_Function import regular_expression_handler as data_handling
+from General_Function import error as Error
 
+import re as re
 import paramiko as para
 
 
@@ -74,9 +76,18 @@ class connection:
             self.connection = None
 
     def send_list_command(self, command_list_json: dict = {}):
+        if self.connection == None:
+            raise Error.ConnectionError
+        if self.connection.is_enable() is False:
+            self.connection.enable_device(
+                enable_command=command_list_json["Enable Device"],
+                password=self.enable_password,
+            )
+        command_list_json.pop("Enable Device")
+        # command_list_json.pop("show vlt status")
+        # command_list_json.pop("show vlt number")
+        command_list_json.pop("show tech-support")
 
-        if self.connection.is_enable():
-            command_list_json.pop("Enable Device")
         command_list = list(command_list_json.values())
         command_list_json = list(command_list_json.keys())
         try:
@@ -86,7 +97,8 @@ class connection:
                 result[command_list_json[i]] = data_handling.remove_control_char(
                     self.connection.send_command(command)
                 )
-            print("***\n", result, "\n***")
+            for i in result.values():
+                print(i)
             return result
 
         except Error.ErrorCommand as e:
@@ -140,26 +152,35 @@ class json_file:
 
 
 if __name__ == "__main__":
-    # telnet_con = connection()
-    # telnet_con.set_hostname("REDACTED")
-    # telnet_con.set_username("REDACTED")
-    # telnet_con.set_password("REDACTED")
-    # telnet_con.set_telnet_connection()
-    # telnet_con.set_ssh_connection()
-    ssh_con = connection()
+
     file = json_file()
     file.get_list_of_file()
     file.read_json_file(file.file_list[1])
+    telnet_con = connection()
+    telnet_con.set_hostname("REDACTED")
+    telnet_con.set_username("non")
+    telnet_con.set_password("REDACTED")
+    telnet_con.set_enable_password("REDACTED")
+    telnet_con.set_port(23)
+    telnet_con.set_telnet_connection()
+    telnet_con.send_list_command(file.get_command_json("os-6"))
+    # print(telnet_con.connection.send_command("enable"))
+    # print(telnet_con.connection.send_command("ter len 0"))
+    # print(telnet_con.connection.send_command("show run"))
 
-    ssh_con.set_hostname("REDACTED")
-    ssh_con.set_username("REDACTED")
-    ssh_con.set_password("REDACTED")
-    # ssh_con.set_enable_password(input("Please input enable password (enter if None): "))
-    ssh_con.set_port(22)
+    # อ่านข้อมูลจนปิด connection และเก็บในตัวแปร output
 
-    ssh_con.set_ssh_connection()
-    if ssh_con.connection == None:
-        exit()
-    print("Connect Successfuly")
-    ssh_con.get_vlt_number(file.get_command_json("os-10"))
-    ssh_con.send_list_command(file.get_command_json("os-10"))
+
+"""ssh_con = connection()
+ ssh_con.set_hostname("REDACTED")
+ssh_con.set_username("REDACTED")
+ssh_con.set_password("REDACTED")
+# ssh_con.set_enable_password(input("Please input enable password (enter if None): "))
+ssh_con.set_port(22)
+
+ssh_con.set_ssh_connection()
+if ssh_con.connection == None:
+    exit()
+print("Connect Successfuly")
+ssh_con.get_vlt_number(file.get_command_json("os-10"))
+ssh_con.send_list_command(file.get_command_json("os-10"))"""

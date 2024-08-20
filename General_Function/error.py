@@ -6,8 +6,14 @@ class Error:
             super().__init__(self.message)
 
     class ErrorEnable_Password(Exception):
-        def __init__(
-            self, message="An error occurred while using given enable password"
-        ):
+        def __init__(self, wrong_password):
+            self.message = (
+                f"An error occurred while using given {wrong_password} password"
+            )
+
+            super().__init__(self.message)
+
+    class ConnectionError(Exception):
+        def __init__(self, message="The Connection variable is still null"):
             self.message = message
             super().__init__(self.message)
