@@ -1,6 +1,6 @@
 from telnetlib import Telnet
-from ..General_Function.regular_expression_handler import data_handling
-from ..General_Function.error import Error
+from .regular_expression_handler import data_handling
+from .error import Error
 from time import sleep
 
 
@@ -27,14 +27,12 @@ class telnet_connection:
             raise e
 
     def login(self):
-
         first_message = self.connect.read_until(b":", timeout=4).decode("utf-8")
         print(first_message, end="")
         if data_handling.is_ready_input_username(first_message):
-            self.connect.write(self.to_bytes(self.username))
-            password_prompt = self.connect.read_until(
-                b":",
-            ).decode("utf-8")
+            self.connect.write(buffer=self.to_bytes(self.username))
+            sleep(0.5)
+            password_prompt = self.connect.read_until(b":", timeout=4).decode("utf-8")
             print(password_prompt, end="")
             if data_handling.is_ready_input_password(password_prompt):
                 self.connect.write(self.to_bytes(self.password))

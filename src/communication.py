@@ -1,12 +1,7 @@
-import os
-import sys
-
-
-import json
-from ssh_module import ssh_connection as ssh
-from telnet_module import telnet_connection as telnet
-from General_Function import regular_expression_handler as data_handling
-from General_Function import error as Error
+from .ssh_module import ssh_connection as ssh
+from .telnet_module import telnet_connection as telnet
+from .regular_expression_handler import data_handling as data_handling
+from .error import Error as Error
 
 import re as re
 import paramiko as para
@@ -113,74 +108,3 @@ class connection:
             return int(match.group(1))
         else:
             return None
-
-
-class json_file:
-    file_list: set
-    os_template: dict
-    command_list: list
-    command_list_json: dict
-
-    def get_list_of_file(self):
-        folder_path = "./command_template"
-        try:
-            self.file_list = os.listdir(folder_path)
-
-        except FileNotFoundError:
-            print(f"Error: Folder '{folder_path}' not found.")
-            return
-
-    def read_json_file(self, file_name: str):
-        file_path = f"./command_template/{file_name}"
-        try:
-            with open(file_path, "r") as f:
-                self.os_template = json.load(f)
-                return self.os_template
-        except FileNotFoundError:
-            print(f"Error: File '{file_path}' not found.")
-            return None
-        except json.JSONDecodeError:
-            print(f"Error: Invalid JSON in file '{file_path}'.")
-            return None
-
-    def get_command_json(self, OS: str):
-        try:
-            return self.os_template[OS]
-        except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
-            print(f"Error getting command list for OS {OS}: {e}")
-            return None
-
-
-if __name__ == "__main__":
-
-    file = json_file()
-    file.get_list_of_file()
-    file.read_json_file(file.file_list[1])
-    telnet_con = connection()
-    telnet_con.set_hostname("REDACTED")
-    telnet_con.set_username("non")
-    telnet_con.set_password("REDACTED")
-    telnet_con.set_enable_password("REDACTED")
-    telnet_con.set_port(23)
-    telnet_con.set_telnet_connection()
-    telnet_con.send_list_command(file.get_command_json("os-6"))
-    # print(telnet_con.connection.send_command("enable"))
-    # print(telnet_con.connection.send_command("ter len 0"))
-    # print(telnet_con.connection.send_command("show run"))
-
-    # อ่านข้อมูลจนปิด connection และเก็บในตัวแปร output
-
-
-"""ssh_con = connection()
- ssh_con.set_hostname("REDACTED")
-ssh_con.set_username("REDACTED")
-ssh_con.set_password("REDACTED")
-# ssh_con.set_enable_password(input("Please input enable password (enter if None): "))
-ssh_con.set_port(22)
-
-ssh_con.set_ssh_connection()
-if ssh_con.connection == None:
-    exit()
-print("Connect Successfuly")
-ssh_con.get_vlt_number(file.get_command_json("os-10"))
-ssh_con.send_list_command(file.get_command_json("os-10"))"""
