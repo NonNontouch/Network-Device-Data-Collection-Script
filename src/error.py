@@ -17,3 +17,8 @@ class Error:
         def __init__(self, message="The Connection variable is still null"):
             self.message = message
             super().__init__(self.message)
+
+    class NoSerialPortError(Exception):
+        def __init__(self, message="Program Can't find serial port"):
+            self.message = message
+            super().__init__(self.message)
