@@ -78,6 +78,10 @@ class telnet_connection:
         else:
             raise Error.ErrorEnable_Password(self.enable_password)
 
+    def close_connection(self):
+        # close connection and set it none
+        self.connect = self.connect.close()
+
     @staticmethod
     def to_bytes(line):
         return f"{line}\n".encode("utf-8")

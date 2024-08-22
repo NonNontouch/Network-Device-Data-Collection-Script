@@ -16,10 +16,7 @@ class ssh_connection:
         self.usename = communication.username
         self.password = communication.password
         self.enable_password = communication.enable_password
-        if communication.port == None:
-            self.port = 22
-        else:
-            self.port = communication.port
+        self.port = communication.port
         self.timeout = communication.timeout
         self.banner_timeout = communication.banner_timeout
 
@@ -35,8 +32,6 @@ class ssh_connection:
                 banner_timeout=self.banner_timeout,
             )
             self.session = self.connect.invoke_shell()
-        except socket.error as e:
-            raise e
         except OSError as e:
             raise e
         except para.SSHException as e:
@@ -79,3 +74,7 @@ class ssh_connection:
 
     def get_output(self):
         return self.session.recv(65535).decode("utf-8")
+
+    def close_connection(self):
+        self.session.close()
+        self.connect = None
