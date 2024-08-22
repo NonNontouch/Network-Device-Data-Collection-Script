@@ -9,19 +9,21 @@ import paramiko as para
 
 
 class connection:
-    # Common variable
-    hostname: str
-    username: str
-    password: str
+    # Common variable with default value
+    hostname: str = ""
+    username: str = ""
+    password: str = ""
     enable_password: str = ""
     timeout: float = 4
     banner_timeout: int = 4
     port: int = None
-    # Serial Variable
-    baudrate: int
-    bytesize: int
-    parity: str
-    stopbits: float
+    # Serial Variable with default value
+    serial_port: str = ""
+    serial_port_list: list
+    baudrate: int = 115200
+    bytesize: int = 8
+    parity: str = "N"
+    stopbits: float = 1
     common_baudrate = [
         50,
         75,
@@ -87,15 +89,34 @@ class connection:
         self.bytesize = bytesize
 
     def set_parity(self, parity: str):
+        """Set parity variable
+
+        Args:
+            parity (str): _parity_ _bit_
+        """
         self.parity = parity
 
     def set_stopbits(self, stopbits: float):
+        """
+        Funcitons:
+            Set stopbits variable
+
+        Arguments:
+            NoSerialPortError: If no serial ports are found.
+        """
         if stopbits < 0:
             return
         self.stopbits = stopbits
-    
 
     def set_ssh_connection(self):
+        """
+        Set connection variable to ssh and then try to connect to the device
+
+        Raises:
+            OSError: If socket error
+            SSHException: If authentication fail
+            Exception: If unknown exception is founded
+        """
         self.connection = ssh(self)
         try:
             self.connection.connect_to_device()
@@ -110,6 +131,7 @@ class connection:
             self.connection = None
 
     def set_telnet_connection(self):
+        """Set connection as telnet and try connect and login to it"""
         if self.port == None:
             self.port = 23
         self.connection = telnet(self)
@@ -121,13 +143,24 @@ class connection:
             self.connection = None
 
     def set_serial_connection(self):
+        """
+        Set connection as serial and try connect and login to it
+        """
         self.connection = serial(self)
         try:
-            self.connection.connect_to_device()
-            # self.connection.login()
+            self.connection.set_serial_object()
+            print(self.get_serial_port())
+            self.connection.connect_to_device(self.serial_port_list[2])
+            self.connection.login()
         except Exception as e:
             print(f"Error connecting to Serial: {e}")
             self.connection = None
+
+    def get_serial_port(self):
+        """_Get list of all avaiable serial port in computer._"""
+        if isinstance(self.connection, serial):
+            self.serial_port_list = self.connection.list_serial_ports()
+            return self.serial_port_list
 
     def send_list_command(self, command_list_json: dict = {}):
         if self.connection == None:
@@ -138,12 +171,13 @@ class connection:
                 password=self.enable_password,
             )
         command_list_json.pop("Enable Device")
-        # command_list_json.pop("show vlt status")
-        # command_list_json.pop("show vlt number")
+        command_list_json.pop("show vlt status")
+        command_list_json.pop("show vlt number")
         command_list_json.pop("show tech-support")
 
         command_list = list(command_list_json.values())
         command_list_json = list(command_list_json.keys())
+        self.connection.send_command("")
         try:
             result: dict = {}
             for i in range(len(command_list_json)):
@@ -152,7 +186,7 @@ class connection:
                     self.connection.send_command(command)
                 )
             for i in result.values():
-                print(i)
+                print(i,end=" ")
             return result
 
         except Error.ErrorCommand as e:
