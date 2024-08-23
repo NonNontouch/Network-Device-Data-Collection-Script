@@ -9,6 +9,8 @@ import paramiko as para
 
 
 class connection:
+    """_Facade class that used to control ssh,telnet and serial._"""
+
     # Common variable with default value
     hostname: str = ""
     username: str = ""
@@ -162,7 +164,18 @@ class connection:
             self.serial_port_list = self.connection.list_serial_ports()
             return self.serial_port_list
 
-    def send_list_command(self, command_list_json: dict = {}):
+    def send_list_command(self, command_list_json: dict):
+        """_Send command to device from sequnce given in dict argument._
+
+        Args:
+            command_list_json (dict): _A dict variable which contain command template._
+
+        Raises:
+            Error.ConnectionError: _If connection is None, Functino will raise this error._
+
+        Returns:
+            dict: _A dict of command result from given command._
+        """
         if self.connection == None:
             raise Error.ConnectionError
         if self.connection.is_enable() is False:
@@ -186,7 +199,7 @@ class connection:
                     self.connection.send_command(command)
                 )
             for i in result.values():
-                print(i,end=" ")
+                print(i, end=" ")
             return result
 
         except Error.ErrorCommand as e:
