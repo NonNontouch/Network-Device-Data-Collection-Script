@@ -22,13 +22,17 @@ class serial_connection:
         self.enable_password: str = connection.enable_password
         self.timeout: int = connection.timeout
         self.banner_timeout: int = connection.banner_timeout
-        # self.port: str = connection.serial_port
         self.baudrate: int = connection.baudrate
         self.bytesize: int = connection.bytesize
         self.parity: str = connection.parity
         self.stopbits: float = connection.stopbits
 
     def set_serial_object(self):
+        """_This function will create Serial Module with given varialbe._
+
+        Raises:
+            e: _All Excetion will be raise by this variable._
+        """
         try:
             self.connect = Serial(
                 timeout=self.timeout,
@@ -45,7 +49,7 @@ class serial_connection:
         self.connect.open()
 
     def send_command(self, command: str):
-        """_Send command to a host via SSH._
+        """_Send command to a host via Serial._
 
         Args:
             command (_str_): _A command you want to send to this host._
@@ -70,6 +74,11 @@ class serial_connection:
         return cmd_output
 
     def login(self):
+        """_This function will try login into device via Serial._
+
+        Raises:
+            Error.LoginError: _If login goes wrong. Such as the response doesn't seems normal._
+        """
         if self.is_login():
             return
         self.connect.write(self.to_bytes(""))
@@ -110,10 +119,20 @@ class serial_connection:
         return self.connect.read_all().decode("utf-8")
 
     def is_enable(self):
+        """_Check if device is enable._
+
+        Returns:
+            bool: _True if enabled, False if not._
+        """
         console_name = self.send_command("").splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
 
     def is_login(self):
+        """_Check if device is already logged in._
+
+        Returns:
+            bool: _True if logged in, False if not._
+        """
         console_name = self.send_command("").splitlines()[-1].strip()
         return True if data_handling.find_prompt(console_name) else False
 
@@ -137,12 +156,12 @@ class serial_connection:
 
     @staticmethod
     def to_bytes(line: str):
-        """return a bytes of string also include \\n
+        """return a bytes of string which also include \\n
 
         Args:
             line (_str_): a string that will convert to byte
 
         Returns:
-            _byte_: byte string with \\n in the end
+            byte: byte string with \\n in the end
         """
         return f"{line}\n".encode("utf-8")
