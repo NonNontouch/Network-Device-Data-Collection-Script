@@ -19,6 +19,7 @@ class ssh_connection:
         self.port = communication.port
         self.timeout = communication.timeout
         self.banner_timeout = communication.banner_timeout
+        self.command_timeout = communication.command_timeout
 
     def connect_to_device(self):
         try:
@@ -32,6 +33,8 @@ class ssh_connection:
                 banner_timeout=self.banner_timeout,
             )
             self.session = self.connect.invoke_shell()
+            self.session.settimeout(self.command_timeout)
+
         except OSError as e:
             raise e
         except para.SSHException as e:
@@ -39,22 +42,47 @@ class ssh_connection:
         except Exception as e:
             raise e
 
-    def send_command(self, command):
-        cmd_output = ""
-        self.session.send(command + "\n")
-        sleep(0.3)
-        while True:
-            _output = self.get_output()
-            cmd_output += _output
-            if data_handling.find_prompt(_output):
-                break
-        if data_handling.check_error(_output):
-            raise Error.ErrorCommand(command)
+    def send_command(self, command: str, max_retries: int = 4):
 
-        return cmd_output
+        if (
+            self.connect.get_transport() is not None
+            and self.connect.get_transport().is_active()
+        ):
 
-    def enable_device(self, password: str):
-        self.session.send("enable" + "\n")
+            retries = 0
+            cmd_output = ""
+            try:
+                self.session.send(command + "\n")
+            except socket.timeout:
+                raise Error.ConnectionLossConnect(command)
+            except socket.error:
+                raise Error.ConnectionLossConnect(command)
+            sleep(0.3)
+            while True:
+                _output = self.get_output()
+                if _output == "":
+                    retries += 1
+                    if retries > max_retries:
+                        raise Error.CommandTimeoutError(command)
+                    sleep(1)
+                elif "More" in _output or "more" in _output:
+                    self.session.send(" ")
+                    _output = data_handling.remove_more_keyword(_output)
+                    cmd_output += _output
+                else:
+                    cmd_output += _output
+                    if data_handling.find_prompt(_output):
+                        break
+            if data_handling.check_error(_output):
+                raise Error.ErrorCommand(command)
+            return cmd_output
+        else:
+            raise Error.ConnectionLossConnect(command)
+
+    def enable_device(self, enable_command: str, password: str):
+        if self.is_enable() == True:
+            return
+        self.session.send(f"{enable_command}" + "\n")
         sleep(0.3)
         while True:
             _output = self.get_output()
@@ -65,15 +93,22 @@ class ssh_connection:
             if _output[-1] == "#":
                 break
             else:
-                return False
-        return True
+                raise Error.ErrorEnable_Password(password)
+        return
 
     def is_enable(self):
         console_name = self.send_command("").splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
 
     def get_output(self):
-        return self.session.recv(65535).decode("utf-8")
+        try:
+            return self.session.recv(65535).decode("utf-8")
+        except socket.timeout:
+            return ""
+
+    def is_ready_to_prompt(self):
+
+        return
 
     def close_connection(self):
         self.session.close()
