@@ -16,8 +16,11 @@ class connection:
     username: str = ""
     password: str = ""
     enable_password: str = ""
+    # TCP timeout
     timeout: float = 4
-    banner_timeout: int = 4
+    banner_timeout: int = 15
+    # Command timeout
+    command_timeout: int = 4
     port: int = None
     # Serial Variable with default value
     serial_port: str = ""
@@ -176,35 +179,50 @@ class connection:
         Returns:
             dict: _A dict of command result from given command._
         """
+        result: dict = {}
         if self.connection == None:
             raise Error.ConnectionError
-        if self.connection.is_enable() is False:
+        try:
             self.connection.enable_device(
                 enable_command=command_list_json["Enable Device"],
                 password=self.enable_password,
             )
+        except Error.ErrorCommand as e:
+            print(e)
+            return None
+        except Error.ConnectionLossConnect as e:
+            print(e)
+            return result
+        except Error.ErrorEnable_Password as e:
+            print(e)
+            return
         command_list_json.pop("Enable Device")
+        command_list_json.pop("Tetminal Length 0")
         command_list_json.pop("show vlt status")
         command_list_json.pop("show vlt number")
         command_list_json.pop("show tech-support")
 
         command_list = list(command_list_json.values())
         command_list_json = list(command_list_json.keys())
-        self.connection.send_command("")
-        try:
-            result: dict = {}
-            for i in range(len(command_list_json)):
+        for i in range(len(command_list_json)):
+            try:
                 command = command_list[i]
                 result[command_list_json[i]] = data_handling.remove_control_char(
                     self.connection.send_command(command)
                 )
-            for i in result.values():
-                print(i, end=" ")
-            return result
+            except Error.ErrorCommand as e:
+                print(e)
+                continue
+            except Error.CommandTimeoutError as e:
+                print(e)
+                continue
+            except Error.ConnectionLossConnect as e:
+                print(e)
+                continue
 
-        except Error.ErrorCommand as e:
-            print(e)
-            return None
+        for i in result.values():
+            print(i, end=" ")
+        return result
 
     def get_vlt_number(self, command_json: dict):
         self.connection.send_command("")
