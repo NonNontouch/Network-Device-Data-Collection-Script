@@ -21,9 +21,13 @@ class data_handling:
             is not None
         )
 
-    def remove_control_char(ssh_output: str):
+    def remove_control_char(command_output: str):
         # ลบ control char ที่ไม่จำเป็น ให้เหลือแค่ \n\r\t
-        return re.sub(r"[^\x20-\x7E\r\n\t]+", "", ssh_output)
+        return re.sub(
+            r"[^\x20-\x7E\r\n]",
+            "",
+            re.sub(r"\x1B[@-_][0-?]*[ -/]*[@-~]", "", command_output),
+        )
 
     def is_ready_input_username(telnet_output: str):
         return (
@@ -44,3 +48,6 @@ class data_handling:
             )
             is not None
         )
+
+    def remove_more_keyword(output: str):
+        return re.sub(r"--[Mm]ore--", "", output)
