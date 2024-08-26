@@ -20,7 +20,7 @@ class connection:
     timeout: float = 4
     banner_timeout: int = 15
     # Command timeout
-    command_timeout: int = 4
+    command_timeout: int = 1
     port: int = None
     # Serial Variable with default value
     serial_port: str = ""
@@ -57,6 +57,11 @@ class connection:
     connection = None
 
     def set_hostname(self, hostname: str):
+        """_Set device hostname,Could be ip address of hostname to resolve._
+
+        Args:
+            hostname (str): _IP address or hostname._
+        """
         self.hostname = hostname
 
     def set_port(self, port: int):
@@ -183,22 +188,29 @@ class connection:
         if self.connection == None:
             raise Error.ConnectionError
         try:
-            self.connection.enable_device(
-                enable_command=command_list_json["Enable Device"],
-                password=self.enable_password,
-            )
+            if "Enable Device" in command_list_json:
+                self.connection.enable_device(
+                    enable_command=command_list_json["Enable Device"],
+                    password=self.enable_password,
+                )
+                del command_list_json["Enable Device"]
         except Error.ErrorCommand as e:
-            print(e)
+            # return เพราะ enable ไม่ได้
+            print(e, ".While trying to enable device.", sep="")
             return None
         except Error.ConnectionLossConnect as e:
-            print(e)
+            # connection loss must reconnect
+            print(e, ".While trying to enable device.", sep="")
             return result
         except Error.CommandTimeoutError as e:
-            print(e)
+            # ถาม user ว่าจะลองใหม่ไหม จากที่ device ไม่ตอบอะไรกลับมา
+            print(e, ".While trying to enable device.", sep="")
             return
         except Error.ErrorEnable_Password as e:
+            # return กลับเพราะ password ผิด
             print(e)
             return
+
         command_list_json.pop("Enable Device")
         command_list_json.pop("Tetminal Length 0")
         command_list_json.pop("show vlt status")
@@ -211,15 +223,23 @@ class connection:
             try:
                 command = command_list[i]
                 result[command_list_json[i]] = data_handling.remove_control_char(
-                    self.connection.send_command(command)
+                    self.connection.send_command(
+                        command, max_retries=4, command_timeout=self.command_timeout
+                    )
                 )
             except Error.ErrorCommand as e:
                 print(e)
                 continue
             except Error.CommandTimeoutError as e:
                 print(e)
-                continue
+                if self.connection.is_connection_alive():
+                    # connection is alive but command doesn't return with anything skip this command
+                    continue
+                else:
+                    # connection is loss
+                    raise Error.ConnectionLossConnect(command)
             except Error.ConnectionLossConnect as e:
+                # connection loss must reconnect
                 print(e)
                 continue
 
