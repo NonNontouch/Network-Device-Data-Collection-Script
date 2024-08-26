@@ -42,13 +42,11 @@ class ssh_connection:
         except Exception as e:
             raise e
 
-    def send_command(self, command: str, max_retries: int = 4):
-
-        if (
-            self.connect.get_transport() is not None
-            and self.connect.get_transport().is_active()
-        ):
-
+    def send_command(
+        self, command: str, max_retries: int = 4, command_timeout: int = 1
+    ):
+        if self.is_connection_alive():
+            self.session.settimeout(command_timeout)
             retries = 0
             cmd_output = ""
             try:
@@ -81,6 +79,7 @@ class ssh_connection:
 
     def enable_device(self, enable_command: str, password: str):
         if self.is_enable() == True:
+            # device already enable
             return
         self.session.send(f"{enable_command}" + "\n")
         sleep(0.3)
@@ -106,9 +105,13 @@ class ssh_connection:
         except socket.timeout:
             return ""
 
-    def is_ready_to_prompt(self):
-
-        return
+    def is_connection_alive(self):
+        return (
+            True
+            if self.connect.get_transport() is not None
+            and self.connect.get_transport().is_active()
+            else False
+        )
 
     def close_connection(self):
         self.session.close()
