@@ -193,6 +193,9 @@ class connection:
         except Error.ConnectionLossConnect as e:
             print(e)
             return result
+        except Error.CommandTimeoutError as e:
+            print(e)
+            return
         except Error.ErrorEnable_Password as e:
             print(e)
             return
