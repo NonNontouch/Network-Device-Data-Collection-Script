@@ -1,8 +1,8 @@
 class Error:
     class ErrorCommand(Exception):
         # Class ทำหน้าที่จัดการ Exction ของคำสั่งที่ส่งไปแล้ว อุปกรณ์ไม่เข้าใจ
-        def __init__(self, command: str):
-            self.message = f"An error occurred while executing the '{command}'"
+        def __init__(self, command: str, command_output: str):
+            self.message = f"An error occurred while executing the '{command}', \nIt gives output '{command_output}'"
             super().__init__(self.message)
 
     class ErrorEnable_Password(Exception):

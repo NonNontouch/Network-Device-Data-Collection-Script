@@ -27,7 +27,7 @@ class ssh_connection:
             self.connect.connect(
                 hostname=self.hostname,
                 port=self.port,
-                username=self.usename,
+                username=self.username,
                 password=self.password,
                 timeout=self.timeout,
                 banner_timeout=self.banner_timeout,
@@ -76,16 +76,14 @@ class ssh_connection:
                     cmd_output += _output
                     if data_handling.find_prompt(_output):
                         break
-            if data_handling.check_error(_output):
-                raise Error.ErrorCommand(command)
+            if data_handling.check_error(cmd_output):
+                # Command is successfully ran but need to check for error
+                raise Error.ErrorCommand(command, cmd_output)
             return cmd_output
         else:
             raise Error.ConnectionLossConnect(command)
 
     def enable_device(self, enable_command: str, password: str):
-        if self.is_enable() == True:
-            # device already enable
-            return
         self.session.send(f"{enable_command}" + "\n")
         sleep(0.3)
         while True:

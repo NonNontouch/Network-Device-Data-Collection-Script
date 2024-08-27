@@ -113,15 +113,16 @@ class telnet_connection:
                     raise Error.CommandTimeoutError(command)
                 sleep(command_timeout)
             elif "More" in _output or "more" in _output:
-                self.session.send(" ")
+                self.connect.write(b" ")
                 _output = data_handling.remove_more_keyword(_output)
                 cmd_output += _output
             else:
                 cmd_output += _output
                 if data_handling.find_prompt(_output):
                     break
-        if data_handling.check_error(_output):
-            raise Error.ErrorCommand(command)
+        if data_handling.check_error(cmd_output):
+            # Command is successfully ran but need to check for error
+            raise Error.ErrorCommand(command, cmd_output)
         return cmd_output
 
     def is_enable(self):
@@ -143,8 +144,6 @@ class telnet_connection:
         Raises:
             Error.ErrorEnable_Password: _description_
         """
-        if self.is_enable():
-            return
         self.connect.write(self.to_bytes(enable_command))
         sleep(0.3)
 
