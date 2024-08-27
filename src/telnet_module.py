@@ -41,13 +41,28 @@ class telnet_connection:
         except Exception as e:
             raise e
 
+    def is_login(self):
+        """_Check if device is already logged in._
+
+        Returns:
+            bool: _True if logged in, False if not._
+        """
+        self.connect.write(b"\n")
+        console_name = (
+            self.connect.read_eager().decode("utf-8").splitlines()[-1].strip()
+        )
+        return True if data_handling.find_prompt(console_name) else False
+
     def login(self):
         try:
+            if self.is_login():
+                return
+            self.connect.write(b"\n")
             first_message = self.connect.read_until(b":", timeout=4).decode("utf-8")
             print(first_message, end="")
             if data_handling.is_ready_input_username(first_message):
                 self.connect.write(buffer=self.to_bytes(self.username))
-                sleep(0.5)
+                sleep(1)
                 password_prompt = self.connect.read_until(b":", timeout=4).decode(
                     "utf-8"
                 )
@@ -58,13 +73,20 @@ class telnet_connection:
                     )
                 if data_handling.is_ready_input_password(password_prompt):
                     self.connect.write(self.to_bytes(self.password))
-                    login_result = self.send_command(
-                        "", command_timeout=self.banner_timeout
-                    )
-                print(login_result, end="")
+                    count = 0
+                    while True:
+                        sleep(1)
+                        login_result = self.connect.read_eager().decode("utf-8")
+                        if data_handling.find_prompt(login_result):
+                            break
+                        if count >= self.timeout:
+                            raise Error.LoginError("Username or Password is wrong.")
+                        count += 1
+
+                    print(login_result, end="")
             else:
                 while True:
-                    if data_handling.is_ready_input_username(self.send_command("")):
+                    if data_handling.is_ready_input_username(self.connect.write(b"\n")):
                         break
 
                 self.connect.write(self.username.encode("utf-8") + b"\n")
