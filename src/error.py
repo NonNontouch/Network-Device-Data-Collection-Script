@@ -37,3 +37,8 @@ class Error:
         def __init__(self, message: str = "Program can't do automatic login"):
             self.message = message
             super().__init__(self.message)
+
+    class SerialConnectError(Exception):
+        def __init__(self, serial_port: str = ""):
+            self.message = f"Program can't connect to {serial_port}"
+            super().__init__(self.message)
