@@ -20,8 +20,9 @@ class serial_connection:
         self.username: str = connection.username
         self.password: str = connection.password
         self.enable_password: str = connection.enable_password
-        self.timeout: int = connection.timeout
-        self.banner_timeout: int = connection.banner_timeout
+        self.timeout: float = connection.timeout
+        self.banner_timeout: float = connection.banner_timeout
+        self.command_timeout: float = connection.command_timeout
         self.baudrate: int = connection.baudrate
         self.bytesize: int = connection.bytesize
         self.parity: str = connection.parity
@@ -45,10 +46,21 @@ class serial_connection:
             raise e
 
     def connect_to_device(self, serial_port):
-        self.connect.port = serial_port
-        self.connect.open()
+        try:
+            self.connect.port = serial_port
 
-    def send_command(self, command: str):
+            self.connect.open()
+        except Exception:
+            print("port can't be open")
+            self.connect.port = None
+            raise Error.SerialConnectError(serial_port)
+
+    def send_command(
+        self,
+        command: str,
+        command_timeout: float = 0,
+        max_retries: int = 4,
+    ):
         """_Send command to a host via Serial._
 
         Args:
@@ -60,17 +72,30 @@ class serial_connection:
         Returns:
             string: _A result from given command._
         """
+        retries = 0
         cmd_output = ""
+        if command_timeout == 0:
+            command_timeout == self.command_timeout
         self.connect.write(self.to_bytes(command))
         sleep(0.3)
         while True:
             _output = self.get_output()
-            cmd_output += _output
-            if data_handling.find_prompt(_output):
-                break
+            if _output == "":
+                retries += 1
+                if retries > max_retries:
+                    raise Error.CommandTimeoutError(command)
+
+                sleep(command_timeout)
+            elif "More" in _output or "more" in _output:
+                self.session.send(" ")
+                _output = data_handling.remove_more_keyword(_output)
+                cmd_output += _output
+            else:
+                cmd_output += _output
+                if data_handling.find_prompt(_output):
+                    break
         if data_handling.check_error(_output):
             raise Error.ErrorCommand(command)
-
         return cmd_output
 
     def login(self):
@@ -105,7 +130,7 @@ class serial_connection:
                     break
                 count += 1
                 if count == 5:
-                    raise Error.LoginError
+                    raise Error.LoginError()
 
             self.connect.write(self.username.encode("utf-8") + b"\n")
             self.connect.write(self.to_bytes(self.password))
