@@ -2,6 +2,7 @@ from .regular_expression_handler import data_handling
 from .error import Error
 from time import sleep
 from serial import Serial
+from serial import serialutil
 import serial.tools.list_ports
 
 
@@ -75,11 +76,17 @@ class serial_connection:
         retries = 0
         cmd_output = ""
         if command_timeout == 0:
-            command_timeout == self.command_timeout
-        self.connect.write(self.to_bytes(command))
+            command_timeout = self.command_timeout
+        try:
+            self.connect.write(self.to_bytes(command))
+        except serialutil.SerialTimeoutException:
+            raise Error.ConnectionLossConnect(command)
         sleep(0.3)
         while True:
-            _output = self.get_output()
+            try:
+                _output = self.get_output()
+            except OSError:
+                raise Error.ConnectionLossConnect(command)
             if _output == "":
                 retries += 1
                 if retries > max_retries:
@@ -105,36 +112,42 @@ class serial_connection:
         Raises:
             Error.LoginError: _If login goes wrong. Such as the response doesn't seems normal._
         """
-        if self.is_login():
-            return
-        self.connect.write(self.to_bytes(""))
-        first_message = self.connect.read_until(b":").decode("utf-8")
-        print(first_message, end="")
-        if data_handling.is_ready_input_username(first_message):
-            self.connect.write(self.to_bytes(self.username))
-            sleep(0.5)
-            password_prompt = self.connect.read_until(b":").decode("utf-8")
-            print(password_prompt, end="")
-            if data_handling.is_ready_input_password(password_prompt):
-                self.connect.write(self.to_bytes(self.password))
-                login_result = self.send_command("")
-            print(login_result, end="")
-            print()
-        else:
-            count = 0
-            while True:
-                self.connect.write(self.to_bytes(""))
-                return_prompt = self.connect.read_until(
-                    b":",
-                ).decode("utf-8")
-                if data_handling.is_ready_input_username(return_prompt):
-                    break
-                count += 1
-                if count == 5:
-                    raise Error.LoginError()
+        try:
+            try:
+                if self.is_login():
+                    return
+            except IndexError:
+                raise Error.LoginError("Program can't check if is login")
+            self.connect.write(self.to_bytes(""))
+            first_message = self.connect.read_until(b":").decode("utf-8")
+            print(first_message, end="")
+            if data_handling.is_ready_input_username(first_message):
+                self.connect.write(self.to_bytes(self.username))
+                sleep(0.5)
+                password_prompt = self.connect.read_until(b":").decode("utf-8")
+                print(password_prompt, end="")
+                if data_handling.is_ready_input_password(password_prompt):
+                    self.connect.write(self.to_bytes(self.password))
+                    login_result = self.send_command("")
+                print(login_result, end="")
+                print()
+            else:
+                count = 0
+                while True:
+                    self.connect.write(self.to_bytes(""))
+                    return_prompt = self.connect.read_until(
+                        b":",
+                    ).decode("utf-8")
+                    if data_handling.is_ready_input_username(return_prompt):
+                        break
+                    count += 1
+                    if count == 5:
+                        raise Error.LoginError()
 
-            self.connect.write(self.username.encode("utf-8") + b"\n")
-            self.connect.write(self.to_bytes(self.password))
+                self.connect.write(self.username.encode("utf-8") + b"\n")
+                self.connect.write(self.to_bytes(self.password))
+        except (serialutil.SerialTimeoutException, OSError):
+            raise Error.ConnectionLossConnect("Login")
 
     def get_output(self):
         """_This funciton will read all data in serial port._
@@ -143,6 +156,29 @@ class serial_connection:
             str: _A string of data in serial port which decoded by utf-8._
         """
         return self.connect.read_all().decode("utf-8")
+
+    def enable_device(self, enable_command: str, password: str):
+        """_This function will make device in Privileged EXEC mode. _
+
+        Args:
+            enable_command (str): _description_
+            password (str): _description_
+
+        Raises:
+            Error.ErrorEnable_Password: _description_
+        """
+        self.connect.write(self.to_bytes(enable_command))
+        sleep(0.3)
+
+        _output = self.connect.read_until(b":").decode("utf-8")
+        for text in ["Password:", "password:"]:
+            if text in _output:
+                _output = self.send_command(password)
+                break
+        if _output[-1] == "#":
+            return
+        else:
+            raise Error.ErrorEnable_Password(self.enable_password)
 
     def is_enable(self):
         """_Check if device is enable._
@@ -159,7 +195,8 @@ class serial_connection:
         Returns:
             bool: _True if logged in, False if not._
         """
-        console_name = self.send_command("").splitlines()[-1].strip()
+        self.connect.write(b"\n")
+        console_name = self.connect.read_all().decode("utf-8").splitlines()[-1].strip()
         return True if data_handling.find_prompt(console_name) else False
 
     def list_serial_ports(self):
