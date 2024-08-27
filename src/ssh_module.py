@@ -10,16 +10,16 @@ class ssh_connection:
     policy = para.AutoAddPolicy()
     session = None
 
-    def __init__(self, communication):
-        # pass communication object into ssh_module
-        self.hostname = communication.hostname
-        self.usename = communication.username
-        self.password = communication.password
-        self.enable_password = communication.enable_password
-        self.port = communication.port
-        self.timeout = communication.timeout
-        self.banner_timeout = communication.banner_timeout
-        self.command_timeout = communication.command_timeout
+    def __init__(self, connection):
+        # pass connection object into ssh_module
+        self.hostname: str = connection.hostname
+        self.username: str = connection.username
+        self.password: str = connection.password
+        self.enable_password: str = connection.enable_password
+        self.port: int = connection.port
+        self.timeout: float = connection.timeout
+        self.banner_timeout: float = connection.banner_timeout
+        self.command_timeout: float = connection.command_timeout
 
     def connect_to_device(self):
         try:
@@ -43,8 +43,13 @@ class ssh_connection:
             raise e
 
     def send_command(
-        self, command: str, max_retries: int = 4, command_timeout: int = 1
+        self,
+        command: str,
+        command_timeout: float = 0,
+        max_retries: int = 4,
     ):
+        if command_timeout == 0:
+            command_timeout == self.command_timeout
         if self.is_connection_alive():
             self.session.settimeout(command_timeout)
             retries = 0
@@ -62,7 +67,7 @@ class ssh_connection:
                     retries += 1
                     if retries > max_retries:
                         raise Error.CommandTimeoutError(command)
-                    sleep(1)
+                    sleep(0.3)
                 elif "More" in _output or "more" in _output:
                     self.session.send(" ")
                     _output = data_handling.remove_more_keyword(_output)
