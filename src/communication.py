@@ -18,9 +18,9 @@ class connection:
     enable_password: str = ""
     # TCP timeout
     timeout: float = 4
-    banner_timeout: int = 15
+    banner_timeout: float = 15
     # Command timeout
-    command_timeout: int = 1
+    command_timeout: float = 1
     port: int = None
     # Serial Variable with default value
     serial_port: str = ""
@@ -211,7 +211,7 @@ class connection:
             print(e)
             return
 
-        command_list_json.pop("Enable Device")
+        
         command_list_json.pop("Tetminal Length 0")
         command_list_json.pop("show vlt status")
         command_list_json.pop("show vlt number")
