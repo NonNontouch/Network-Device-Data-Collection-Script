@@ -18,6 +18,9 @@ class connection:
     enable_password: str = ""
     # TCP timeout
     timeout: float = 4
+    # Login timeout
+    login_wait_time: float = 4
+    # Banner Timeout
     banner_timeout: float = 15
     # Command timeout
     command_timeout: float = 1
@@ -82,6 +85,11 @@ class connection:
         if timeout <= 0:
             return
         self.timeout = timeout
+
+    def set_login_wait_time(self, login_wait_time: float):
+        if login_wait_time < 0:
+            return
+        self.login_wait_time = login_wait_time
 
     def set_banner_timeout(self, banner_timeout: int):
         if banner_timeout < 0:

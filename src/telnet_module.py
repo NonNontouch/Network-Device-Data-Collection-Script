@@ -23,6 +23,7 @@ class telnet_connection:
         self.enable_password: str = connection.enable_password
         self.port: int = connection.port
         self.timeout: float = connection.timeout
+        self.login_wait_time: float = connection.login_wait_time
         self.banner_timeout: float = connection.banner_timeout
         self.command_timeout: float = connection.command_timeout
 
@@ -62,7 +63,7 @@ class telnet_connection:
             print(first_message, end="")
             if data_handling.is_ready_input_username(first_message):
                 self.connect.write(buffer=self.to_bytes(self.username))
-                sleep(1)
+                sleep(self.login_wait_time)
                 password_prompt = self.connect.read_until(b":", timeout=4).decode(
                     "utf-8"
                 )
@@ -75,7 +76,7 @@ class telnet_connection:
                     self.connect.write(self.to_bytes(self.password))
                     count = 0
                     while True:
-                        sleep(1)
+                        sleep(self.login_wait_timeุึ)
                         login_result = self.connect.read_eager().decode("utf-8")
                         if data_handling.find_prompt(login_result):
                             break
