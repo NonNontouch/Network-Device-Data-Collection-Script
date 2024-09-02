@@ -1,7 +1,14 @@
 class Error:
     class ErrorCommand(Exception):
-        # Class ทำหน้าที่จัดการ Exction ของคำสั่งที่ส่งไปแล้ว อุปกรณ์ไม่เข้าใจ
+        """_Error Class that handle when command given to device is returned error._"""
+
         def __init__(self, command: str, command_output: str):
+            """_init the class._
+
+            Args:
+                command (str): _Command that is used._
+                command_output (str): _Output of given command._
+            """
             self.message = f"An error occurred while executing the '{command}', \nIt gives output '{command_output}'"
             super().__init__(self.message)
 
@@ -41,4 +48,9 @@ class Error:
     class SerialConnectError(Exception):
         def __init__(self, serial_port: str = ""):
             self.message = f"Program can't connect to {serial_port}"
+            super().__init__(self.message)
+
+    class NoFontError(Exception):
+        def __init__(self, font: str = ""):
+            self.message = f"Program can't get {font} from your computer."
             super().__init__(self.message)
