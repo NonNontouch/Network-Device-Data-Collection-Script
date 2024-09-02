@@ -6,6 +6,22 @@ from .error import Error
 
 
 class ssh_connection:
+    """_Class that handle ssh connection._
+
+
+    Raises:
+        OSError: _When connection to host is loss or unable to conenct._
+        para.SSHException: _When can't access host ssh server._
+        Exception: _Any exceltion._
+        Error.ConnectionLossConnect: _When Connection is loss while send and receive data._
+        Error.CommandTimeoutError: _When sended command return with nothing for period of time._
+        Error.ErrorCommand: _When sened command return with error keywords._
+        Error.ErrorEnable_Password: _When given enable is wrong._
+
+    Returns:
+        _type_: _description_
+    """
+
     connect = para.SSHClient()
     policy = para.AutoAddPolicy()
     session = None
@@ -36,11 +52,11 @@ class ssh_connection:
             self.session.settimeout(self.command_timeout)
 
         except OSError as e:
-            raise e
+            raise OSError(e)
         except para.SSHException as e:
-            raise e
+            raise para.SSHException(e)
         except Exception as e:
-            raise e
+            raise Exception(e)
 
     def send_command(
         self,
