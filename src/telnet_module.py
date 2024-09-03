@@ -49,6 +49,7 @@ class telnet_connection:
             bool: _True if logged in, False if not._
         """
         self.connect.write(b"\n")
+        sleep(1)
         console_name = (
             self.connect.read_eager().decode("utf-8").splitlines()[-1].strip()
         )
@@ -62,6 +63,7 @@ class telnet_connection:
             first_message = self.connect.read_until(b":", timeout=4).decode("utf-8")
             print(first_message, end="")
             if data_handling.is_ready_input_username(first_message):
+                sleep(self.login_wait_time)
                 self.connect.write(buffer=self.to_bytes(self.username))
                 sleep(self.login_wait_time)
                 password_prompt = self.connect.read_until(b":", timeout=4).decode(
@@ -73,10 +75,11 @@ class telnet_connection:
                         "Program couldn't send data via Telnet, Could be blocked by firewall"
                     )
                 if data_handling.is_ready_input_password(password_prompt):
+                    sleep(self.login_wait_time)
                     self.connect.write(self.to_bytes(self.password))
                     count = 0
                     while True:
-                        sleep(self.login_wait_timeุึ)
+                        sleep(self.login_wait_time)
                         login_result = self.connect.read_eager().decode("utf-8")
                         if data_handling.find_prompt(login_result):
                             break
