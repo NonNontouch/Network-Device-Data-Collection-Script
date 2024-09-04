@@ -84,7 +84,7 @@ class serial_connection:
         sleep(0.3)
         while True:
             try:
-                _output = self.get_output()
+                _output = data_handling.remove_control_char(self.get_output())
             except OSError:
                 raise Error.ConnectionLossConnect(command)
             if _output == "":
@@ -96,9 +96,9 @@ class serial_connection:
             elif "More" in _output or "more" in _output:
                 self.connect.write(" ")
                 _output = data_handling.remove_more_keyword(_output)
-                cmd_output += _output
+                cmd_output += data_handling.remove_control_char(_output)
             else:
-                cmd_output += _output
+                cmd_output += data_handling.remove_control_char(_output)
                 if data_handling.find_prompt(_output):
                     break
         if data_handling.check_error(cmd_output):

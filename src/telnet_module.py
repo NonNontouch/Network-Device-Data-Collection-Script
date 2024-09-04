@@ -129,7 +129,7 @@ class telnet_connection:
         sleep(0.3)
         while True:
             try:
-                _output = self.connect.read_eager().decode("utf-8")
+                _output = _output = data_handling.remove_control_char(self.get_output())
             except EOFError as e:
                 print(e)
                 raise Error.ConnectionLossConnect(command)
@@ -150,6 +150,9 @@ class telnet_connection:
             # Command is successfully ran but need to check for error
             raise Error.ErrorCommand(command, cmd_output)
         return cmd_output
+
+    def get_output(self):
+        return self.connect.read_eager().decode("utf-8")
 
     def is_enable(self):
         """_Check if device is enable._

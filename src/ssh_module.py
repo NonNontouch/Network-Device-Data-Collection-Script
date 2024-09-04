@@ -78,7 +78,7 @@ class ssh_connection:
                 raise Error.ConnectionLossConnect(command)
             sleep(0.3)
             while True:
-                _output = self.get_output()
+                _output = data_handling.remove_control_char(self.get_output())
                 if _output == "":
                     retries += 1
                     if retries > max_retries:
