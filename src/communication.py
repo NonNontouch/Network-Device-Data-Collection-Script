@@ -19,7 +19,7 @@ class connection:
     # TCP timeout
     timeout: float = 4
     # Login timeout
-    login_wait_time: float = 4
+    login_wait_time: float = 3
     # Banner Timeout
     banner_timeout: float = 15
     # Command timeout
@@ -227,10 +227,10 @@ class connection:
             vlt_domain = self.get_vlt_number(command_dict_json)
             command_dict_json["show vlt status"] = f"show vlt {vlt_domain}"
             pass
-        command_dict_json.pop("Tetminal Length 0")
+        # command_dict_json.pop("Tetminal Length 0")
         # command_dict_json.pop("show vlt status")
         # command_dict_json.pop("show vlt number")
-        command_dict_json.pop("show tech-support")
+        # command_dict_json.pop("show tech-support")
 
         command_list = list(command_dict_json.values())
         command_list_json = list(command_dict_json.keys())
@@ -238,11 +238,10 @@ class connection:
         for i in range(len(command_list_json)):
             try:
                 command = command_list[i]
-                result[command_list_json[i]] = data_handling.remove_control_char(
-                    self.connection.send_command(
-                        command, max_retries=4, command_timeout=self.command_timeout
-                    )
+                result[command_list_json[i]] = self.connection.send_command(
+                    command, max_retries=4, command_timeout=self.command_timeout
                 )
+
             except Error.ErrorCommand as e:
                 print(e)
                 continue
