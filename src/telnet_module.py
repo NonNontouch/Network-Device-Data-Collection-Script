@@ -195,7 +195,7 @@ class telnet_connection:
         try:
             # Send a null byte (or a newline) to check if the connection is alive
             self.connect.write(b"\n")
-            self.connect.read_until(b"\n", timeout=1)
+            self.connect.read_until(b"\n", timeout=self.command_timeout)
             return True
         except (EOFError, ConnectionResetError, ConnectionAbortedError, OSError):
             # If any of these exceptions are raised, the connection is not alive
