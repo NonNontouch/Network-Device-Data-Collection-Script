@@ -1,0 +1,26 @@
+{
+    "os-6": {
+        "Enable Device": "enable",
+        "Tetminal Length 0": "terminal length 0",
+        "show running-configuration": "show running-config",
+        "show interface status": "show interface status",
+        "show cpu usage": "show process cpu",
+        "show memory usage": "show memory cpu",
+        "show fan status": "show system fan",
+        "show power status": "show system power",
+        "show temperature": "show system temperature",
+        "show tech-support": "show tech-support"
+    },
+    "os-10": {
+        "Enable Device": "enable",
+        "Tetminal Length 0": "terminal length 0",
+        "show running-configuration": "show running-config",
+        "show interface status": "show interface status",
+        "show cpu usage": "show processes cpu summary",
+        "show memory": "show processes memory",
+        "show system status": "show system brief",
+        "show vlt number": "show running-configuration vlt",
+        "show vlt status": "show vlt <vlt domain>",
+        "show tech-support": "show tech-support"
+    }
+}
