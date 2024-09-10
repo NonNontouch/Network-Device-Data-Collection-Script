@@ -9,26 +9,32 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class GUI:
     main_style = """
-            #input_label{
-                border: 2px solid black;  
-                border-radius: 10px;
-                padding: 5px;
-                background-color: #4D4D4D;    
-            }
-            #enable_pass_label{
-                border: 2px solid black;  
-                border-radius: 10px;
-                padding: 5px;
-                background-color: #4D4D4D; 
-                font-size: 22px;
-            }
-            #input_lineedit{
-                border: 2px solid black;   /* 2px thick solid black border */
-                border-radius: 10px;       /* Optional: Rounded corners */
-                padding: 5px;              /* Space inside the QLineEdit, between text and border */
-                min-width: 200px;
-                background-color: #4D4D4D;  
-            }
+    #input_label{
+        border: 2px solid black;  
+        border-radius: 10px;
+        padding: 5px;
+        background-color: #4D4D4D;    
+    }
+    #enable_pass_label{
+        border: 2px solid black;  
+        border-radius: 10px;
+        padding: 5px;
+        background-color: #4D4D4D; 
+        font-size: 22px;
+    }
+    #input_lineedit{
+        border: 2px solid black;
+        border-radius: 10px;
+        padding: 5px;       
+        min-width: 200px;
+        background-color: #4D4D4D;  
+    }
+    #connection_grid_label{
+        border: 2px solid black;  
+        border-radius: 10px;
+        padding: 5px;
+        background-color: #696969;
+    }
             
     """
 
@@ -177,35 +183,39 @@ class GUI:
         self.connection_botton_grid = QtWidgets.QGridLayout(connection_botton_widget)
 
         self.connection_type_button_group = QtWidgets.QButtonGroup(self.Window)
-        ssh_button = self.create_radio_button("SSH", "./src/Assets/SSH.png")
+        ssh_button = GUI_Factory.create_radio_button(
+            "SSH", "./src/Assets/SSH.png", self.connection_type_button_group
+        )
         ssh_button.setChecked(True)
-        ssh_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
         self.connection_top_grid.addWidget(ssh_button, 0, 0)
 
-        telnet_button = self.create_radio_button("Telnet", "./src/Assets/Telnet.png")
-        telnet_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        telnet_button = GUI_Factory.create_radio_button(
+            "Telnet", "./src/Assets/Telnet.png", self.connection_type_button_group
+        )
         self.connection_top_grid.addWidget(telnet_button, 0, 1)
 
-        serial_button = self.create_radio_button("Serial", "./src/Assets/RS232.png")
-        serial_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        serial_button = GUI_Factory.create_radio_button(
+            "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
+        )
+
         self.connection_top_grid.addWidget(serial_button, 0, 2)
 
         self.connect_botton = QtWidgets.QPushButton("Connect")
         self.connect_botton.setStyleSheet(
             """
             QPushButton {
-                background-color: #4CAF50;  /* Green background */
-                color: white;  /* White text */
-                border: 2px solid #4CAF50;  /* Green border */
-                border-radius: 10px;  /* Rounded corners */
-                padding: 10px 20px;  /* Padding inside the button */
-                font-size: 16px;  /* Font size */
+                background-color: #4CAF50; 
+                color: white; 
+                border: 2px solid #4CAF50; 
+                border-radius: 10px; 
+                padding: 10px 20px; 
+                font-size: 16px;
             }
             QPushButton:hover {
                 background-color: #45a049;  /* Darker green on hover */
             }
             QPushButton:pressed {
-                background-color: #388E3C;  /* Even darker green on press */
+                background-color: #388E3C;  /* darker green on press */
             }
         """
         )
@@ -214,7 +224,9 @@ class GUI:
 
         self.connection_botton_grid.addWidget(
             GUI_Factory.create_label(
-                label_text="Comport", obj_name="input_label", stylesheet=self.main_style
+                label_text="Comport",
+                obj_name="connection_grid_label",
+                stylesheet=self.main_style,
             ),
             0,
             0,
@@ -226,7 +238,7 @@ class GUI:
         self.connection_botton_grid.addWidget(
             GUI_Factory.create_label(
                 label_text="Baudrate",
-                obj_name="input_label",
+                obj_name="connection_grid_label",
                 stylesheet=self.main_style,
             ),
             0,
@@ -276,36 +288,6 @@ class GUI:
             0,
         )
 
-    def create_radio_button(self, text, image_path):
-        # Create a QRadioButton
-        radio_button = QtWidgets.QRadioButton(text)
-
-        # Load and set the image for the radio button
-        icon = QtGui.QIcon(image_path)
-        radio_button.setIcon(icon)
-        radio_button.setIconSize(QtCore.QSize(16, 16))  # Set the size of the icon
-        radio_button.setStyleSheet(
-            """
-            QRadioButton::indicator {
-                width: 16px;
-                height: 16px;
-                border: 2px solid black;
-                background-color: white;  /* White background for unchecked state */
-            } 
-            QRadioButton::indicator:checked {
-                background-color: white; 
-                border: 2px solid black;
-                background-image: url(./src/Assets/checkmark.png); 
-                background-repeat: no-repeat;
-                background-position: center;
-            }
-        """
-        )
-
-        # Add the radio button to the button group
-        self.connection_type_button_group.addButton(radio_button)
-        return radio_button
-
     def setup_window(self):
         self.main_grid = QtWidgets.QGridLayout(self.central_widget)
         self.Window.setCentralWidget(self.central_widget)
@@ -335,7 +317,7 @@ class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
         super(ComboBoxWithDynamicArrow, self).__init__(parent)
         self.combobox_style = """ 
         QComboBox {
-            background-color: #4D4D4D; /* Dark background color */
+            background-color: #696969; /* Dark background color */
             border: 1px solid #2F2F2F;
             border-radius: 5px;
             padding: 5px;
@@ -411,3 +393,41 @@ class GUI_Factory:
         temp_widtet = QtWidgets.QWidget(parrent)
         temp_widtet.setObjectName(obj_name)
         temp_widtet.setStyleSheet(stylesheet)
+
+    @staticmethod
+    def create_radio_button(text, image_path, botton_group):
+        # Create a QRadioButton
+        radio_button = QtWidgets.QRadioButton(text)
+
+        # Load and set the image for the radio button
+        icon = QtGui.QIcon(image_path)
+        radio_button.setIcon(icon)
+        radio_button.setIconSize(QtCore.QSize(16, 16))  # Set the size of the icon
+        radio_button.setStyleSheet(
+            """
+            QRadioButton {
+            background-color: #696969; 
+            border-radius: 10px;
+            padding: 5px;
+            border: none;
+            }
+            QRadioButton::indicator {
+                width: 16px;
+                height: 16px;
+                border: 2px solid black;
+                background-color: white;  
+            } 
+            QRadioButton::indicator:checked {
+                background-color: white; 
+                border: 2px solid black;
+                background-image: url(./src/Assets/checkmark.png); 
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+        """
+        )
+        radio_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+
+        # Add the radio button to the button group
+        botton_group.addButton(radio_button)
+        return radio_button
