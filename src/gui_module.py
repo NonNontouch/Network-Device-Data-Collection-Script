@@ -8,6 +8,45 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class GUI:
+
+    def __init__(self) -> None:
+        try:
+            self.App = QtWidgets.QApplication(sys.argv)
+            font_id = QtGui.QFontDatabase.addApplicationFont(
+                os.path.abspath("./src/Assets/BAHNSCHRIFT.ttf")
+            )
+            font_families = QtGui.QFontDatabase.applicationFontFamilies(font_id)
+            default_text_font = QtGui.QFont(font_families[0], 18)
+            self.App.setFont(default_text_font)
+
+            self.Window = QtWidgets.QMainWindow()
+            self.Window.setWindowTitle("Network Device Data Collection Script")
+        except Exception as e:
+            print(e)
+
+    def setup_window(self):
+        self.Main_Page = Main_Page(self.Window)
+
+        self.Window.setCentralWidget(self.Main_Page.get_widget())
+
+        self.Window.show()
+        self.center_window()
+        sys.exit(self.App.exec_())
+
+    def center_window(self):
+        window_geometry = self.Window.frameGeometry()
+
+        # Get the center point of the screen
+        screen_center = QtWidgets.QDesktopWidget().availableGeometry().center()
+
+        # Move the center of the window's geometry to the screen center
+        window_geometry.moveCenter(screen_center)
+
+        # Move the top-left point of the window to the top-left of the adjusted geometry
+        self.Window.move(window_geometry.topLeft())
+
+
+class Main_Page:
     main_style = """
     #input_label{
         border: 2px solid black;  
@@ -35,27 +74,19 @@ class GUI:
         padding: 5px;
         background-color: #696969;
     }
-            
     """
 
-    def __init__(self) -> None:
-        try:
-            self.App = QtWidgets.QApplication(sys.argv)
-            font_id = QtGui.QFontDatabase.addApplicationFont(
-                os.path.abspath("./src/Assets/BAHNSCHRIFT.ttf")
-            )
-            font_families = QtGui.QFontDatabase.applicationFontFamilies(font_id)
-            default_text_font = QtGui.QFont(font_families[0], 18)
-            self.App.setFont(default_text_font)
+    def __init__(self, window_parrent: QtWidgets.QMainWindow) -> None:
+        self.main_widget = QtWidgets.QWidget(window_parrent)
+        self.main_grid = QtWidgets.QGridLayout(self.main_widget)
+        self.__set_input_grid()
+        self.__set_connection_grid()
 
-            self.Window = QtWidgets.QMainWindow()
-            self.central_widget = QtWidgets.QWidget(self.Window)
-            self.QDialog = QtWidgets.QDialog(self.Window)
-        except Exception as e:
-            print(e)
+    def get_widget(self):
+        return self.main_widget
 
-    def set_input_grid(self):
-        self.input_widget = QtWidgets.QWidget(self.central_widget)
+    def __set_input_grid(self):
+        self.input_widget = QtWidgets.QWidget(self.main_widget)
 
         self.input_widget.setMinimumHeight(150)
         self.input_widget.setMinimumWidth(800)
@@ -152,7 +183,7 @@ class GUI:
             0,
         )
 
-    def set_connection_grid(self):
+    def __set_connection_grid(self):
         widget_default_style = """
             #connection_widget{
                 border: 2px solid black;  
@@ -161,7 +192,7 @@ class GUI:
                 background-color: #4D4D4D;
                 }
             """
-        self.connection_widget = QtWidgets.QWidget(self.central_widget)
+        self.connection_widget = QtWidgets.QWidget(self.main_widget)
         self.connection_widget.setStyleSheet(
             """
             background-color: #252525;
@@ -170,11 +201,11 @@ class GUI:
             color: white;  
         """
         )
-        connection_top_widget = QtWidgets.QWidget(self.central_widget)
+        connection_top_widget = QtWidgets.QWidget(self.main_widget)
         connection_top_widget.setObjectName("connection_widget")
         connection_top_widget.setStyleSheet(widget_default_style)
 
-        connection_botton_widget = QtWidgets.QWidget(self.central_widget)
+        connection_botton_widget = QtWidgets.QWidget(self.main_widget)
         connection_botton_widget.setObjectName("connection_widget")
         connection_botton_widget.setStyleSheet(widget_default_style)
 
@@ -182,7 +213,7 @@ class GUI:
         self.connection_top_grid = QtWidgets.QGridLayout(connection_top_widget)
         self.connection_botton_grid = QtWidgets.QGridLayout(connection_botton_widget)
 
-        self.connection_type_button_group = QtWidgets.QButtonGroup(self.Window)
+        self.connection_type_button_group = QtWidgets.QButtonGroup(self.main_widget)
         ssh_button = GUI_Factory.create_radio_button(
             "SSH", "./src/Assets/SSH.png", self.connection_type_button_group
         )
@@ -288,28 +319,67 @@ class GUI:
             0,
         )
 
-    def setup_window(self):
-        self.main_grid = QtWidgets.QGridLayout(self.central_widget)
-        self.Window.setCentralWidget(self.central_widget)
 
-        self.Window.setWindowTitle("PyQt5")
-        self.set_input_grid()
-        self.set_connection_grid()
-        self.Window.show()
-        self.center_window()
-        sys.exit(self.App.exec_())
+class GUI_Factory:
+    @staticmethod
+    def create_label(label_text: str, obj_name: str, stylesheet: str):
+        temp_label = QtWidgets.QLabel(text=label_text)
+        temp_label.setObjectName(obj_name)
+        temp_label.setStyleSheet(stylesheet)
+        return temp_label
 
-    def center_window(self):
-        window_geometry = self.Window.frameGeometry()
+    @staticmethod
+    def create_lineedit(obj_name: str, stylesheet: str, is_password=False):
+        temp_lineedit = QtWidgets.QLineEdit()
+        temp_lineedit.setObjectName(obj_name)
+        temp_lineedit.setStyleSheet(stylesheet)
+        if is_password:
+            temp_lineedit.setEchoMode(QtWidgets.QLineEdit.Password)
+        return temp_lineedit
 
-        # Get the center point of the screen
-        screen_center = QtWidgets.QDesktopWidget().availableGeometry().center()
+    @staticmethod
+    def create_widget(parrent: QtWidgets.QWidget, obj_name: str, stylesheet: str):
+        temp_widtet = QtWidgets.QWidget(parrent)
+        temp_widtet.setObjectName(obj_name)
+        temp_widtet.setStyleSheet(stylesheet)
 
-        # Move the center of the window's geometry to the screen center
-        window_geometry.moveCenter(screen_center)
+    @staticmethod
+    def create_radio_button(text, image_path, botton_group):
+        # Create a QRadioButton
+        radio_button = QtWidgets.QRadioButton(text)
 
-        # Move the top-left point of the window to the top-left of the adjusted geometry
-        self.Window.move(window_geometry.topLeft())
+        # Load and set the image for the radio button
+        icon = QtGui.QIcon(image_path)
+        radio_button.setIcon(icon)
+        radio_button.setIconSize(QtCore.QSize(24, 24))  # Set the size of the icon
+        radio_button.setStyleSheet(
+            """
+            QRadioButton {
+            background-color: #696969; 
+            border-radius: 10px;
+            padding: 5px;
+            border: none;
+            }
+            QRadioButton::indicator {
+                width: 16px;
+                height: 16px;
+                border: 2px solid black;
+                background-color: white;  
+            } 
+            QRadioButton::indicator:checked {
+                background-color: white; 
+                border: 2px solid black;
+                background-image: url(./src/Assets/checkmark.png); 
+                background-repeat: no-repeat;
+                background-position: center;
+            }
+        """
+        )
+        radio_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+
+        # Add the radio button to the button group
+        botton_group.addButton(radio_button)
+        return radio_button
 
 
 class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
@@ -369,65 +439,3 @@ class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
 
     def set_arrow_down(self):
         self.setStyleSheet(self.combobox_style)
-
-
-class GUI_Factory:
-    @staticmethod
-    def create_label(label_text: str, obj_name: str, stylesheet: str):
-        temp_label = QtWidgets.QLabel(text=label_text)
-        temp_label.setObjectName(obj_name)
-        temp_label.setStyleSheet(stylesheet)
-        return temp_label
-
-    @staticmethod
-    def create_lineedit(obj_name: str, stylesheet: str, is_password=False):
-        temp_lineedit = QtWidgets.QLineEdit()
-        temp_lineedit.setObjectName(obj_name)
-        temp_lineedit.setStyleSheet(stylesheet)
-        if is_password:
-            temp_lineedit.setEchoMode(QtWidgets.QLineEdit.Password)
-        return temp_lineedit
-
-    @staticmethod
-    def create_widget(parrent: QtWidgets.QWidget, obj_name: str, stylesheet: str):
-        temp_widtet = QtWidgets.QWidget(parrent)
-        temp_widtet.setObjectName(obj_name)
-        temp_widtet.setStyleSheet(stylesheet)
-
-    @staticmethod
-    def create_radio_button(text, image_path, botton_group):
-        # Create a QRadioButton
-        radio_button = QtWidgets.QRadioButton(text)
-
-        # Load and set the image for the radio button
-        icon = QtGui.QIcon(image_path)
-        radio_button.setIcon(icon)
-        radio_button.setIconSize(QtCore.QSize(16, 16))  # Set the size of the icon
-        radio_button.setStyleSheet(
-            """
-            QRadioButton {
-            background-color: #696969; 
-            border-radius: 10px;
-            padding: 5px;
-            border: none;
-            }
-            QRadioButton::indicator {
-                width: 16px;
-                height: 16px;
-                border: 2px solid black;
-                background-color: white;  
-            } 
-            QRadioButton::indicator:checked {
-                background-color: white; 
-                border: 2px solid black;
-                background-image: url(./src/Assets/checkmark.png); 
-                background-repeat: no-repeat;
-                background-position: center;
-            }
-        """
-        )
-        radio_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
-
-        # Add the radio button to the button group
-        botton_group.addButton(radio_button)
-        return radio_button
