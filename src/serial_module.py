@@ -18,16 +18,16 @@ class serial_connection:
         Args:
             connection (_class connection_): _A connection class with ready to use variable._
         """
-        self.username: str = connection.username
-        self.password: str = connection.password
-        self.enable_password: str = connection.enable_password
-        self.timeout: float = connection.timeout
-        self.banner_timeout: float = connection.banner_timeout
-        self.command_timeout: float = connection.command_timeout
-        self.baudrate: int = connection.baudrate
-        self.bytesize: int = connection.bytesize
-        self.parity: str = connection.parity
-        self.stopbits: float = connection.stopbits
+        self._username: str = connection.username
+        self._password: str = connection.password
+        self._enable_password: str = connection.enable_password
+        self._timeout: float = connection.timeout
+        self._banner_timeout: float = connection.banner_timeout
+        self._command_timeout: float = connection.command_timeout
+        self._baudrate: int = connection.baudrate
+        self._bytesize: int = connection.bytesize
+        self._parity: str = connection.parity
+        self._stopbits: float = connection.stopbits
 
     def set_serial_object(self):
         """_This function will create Serial Module with given varialbe._
@@ -37,11 +37,11 @@ class serial_connection:
         """
         try:
             self.connect = Serial(
-                timeout=self.timeout,
-                baudrate=self.baudrate,
-                bytesize=self.bytesize,
-                parity=self.parity,
-                stopbits=self.stopbits,
+                timeout=self._timeout,
+                baudrate=self._baudrate,
+                bytesize=self._bytesize,
+                parity=self._parity,
+                stopbits=self._stopbits,
             )
         except Exception as e:
             raise e
@@ -76,7 +76,7 @@ class serial_connection:
         retries = 0
         cmd_output = ""
         if command_timeout == 0:
-            command_timeout = self.command_timeout
+            command_timeout = self._command_timeout
         try:
             self.connect.write(self.to_bytes(command))
         except serialutil.SerialTimeoutException:
@@ -122,12 +122,12 @@ class serial_connection:
             first_message = self.connect.read_until(b":").decode("utf-8")
             print(first_message, end="")
             if data_handling.is_ready_input_username(first_message):
-                self.connect.write(self.to_bytes(self.username))
+                self.connect.write(self.to_bytes(self._username))
                 sleep(0.5)
                 password_prompt = self.connect.read_until(b":").decode("utf-8")
                 print(password_prompt, end="")
                 if data_handling.is_ready_input_password(password_prompt):
-                    self.connect.write(self.to_bytes(self.password))
+                    self.connect.write(self.to_bytes(self._password))
                     login_result = self.send_command("")
                 print(login_result, end="")
                 print()
@@ -144,8 +144,8 @@ class serial_connection:
                     if count == 5:
                         raise Error.LoginError()
 
-                self.connect.write(self.username.encode("utf-8") + b"\n")
-                self.connect.write(self.to_bytes(self.password))
+                self.connect.write(self._username.encode("utf-8") + b"\n")
+                self.connect.write(self.to_bytes(self._password))
         except (serialutil.SerialTimeoutException, OSError):
             raise Error.ConnectionLossConnect("Login")
 
@@ -178,7 +178,7 @@ class serial_connection:
         if _output[-1] == "#":
             return
         else:
-            raise Error.ErrorEnable_Password(self.enable_password)
+            raise Error.ErrorEnable_Password(self._enable_password)
 
     def is_enable(self):
         """_Check if device is enable._
@@ -216,6 +216,16 @@ class serial_connection:
             return available_ports
         else:
             raise Error.NoSerialPortError
+
+    def is_connection_alive(self):
+        try:
+            # Send a null byte (or a newline) to check if the connection is alive
+            self.connect.write(b"\n")
+            self.connect.read_until(b"\n")
+            return True
+        except (EOFError, ConnectionResetError, ConnectionAbortedError, OSError):
+            # If any of these exceptions are raised, the connection is not alive
+            return False
 
     @staticmethod
     def to_bytes(line: str):

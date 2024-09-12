@@ -17,15 +17,15 @@ class telnet_connection:
             connection (_class connection_): _A connection class with ready to use variable._
         """
         # pass communication object into telnet_module
-        self.hostname: str = connection.hostname
-        self.username: str = connection.username
-        self.password: str = connection.password
-        self.enable_password: str = connection.enable_password
-        self.port: int = connection.port
-        self.timeout: float = connection.timeout
-        self.login_wait_time: float = connection.login_wait_time
-        self.banner_timeout: float = connection.banner_timeout
-        self.command_timeout: float = connection.command_timeout
+        self._hostname: str = connection.hostname
+        self._username: str = connection.username
+        self._password: str = connection.password
+        self._enable_password: str = connection.enable_password
+        self._port: int = connection.port
+        self._timeout: float = connection.timeout
+        self._login_wait_time: float = connection.login_wait_time
+        self._banner_timeout: float = connection.banner_timeout
+        self._command_timeout: float = connection.command_timeout
 
     def connect_to_device(self):
         """_This function will try connect into device via Telnet._
@@ -35,7 +35,7 @@ class telnet_connection:
             e: _description_
         """
         try:
-            self.connect = Telnet(host=self.hostname, port=self.port, timeout=4)
+            self.connect = Telnet(host=self._hostname, port=self._port, timeout=4)
 
         except OSError as e:
             raise e
@@ -60,42 +60,38 @@ class telnet_connection:
             if self.is_login():
                 return
             self.connect.write(b"\n")
-            first_message = self.connect.read_until(b":", timeout=4).decode("utf-8")
+            first_message = self.connect.read_until(
+                b":", timeout=self._login_wait_time
+            ).decode("utf-8")
             print(first_message, end="")
             if data_handling.is_ready_input_username(first_message):
-                sleep(self.login_wait_time)
-                self.connect.write(buffer=self.to_bytes(self.username))
-                sleep(self.login_wait_time)
-                password_prompt = self.connect.read_until(b":", timeout=4).decode(
-                    "utf-8"
-                )
+                sleep(self._login_wait_time)
+                self.connect.write(buffer=self.to_bytes(self._username))
+                sleep(self._login_wait_time)
+                password_prompt = self.connect.read_until(
+                    b":", timeout=self._login_wait_time
+                ).decode("utf-8")
                 print(password_prompt, end="")
-                if self.username not in password_prompt:
+                if self._username not in password_prompt:
                     raise Error.LoginError(
                         "Program couldn't send data via Telnet, Could be blocked by firewall"
                     )
                 if data_handling.is_ready_input_password(password_prompt):
-                    sleep(self.login_wait_time)
-                    self.connect.write(self.to_bytes(self.password))
+                    sleep(self._login_wait_time)
+                    self.connect.write(self.to_bytes(self._password))
                     count = 0
                     while True:
-                        sleep(self.login_wait_time)
+                        sleep(0.5)
                         login_result = self.connect.read_eager().decode("utf-8")
                         if data_handling.find_prompt(login_result):
                             break
-                        if count >= self.timeout:
+                        if count >= self._banner_timeout:
                             raise Error.LoginError("Username or Password is wrong.")
-                        count += 1
+                        count += 0.5
 
                     print(login_result, end="")
             else:
-                while True:
-                    if data_handling.is_ready_input_username(self.connect.write(b"\n")):
-                        break
-
-                self.connect.write(self.username.encode("utf-8") + b"\n")
-
-                self.connect.write(self.to_bytes(self.password))
+                raise Error.LoginError()
         except (EOFError, OSError):
             # If connection is closed while reading or writing
             raise Error.ConnectionLossConnect("Login")
@@ -120,7 +116,7 @@ class telnet_connection:
         retries = 0
         cmd_output = ""
         if command_timeout == 0:
-            command_timeout == self.command_timeout
+            command_timeout == self._command_timeout
         try:
             self.connect.write(self.to_bytes(command))
         except OSError as e:
@@ -184,7 +180,7 @@ class telnet_connection:
         if _output[-1] == "#":
             return
         else:
-            raise Error.ErrorEnable_Password(self.enable_password)
+            raise Error.ErrorEnable_Password(password)
 
     def close_connection(self):
         """_Close connection and set connect variable to None._"""
@@ -195,7 +191,7 @@ class telnet_connection:
         try:
             # Send a null byte (or a newline) to check if the connection is alive
             self.connect.write(b"\n")
-            self.connect.read_until(b"\n", timeout=self.command_timeout)
+            self.connect.read_until(b"\n", timeout=self._command_timeout)
             return True
         except (EOFError, ConnectionResetError, ConnectionAbortedError, OSError):
             # If any of these exceptions are raised, the connection is not alive

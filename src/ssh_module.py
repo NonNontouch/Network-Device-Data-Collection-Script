@@ -28,28 +28,27 @@ class ssh_connection:
 
     def __init__(self, connection):
         # pass connection object into ssh_module
-        self.hostname: str = connection.hostname
-        self.username: str = connection.username
-        self.password: str = connection.password
-        self.enable_password: str = connection.enable_password
-        self.port: int = connection.port
-        self.timeout: float = connection.timeout
-        self.banner_timeout: float = connection.banner_timeout
-        self.command_timeout: float = connection.command_timeout
+        self._hostname: str = connection.hostname
+        self._username: str = connection.username
+        self._password: str = connection.password
+        self._port: int = connection.port
+        self._timeout: float = connection.timeout
+        self._banner_timeout: float = connection.banner_timeout
+        self._command_timeout: float = connection.command_timeout
 
     def connect_to_device(self):
         try:
             self.connect.set_missing_host_key_policy(self.policy)
             self.connect.connect(
-                hostname=self.hostname,
-                port=self.port,
-                username=self.username,
-                password=self.password,
-                timeout=self.timeout,
-                banner_timeout=self.banner_timeout,
+                hostname=self._hostname,
+                port=self._port,
+                username=self._username,
+                password=self._password,
+                timeout=self._timeout,
+                banner_timeout=self._banner_timeout,
             )
             self.session = self.connect.invoke_shell()
-            self.session.settimeout(self.command_timeout)
+            self.session.settimeout(self._command_timeout)
 
         except OSError as e:
             raise OSError(e)
@@ -65,7 +64,7 @@ class ssh_connection:
         max_retries: int = 4,
     ):
         if command_timeout == 0:
-            command_timeout == self.command_timeout
+            command_timeout == self._command_timeout
         if self.is_connection_alive():
             self.session.settimeout(command_timeout)
             retries = 0
@@ -74,8 +73,7 @@ class ssh_connection:
                 self.session.send(command + "\n")
             except socket.timeout:
                 raise Error.ConnectionLossConnect(command)
-            except socket.error:
-                raise Error.ConnectionLossConnect(command)
+
             sleep(0.3)
             while True:
                 _output = data_handling.remove_control_char(self.get_output())
