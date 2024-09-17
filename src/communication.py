@@ -2,13 +2,13 @@ from .ssh_module import ssh_connection as ssh
 from .telnet_module import telnet_connection as telnet
 from .serial_module import serial_connection as serial
 from .regular_expression_handler import data_handling as data_handling
-from .error import Error as Error
+import src.error as Error
 
 import re as re
 import paramiko as para
 
 
-class connection:
+class connection_manager:
     """_Facade class that used to control ssh,telnet and serial._"""
 
     # Common variable with default value
@@ -23,7 +23,7 @@ class connection:
     # Banner Timeout
     banner_timeout: float = 15
     # Command timeout
-    command_timeout: float = 1
+    command_wait_time: float = 2
     port: int = None
     # Serial Variable with default value
     serial_port: str = ""
@@ -68,9 +68,7 @@ class connection:
         self.hostname = hostname
 
     def set_port(self, port: int):
-        if port >= 65545 or port < 1:
-            return
-        self.port = port
+        self.port = port if 1 <= port < 65545 else self.port
 
     def set_username(self, username: str):
         self.username = username
@@ -82,29 +80,28 @@ class connection:
         self.enable_password = enable_password
 
     def set_timeout(self, timeout: float):
-        if timeout <= 0:
-            return
-        self.timeout = timeout
+        self.timeout = timeout if timeout > 0 else self.timeout
 
     def set_login_wait_time(self, login_wait_time: float):
-        if login_wait_time < 0:
-            return
-        self.login_wait_time = login_wait_time
+        self.login_wait_time = (
+            login_wait_time if login_wait_time >= 0 else self.login_wait_time
+        )
+
+    def set_command_wait_time(self, command_wait_time: float):
+        self.command_wait_time = (
+            command_wait_time if command_wait_time >= 0 else self.command_wait_time
+        )
 
     def set_banner_timeout(self, banner_timeout: int):
-        if banner_timeout < 0:
-            return
-        self.banner_timeout = banner_timeout
+        self.banner_timeout = (
+            banner_timeout if banner_timeout >= 0 else self.banner_timeout
+        )
 
     def set_baudrate(self, baudrate: int):
-        if baudrate not in self.common_baudrate:
-            return
-        self.baudrate = baudrate
+        self.baudrate = baudrate if baudrate in self.common_baudrate else self.baudrate
 
     def set_bytesize(self, bytesize: int):
-        if bytesize < 0:
-            return
-        self.bytesize = bytesize
+        self.bytesize = bytesize if bytesize >= 0 else self.bytesize
 
     def set_parity(self, parity: str):
         """Set parity variable
@@ -122,9 +119,8 @@ class connection:
         Arguments:
             NoSerialPortError: If no serial ports are found.
         """
-        if stopbits < 0:
-            return
-        self.stopbits = stopbits
+
+        self.stopbits = stopbits if stopbits >= 0 else self.stopbits
 
     def set_ssh_connection(self):
         """
@@ -207,30 +203,20 @@ class connection:
                     raise Error.LoginError("Program can't enable device")
             else:
                 pass
-        except Error.ErrorCommand as e:
+        except (
+            Error.ErrorCommand,
+            Error.ConnectionLossConnect,
+            Error.CommandTimeoutError,
+            Error.ErrorEnable_Password,
+        ) as e:
             # return เพราะ enable ไม่ได้
             print(e, ".While trying to enable device.", sep="")
             return None
-        except Error.ConnectionLossConnect as e:
-            # connection loss must reconnect
-            print(e, ".While trying to enable device.", sep="")
-            return result
-        except Error.CommandTimeoutError as e:
-            # ถาม user ว่าจะลองใหม่ไหม จากที่ device ไม่ตอบอะไรกลับมา
-            print(e, ".While trying to enable device.", sep="")
-            return
-        except Error.ErrorEnable_Password as e:
-            # return กลับเพราะ password ผิด
-            print(e)
-            return
+
         if "show vlt number" in command_dict_json:
             vlt_domain = self.get_vlt_number(command_dict_json)
             command_dict_json["show vlt status"] = f"show vlt {vlt_domain}"
             pass
-        # command_dict_json.pop("Tetminal Length 0")
-        # command_dict_json.pop("show vlt status")
-        # command_dict_json.pop("show vlt number")
-        # command_dict_json.pop("show tech-support")
 
         command_list = list(command_dict_json.values())
         command_list_json = list(command_dict_json.keys())
@@ -238,9 +224,7 @@ class connection:
         for i in range(len(command_list_json)):
             try:
                 command = command_list[i]
-                result[command_list_json[i]] = self.connection.send_command(
-                    command, max_retries=4, command_timeout=self.command_timeout
-                )
+                result[command_list_json[i]] = self.connection.send_command(command)
 
             except Error.ErrorCommand as e:
                 print(e)
