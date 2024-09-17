@@ -1,5 +1,5 @@
 from PIL import Image, ImageDraw, ImageFont
-from .error import Error
+import src.error as Error
 
 
 class text_to_pic:

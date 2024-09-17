@@ -2,7 +2,7 @@ import socket
 from time import sleep
 import paramiko as para
 from .regular_expression_handler import data_handling
-from .error import Error
+import src.error as Error
 
 
 class ssh_connection:
@@ -60,13 +60,8 @@ class ssh_connection:
     def send_command(
         self,
         command: str,
-        command_timeout: float = 0,
-        max_retries: int = 4,
     ):
-        if command_timeout == 0:
-            command_timeout == self._command_timeout
         if self.is_connection_alive():
-            self.session.settimeout(command_timeout)
             retries = 0
             cmd_output = ""
             try:
@@ -79,14 +74,16 @@ class ssh_connection:
                 _output = data_handling.remove_control_char(self.get_output())
                 if _output == "":
                     retries += 1
-                    if retries > max_retries:
+                    if retries > 4:
                         raise Error.CommandTimeoutError(command)
-                    sleep(0.3)
+                    sleep(self._command_timeout)
                 elif "More" in _output or "more" in _output:
+                    retries = 0
                     self.session.send(" ")
                     _output = data_handling.remove_more_keyword(_output)
                     cmd_output += _output
                 else:
+                    retries = 0
                     cmd_output += _output
                     if data_handling.find_prompt(_output):
                         break

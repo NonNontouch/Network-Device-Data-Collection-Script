@@ -1,6 +1,6 @@
 from telnetlib import Telnet
 from .regular_expression_handler import data_handling
-from .error import Error
+import src.error as Error
 from time import sleep
 
 

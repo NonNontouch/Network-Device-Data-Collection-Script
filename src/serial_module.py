@@ -1,5 +1,5 @@
 from .regular_expression_handler import data_handling
-from .error import Error
+import src.error as Error
 from time import sleep
 from serial import Serial
 from serial import serialutil
@@ -112,12 +112,10 @@ class serial_connection:
         Raises:
             Error.LoginError: _If login goes wrong. Such as the response doesn't seems normal._
         """
+
         try:
-            try:
-                if self.is_login():
-                    return
-            except IndexError:
-                raise Error.LoginError("Program can't check if is login")
+            if self.is_login():
+                return
             self.connect.write(self.to_bytes(""))
             first_message = self.connect.read_until(b":").decode("utf-8")
             print(first_message, end="")
@@ -148,6 +146,8 @@ class serial_connection:
                 self.connect.write(self.to_bytes(self._password))
         except (serialutil.SerialTimeoutException, OSError):
             raise Error.ConnectionLossConnect("Login")
+        except IndexError:
+            raise Error.LoginError("Program can't check if is login")
 
     def get_output(self):
         """_This funciton will read all data in serial port._
