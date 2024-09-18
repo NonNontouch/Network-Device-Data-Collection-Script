@@ -23,7 +23,9 @@ class connection_manager:
     # Banner Timeout
     banner_timeout: float = 15
     # Command timeout
-    command_wait_time: float = 2
+    command_retriesdelay: float = 4
+    # Command retry time
+    command_maxretries: int = 4
     port: int = None
     # Serial Variable with default value
     serial_port: str = ""
@@ -60,47 +62,113 @@ class connection_manager:
     connection = None
 
     def set_hostname(self, hostname: str):
-        """_Set device hostname,Could be ip address of hostname to resolve._
+        """Set the device hostname, which can be an IP address or a resolvable hostname.
 
         Args:
-            hostname (str): _IP address or hostname._
+            hostname (str): The IP address or hostname to set as the device's hostname.
         """
         self.hostname = hostname
 
     def set_port(self, port: int):
+        """Set the device port.
+
+        The port must be within the range of 1 to 65544; otherwise, it will retain the previous value or default value.
+
+        Args:
+            port (int): The port number to set for the device.
+        """
         self.port = port if 1 <= port < 65545 else self.port
 
     def set_username(self, username: str):
+        """Set the username for device access.
+
+        Args:
+            username (str): The username to authenticate with the device.
+        """
         self.username = username
 
     def set_password(self, password: str):
+        """Set the password for device access.
+
+        Args:
+            password (str): The password to authenticate with the device.
+        """
         self.password = password
 
     def set_enable_password(self, enable_password: str):
+        """Set the enable password for privileged mode access on the device.
+
+        Args:
+            enable_password (str): The password required to enter privileged mode.
+        """
         self.enable_password = enable_password
 
     def set_timeout(self, timeout: float):
+        """Set the timeout for device operations.
+
+        The timeout must be greater than 0; otherwise, it will retain the previous value or default value.
+
+        Args:
+            timeout (float): The timeout duration in seconds for device operations.
+        """
         self.timeout = timeout if timeout > 0 else self.timeout
 
     def set_login_wait_time(self, login_wait_time: float):
+        """Set the wait time for login operations.
+
+        The wait time must be non-negative; otherwise, it will retain the previous value or default value.
+
+        Args:
+            login_wait_time (float): The wait time in seconds for login operations.
+        """
         self.login_wait_time = (
             login_wait_time if login_wait_time >= 0 else self.login_wait_time
         )
 
-    def set_command_wait_time(self, command_wait_time: float):
-        self.command_wait_time = (
-            command_wait_time if command_wait_time >= 0 else self.command_wait_time
+    def set_command_retries_delay(self, command_retriesdelay: float):
+        """Set the wait time for command execution.
+
+        The wait time must be non-negative; otherwise, it will retain the previous value or default value.
+
+        Args:
+            command_wait_time (float): The wait time in seconds for command execution.
+        """
+        self.command_retriesdelay = (
+            command_retriesdelay
+            if command_retriesdelay >= 0
+            else self.command_retriesdelay
         )
 
     def set_banner_timeout(self, banner_timeout: int):
+        """Set the timeout duration for banner display.
+
+        The banner timeout must be non-negative; otherwise, it will retain the previous value or default value.
+
+        Args:
+            banner_timeout (int): The timeout duration in seconds for banner display.
+        """
         self.banner_timeout = (
             banner_timeout if banner_timeout >= 0 else self.banner_timeout
         )
 
     def set_baudrate(self, baudrate: int):
+        """Set the baud rate for serial communication.
+
+        The baud rate must be one of the common baud rates; otherwise, it will retain the previous value or default value.
+
+        Args:
+            baudrate (int): The baud rate for serial communication.
+        """
         self.baudrate = baudrate if baudrate in self.common_baudrate else self.baudrate
 
     def set_bytesize(self, bytesize: int):
+        """Set the byte size for serial communication.
+
+        The byte size must be non-negative; otherwise, it will retain the previous value or default value.
+
+        Args:
+            bytesize (int): The byte size for serial communication.
+        """
         self.bytesize = bytesize if bytesize >= 0 else self.bytesize
 
     def set_parity(self, parity: str):
