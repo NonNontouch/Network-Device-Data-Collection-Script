@@ -59,8 +59,6 @@ class serial_connection:
     def send_command(
         self,
         command: str,
-        command_timeout: float = 0,
-        max_retries: int = 4,
     ):
         """_Send command to a host via Serial._
 
@@ -75,35 +73,42 @@ class serial_connection:
         """
         retries = 0
         cmd_output = ""
-        if command_timeout == 0:
-            command_timeout = self._command_timeout
+
         try:
             self.connect.write(self.to_bytes(command))
         except serialutil.SerialTimeoutException:
             raise Error.ConnectionLossConnect(command)
+
         sleep(0.3)
+
         while True:
             try:
                 _output = data_handling.remove_control_char(self.get_output())
             except OSError:
                 raise Error.ConnectionLossConnect(command)
-            if _output == "":
-                retries += 1
-                if retries > max_retries:
-                    raise Error.CommandTimeoutError(command)
 
-                sleep(command_timeout)
-            elif "More" in _output or "more" in _output:
+            if not _output:  # Check for empty output
+                retries += 1
+                if retries > 4:
+                    raise Error.CommandTimeoutError(command)
+                sleep(self._command_timeout)  # Use command timeout for waiting
+                continue  # Continue to the next iteration
+
+            # Handle "More" prompt
+            if "More" in _output or "more" in _output:
                 self.connect.write(" ")
                 _output = data_handling.remove_more_keyword(_output)
-                cmd_output += data_handling.remove_control_char(_output)
-            else:
-                cmd_output += data_handling.remove_control_char(_output)
-                if data_handling.find_prompt(_output):
-                    break
+
+            cmd_output += _output
+            retries = 0  # Reset retries on valid output
+
+            # Check for prompt to break the loop
+            if data_handling.find_prompt(_output):
+                break
+
         if data_handling.check_error(cmd_output):
-            # Command is successfully ran but need to check for error
             raise Error.ErrorCommand(command, cmd_output)
+
         return cmd_output
 
     def login(self):

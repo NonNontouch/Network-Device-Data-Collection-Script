@@ -34,7 +34,8 @@ class ssh_connection:
         self._port: int = connection.port
         self._timeout: float = connection.timeout
         self._banner_timeout: float = connection.banner_timeout
-        self._command_timeout: float = connection.command_timeout
+        self._RETRY_DELAY: float = connection.command_retriesdelay
+        self._MAX_RETRIES: int = connection.command_maxretries
 
     def connect_to_device(self):
         try:
@@ -48,7 +49,7 @@ class ssh_connection:
                 banner_timeout=self._banner_timeout,
             )
             self.session = self.connect.invoke_shell()
-            self.session.settimeout(self._command_timeout)
+            self.session.settimeout(self._RETRY_DELAY)
 
         except OSError as e:
             raise OSError(e)
@@ -57,42 +58,49 @@ class ssh_connection:
         except Exception as e:
             raise Exception(e)
 
-    def send_command(
-        self,
-        command: str,
-    ):
-        if self.is_connection_alive():
-            retries = 0
-            cmd_output = ""
-            try:
-                self.session.send(command + "\n")
-            except socket.timeout:
-                raise Error.ConnectionLossConnect(command)
-
-            sleep(0.3)
-            while True:
-                _output = data_handling.remove_control_char(self.get_output())
-                if _output == "":
-                    retries += 1
-                    if retries > 4:
-                        raise Error.CommandTimeoutError(command)
-                    sleep(self._command_timeout)
-                elif "More" in _output or "more" in _output:
-                    retries = 0
-                    self.session.send(" ")
-                    _output = data_handling.remove_more_keyword(_output)
-                    cmd_output += _output
-                else:
-                    retries = 0
-                    cmd_output += _output
-                    if data_handling.find_prompt(_output):
-                        break
-            if data_handling.check_error(cmd_output):
-                # Command is successfully ran but need to check for error
-                raise Error.ErrorCommand(command, cmd_output)
-            return cmd_output
-        else:
+    def send_command(self, command: str):
+        if not self.is_connection_alive():
             raise Error.ConnectionLossConnect(command)
+
+        retries = 0
+
+        cmd_output = ""
+
+        try:
+            self.session.send(command + "\n")
+        except socket.timeout:
+            raise Error.ConnectionLossConnect(command)
+
+        sleep(0.3)
+
+        while True:
+            _output = data_handling.remove_control_char(self.get_output())
+
+            if not _output:  # Check for empty output
+                retries += 1
+                if retries > self._MAX_RETRIES:
+                    raise Error.CommandTimeoutError(command)
+                sleep(self._RETRY_DELAY)
+                continue
+
+            # Handle "More" prompt
+            if "More" in _output or "more" in _output:
+                self.session.send(" ")
+                _output = data_handling.remove_more_keyword(_output)
+
+            # Append output to cmd_output
+            cmd_output += _output
+            retries = 0  # Reset retries on valid output
+
+            # Check for prompt to break the loop
+            if data_handling.find_prompt(_output):
+                break
+
+        # Check for errors in the command output
+        if data_handling.check_error(cmd_output):
+            raise Error.ErrorCommand(command, cmd_output)
+
+        return cmd_output
 
     def enable_device(self, enable_command: str, password: str):
         self.session.send(f"{enable_command}" + "\n")
