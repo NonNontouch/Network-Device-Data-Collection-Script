@@ -151,6 +151,18 @@ class connection_manager:
             banner_timeout if banner_timeout >= 0 else self.banner_timeout
         )
 
+    def set_command_maxretries(self, command_maxretries: int):
+        """Set the maximum number of retries for command execution.
+
+        The maximum retries must be non-negative; otherwise, the previous value will be retained.
+
+        Args:
+            command_maxretries (int): The maximum number of retries to set for command execution.
+        """
+        self.command_maxretries = (
+            command_maxretries if command_maxretries >= 0 else self.command_maxretries
+        )
+
     def set_baudrate(self, baudrate: int):
         """Set the baud rate for serial communication.
 
