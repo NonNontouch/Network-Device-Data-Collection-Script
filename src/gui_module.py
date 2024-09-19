@@ -30,20 +30,8 @@ class GUI:
         self.Window.setCentralWidget(self.Main_Page.get_widget())
 
         self.Window.show()
-        self.center_window()
+        GUI_Factory.center_window(self.Window)
         sys.exit(self.App.exec_())
-
-    def center_window(self):
-        window_geometry = self.Window.frameGeometry()
-
-        # Get the center point of the screen
-        screen_center = QtWidgets.QDesktopWidget().availableGeometry().center()
-
-        # Move the center of the window's geometry to the screen center
-        window_geometry.moveCenter(screen_center)
-
-        # Move the top-left point of the window to the top-left of the adjusted geometry
-        self.Window.move(window_geometry.topLeft())
 
 
 class Main_Page:
@@ -52,14 +40,15 @@ class Main_Page:
         border: 2px solid black;  
         border-radius: 10px;
         padding: 5px;
-        background-color: #4D4D4D;    
+        background-color: #4D4D4D;
+            
     }
     #enable_pass_label{
         border: 2px solid black;  
         border-radius: 10px;
         padding: 5px;
         background-color: #4D4D4D; 
-        font-size: 22px;
+        font-size: 18px;
     }
     #input_lineedit{
         border: 2px solid black;
@@ -342,7 +331,8 @@ class Variable_Configure_Page:
         border-radius: 10px;
         padding: 3px;
         background-color: #4D4D4D;    
-        font: 15px;
+        font: 16px;
+        min-width: 160px
     }
     #input_lineedit{
         border: 2px solid black;
@@ -350,12 +340,21 @@ class Variable_Configure_Page:
         padding: 3px;       
         min-width: 200px;
         background-color: #4D4D4D;  
+        font-size: 16px;
     }
     #connection_grid_label{
         border: 2px solid black;  
         border-radius: 10px;
         padding: 5px;
         background-color: #696969;
+    }
+    #banner{
+       font-size: 18px; 
+        font-weight: bold; 
+        color: white; 
+        padding: 10px; 
+        text-align: center; /* Center the text */
+    width: 100%; /* Make the label take full width */
     }
     """
 
@@ -365,25 +364,17 @@ class Variable_Configure_Page:
         self.dialog = QtWidgets.QDialog(widget_parrent)
         self.dialog_grid_layout = QtWidgets.QGridLayout(self.dialog)
         self.dialog.setWindowTitle("Input Dialog")
-        self.dialog.setGeometry(150, 150, 300, 150)
-        self._set_ip__input_variable_grid()
-        # Create widgets for the dialog
-        # timeout_label = GUI_Factory.create_label("Timeout", "variable_label", "")
-        # self.timeout_input = GUI_Factory.create_lineedit("variable_input", "")
+        GUI_Factory.center_window(self.dialog)
+        self._set_ip_input_variable_grid()
+        self._set_serial_input_grid()
+        self._set_button_grid()
 
-        # self.ok_button = QtWidgets.QPushButton("OK", self.dialog)
-        # self.cancel_button = QtWidgets.QPushButton("Cancel", self.dialog)
-
-        # Connect buttons
-        # self.ok_button.clicked.connect(self.accept)
-        # self.cancel_button.clicked.connect(self.reject)
-
-    def _set_ip__input_variable_grid(self):
+    def _set_ip_input_variable_grid(self):
         self.input_widget = QtWidgets.QWidget(self._widget_parrent)
 
-        self.input_widget.setMinimumHeight(300)
-        self.input_widget.setMinimumWidth(800)
-        self.input_widget.setMaximumHeight(380)
+        self.input_widget.setMinimumHeight(220)
+        self.input_widget.setMinimumWidth(500)
+        self.input_widget.setMaximumHeight(400)
         self.input_widget.setStyleSheet(
             """
             background-color: #252525;
@@ -395,13 +386,19 @@ class Variable_Configure_Page:
         self.ip_variable_grid = QtWidgets.QGridLayout(self.input_widget)
         self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
+        banner_label = GUI_Factory.create_label(
+            "IP Timer Configuration", "banner", self.main_style
+        )
+
         login_wait_label = GUI_Factory.create_label(
             label_text="Login Wait Time",
             obj_name="input_label",
             stylesheet=self.main_style,
         )
         self.login_wait_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
+            obj_name="input_lineedit",
+            stylesheet=self.main_style,
+            placeholder_text="Default 3",
         )
         self.login_wait_input.setValidator(QtGui.QDoubleValidator(self.input_widget))
 
@@ -411,67 +408,143 @@ class Variable_Configure_Page:
             stylesheet=self.main_style,
         )
         self.banner_timeout_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
+            obj_name="input_lineedit",
+            stylesheet=self.main_style,
+            placeholder_text="Default 15",
         )
         self.banner_timeout_input.setValidator(
             QtGui.QDoubleValidator(self.input_widget)
         )
 
-        command_timeout_label = GUI_Factory.create_label(
+        command_retriesdelay_label = GUI_Factory.create_label(
             label_text="Command Timeout",
             obj_name="input_label",
             stylesheet=self.main_style,
         )
-        self.command_timeout_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
+        self.command_retriesdelay_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit",
+            stylesheet=self.main_style,
+            placeholder_text="Default 4",
         )
-        self.command_timeout_input.setValidator(
+        self.command_retriesdelay_input.setValidator(
             QtGui.QDoubleValidator(self.input_widget)
         )
 
+        command_maxretries_label = GUI_Factory.create_label(
+            label_text="Command Max Retries",
+            obj_name="input_label",
+            stylesheet=self.main_style,
+        )
+        self.command_maxretries_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit",
+            stylesheet=self.main_style,
+            placeholder_text="Default 4",
+        )
+        self.command_maxretries_input.setValidator(
+            QtGui.QDoubleValidator(self.input_widget)
+        )
+
+        # Add New Widgets to Grid
+        self.ip_variable_grid.addWidget(banner_label, 0, 0, 1, 2)
+
+        self.ip_variable_grid.addWidget(login_wait_label, 1, 0)
+        self.ip_variable_grid.addWidget(self.login_wait_input, 1, 1)
+        self.ip_variable_grid.addWidget(banner_timeout_label, 2, 0)
+        self.ip_variable_grid.addWidget(self.banner_timeout_input, 2, 1)
+        self.ip_variable_grid.addWidget(command_retriesdelay_label, 3, 0)
+        self.ip_variable_grid.addWidget(self.command_retriesdelay_input, 3, 1)
+        self.ip_variable_grid.addWidget(command_maxretries_label, 4, 0)
+        self.ip_variable_grid.addWidget(self.command_maxretries_input, 4, 1)
+        self.dialog_grid_layout.addWidget(
+            self.input_widget,
+            0,
+            0,
+        )
+
+    def _set_serial_input_grid(self):
+        self.serial_widget = QtWidgets.QWidget(self._widget_parrent)
+        self.serial_widget.setMinimumHeight(180)
+        self.serial_widget.setMinimumWidth(500)
+        self.serial_widget.setMaximumHeight(400)
+        self.serial_widget.setStyleSheet(
+            """
+            background-color: #252525;
+            border: 2px solid black;
+            border-radius: 10px;
+            color: white;  
+            """
+        )
+        self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
+        banner_label = GUI_Factory.create_label(
+            "Serial Configuration", "banner", self.main_style
+        )
         bytesize_label = GUI_Factory.create_label(
             label_text="Bytesize", obj_name="input_label", stylesheet=self.main_style
         )
         self.bytesize_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
+            obj_name="input_lineedit",
+            stylesheet=self.main_style,
+            placeholder_text="Default 8",
         )
-        self.bytesize_input.setValidator(QtGui.QIntValidator(self.input_widget))
+        self.bytesize_input.setValidator(QtGui.QIntValidator(self.serial_widget))
 
         parity_label = GUI_Factory.create_label(
             label_text="Parity", obj_name="input_label", stylesheet=self.main_style
         )
         self.parity_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
+            obj_name="input_lineedit",
+            stylesheet=self.main_style,
+            placeholder_text='Default "N"',
         )
 
         stopbits_label = GUI_Factory.create_label(
             label_text="Stopbits", obj_name="input_label", stylesheet=self.main_style
         )
         self.stopbits_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
+            obj_name="input_lineedit",
+            stylesheet=self.main_style,
+            placeholder_text="Default 1",
         )
-        self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.input_widget))
+        self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.serial_widget))
 
-        # Add New Widgets to Grid
-        self.ip_variable_grid.addWidget(login_wait_label, 0, 0)
-        self.ip_variable_grid.addWidget(self.login_wait_input, 0, 1)
-        self.ip_variable_grid.addWidget(banner_timeout_label, 0, 2)
-        self.ip_variable_grid.addWidget(self.banner_timeout_input, 0, 3)
-        self.ip_variable_grid.addWidget(command_timeout_label, 1, 0)
-        self.ip_variable_grid.addWidget(self.command_timeout_input, 1, 1)
-
-        self.ip_variable_grid.addWidget(bytesize_label, 2, 0)
-        self.ip_variable_grid.addWidget(self.bytesize_input, 2, 1)
-        self.ip_variable_grid.addWidget(parity_label, 2, 2)
-        self.ip_variable_grid.addWidget(self.parity_input, 2, 3)
-        self.ip_variable_grid.addWidget(stopbits_label, 3, 0)
-        self.ip_variable_grid.addWidget(self.stopbits_input, 3, 1)
-
+        self.serial_variable_grid.addWidget(banner_label, 0, 0, 1, 2)
+        self.serial_variable_grid.addWidget(bytesize_label, 1, 0)
+        self.serial_variable_grid.addWidget(self.bytesize_input, 1, 1)
+        self.serial_variable_grid.addWidget(parity_label, 2, 0)
+        self.serial_variable_grid.addWidget(self.parity_input, 2, 1)
+        self.serial_variable_grid.addWidget(stopbits_label, 3, 0)
+        self.serial_variable_grid.addWidget(self.stopbits_input, 3, 1)
         self.dialog_grid_layout.addWidget(
-            self.input_widget,
-            0,
+            self.serial_widget,
+            1,
             0,
         )
+
+    def _set_button_grid(self):
+        self.button_widget = QtWidgets.QWidget(self._widget_parrent)
+        self.button_widget.setMinimumHeight(40)
+        self.button_widget.setMinimumWidth(500)
+        self.button_widget.setMaximumHeight(100)
+        self.button_widget.setStyleSheet(
+            """
+            background-color: #252525;
+            border: 2px solid black;
+            border-radius: 10px;
+            color: white;  
+            """
+        )
+        self.button_grid = QtWidgets.QGridLayout(self.button_widget)
+
+        self.ok_button = QtWidgets.QPushButton("OK", self.dialog)
+        self.cancel_button = QtWidgets.QPushButton("Cancel", self.dialog)
+
+        self.button_grid.addWidget(self.ok_button, 0, 0)
+        self.button_grid.addWidget(self.cancel_button, 0, 1)
+        # Connect buttons
+        self.ok_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.reject)
+
+        self.dialog_grid_layout.addWidget(self.button_widget, 2, 0)
 
     def exec_(self):
         return self.dialog.exec_()
@@ -492,6 +565,19 @@ class Variable_Configure_Page:
 
 
 class GUI_Factory:
+    @staticmethod
+    def center_window(Window: QtWidgets.QMainWindow):
+        window_geometry = Window.frameGeometry()
+
+        # Get the center point of the screen
+        screen_center = QtWidgets.QDesktopWidget().availableGeometry().center()
+
+        # Move the center of the window's geometry to the screen center
+        window_geometry.moveCenter(screen_center)
+
+        # Move the top-left point of the window to the top-left of the adjusted geometry
+        Window.move(window_geometry.topLeft())
+
     @staticmethod
     def create_label(label_text: str, obj_name: str, stylesheet: str):
         temp_label = QtWidgets.QLabel(text=label_text)
