@@ -23,7 +23,8 @@ class serial_connection:
         self._enable_password: str = connection.enable_password
         self._timeout: float = connection.timeout
         self._banner_timeout: float = connection.banner_timeout
-        self._command_timeout: float = connection.command_timeout
+        self._RETRY_DELAY: float = connection.command_retriesdelay
+        self._MAX_RETRIES: int = connection.command_maxretries
         self._baudrate: int = connection.baudrate
         self._bytesize: int = connection.bytesize
         self._parity: str = connection.parity
@@ -89,9 +90,9 @@ class serial_connection:
 
             if not _output:  # Check for empty output
                 retries += 1
-                if retries > 4:
+                if retries > self._MAX_RETRIES:
                     raise Error.CommandTimeoutError(command)
-                sleep(self._command_timeout)  # Use command timeout for waiting
+                sleep(self._RETRY_DELAY)  # Use command timeout for waiting
                 continue  # Continue to the next iteration
 
             # Handle "More" prompt

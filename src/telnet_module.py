@@ -25,7 +25,8 @@ class telnet_connection:
         self._timeout: float = connection.timeout
         self._login_wait_time: float = connection.login_wait_time
         self._banner_timeout: float = connection.banner_timeout
-        self._command_timeout: float = connection.command_timeout
+        self._RETRY_DELAY: float = connection.command_retriesdelay
+        self._MAX_RETRIES: int = connection.command_maxretries
 
     def connect_to_device(self):
         """_This function will try connect into device via Telnet._
@@ -131,9 +132,9 @@ class telnet_connection:
 
             if not _output:  # Check for empty output
                 retries += 1
-                if retries > 4:
+                if retries > self._MAX_RETRIES:
                     raise Error.CommandTimeoutError(command)
-                sleep(self._command_timeout)  # Use the command timeout here
+                sleep(self._RETRY_DELAY)  # Use the command timeout here
                 continue  # Continue to the next iteration
 
             # Handle "More" prompt
@@ -197,7 +198,7 @@ class telnet_connection:
         try:
             # Send a null byte (or a newline) to check if the connection is alive
             self.connect.write(b"\n")
-            self.connect.read_until(b"\n", timeout=self._command_timeout)
+            self.connect.read_until(b"\n", timeout=self._RETRY_DELAY)
             return True
         except (EOFError, ConnectionResetError, ConnectionAbortedError, OSError):
             # If any of these exceptions are raised, the connection is not alive
