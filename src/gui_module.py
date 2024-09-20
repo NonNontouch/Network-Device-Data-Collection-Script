@@ -319,9 +319,7 @@ class Main_Page:
         dialog = Variable_Configure_Page(self.main_widget)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             user_input = dialog.get_input()
-            QtWidgets.QMessageBox.information(
-                self.main_widget, "Input Received", f"You entered: {user_input}"
-            )
+            print(user_input)
 
 
 class Variable_Configure_Page:
@@ -353,8 +351,37 @@ class Variable_Configure_Page:
         font-weight: bold; 
         color: white; 
         padding: 10px; 
+        background-color: #4D4D4D;
         text-align: center; /* Center the text */
-    width: 100%; /* Make the label take full width */
+        width: 100%; /* Make the label take full width */
+    }
+    #acceptButton{
+        background-color: #4CAF50;  /* Light green background */
+        color: white;  /* White text */
+        border: 2px solid #4CAF50;  /* Green border */
+        border-radius: 10px;  /* Rounded corners */
+        padding: 10px 20px;  /* Padding inside the button */
+        font-size: 16px;  /* Font size */
+    }
+    #acceptButton:hover {
+        background-color: #45a049;  /* Darker green on hover */
+    }
+    #acceptButton:pressed {
+        background-color: #388E3C;  /* Even darker green on press */
+    }
+    #cancelButton {
+        background-color: #f44336;  /* Light red background */
+        color: white;  /* White text */
+        border: 2px solid #f44336;  /* Red border */
+        border-radius: 10px;  /* Rounded corners */
+        padding: 10px 20px;  /* Padding inside the button */
+        font-size: 16px;  /* Font size */
+    }
+    #cancelButton:hover {
+        background-color: #e53935;  /* Darker red on hover */
+    }
+    #cancelButton:pressed {
+        background-color: #c62828;  /* Even darker red on press */
     }
     """
 
@@ -364,7 +391,6 @@ class Variable_Configure_Page:
         self.dialog = QtWidgets.QDialog(widget_parrent)
         self.dialog_grid_layout = QtWidgets.QGridLayout(self.dialog)
         self.dialog.setWindowTitle("Input Dialog")
-        GUI_Factory.center_window(self.dialog)
         self._set_ip_input_variable_grid()
         self._set_serial_input_grid()
         self._set_button_grid()
@@ -496,6 +522,11 @@ class Variable_Configure_Page:
             stylesheet=self.main_style,
             placeholder_text='Default "N"',
         )
+        info_icon = GUI_Factory.create_info_icon(
+            icon_path="./src/Assets/info.png",
+            tooltip_text="Parity options:\n- None\n- Even\n- Odd\n- Mark\n- Space",
+            stylesheet=self.main_style,
+        )
 
         stopbits_label = GUI_Factory.create_label(
             label_text="Stopbits", obj_name="input_label", stylesheet=self.main_style
@@ -507,11 +538,12 @@ class Variable_Configure_Page:
         )
         self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.serial_widget))
 
-        self.serial_variable_grid.addWidget(banner_label, 0, 0, 1, 2)
+        self.serial_variable_grid.addWidget(banner_label, 0, 0, 1, 3)
         self.serial_variable_grid.addWidget(bytesize_label, 1, 0)
         self.serial_variable_grid.addWidget(self.bytesize_input, 1, 1)
         self.serial_variable_grid.addWidget(parity_label, 2, 0)
         self.serial_variable_grid.addWidget(self.parity_input, 2, 1)
+        self.serial_variable_grid.addWidget(info_icon, 2, 2)
         self.serial_variable_grid.addWidget(stopbits_label, 3, 0)
         self.serial_variable_grid.addWidget(self.stopbits_input, 3, 1)
         self.dialog_grid_layout.addWidget(
@@ -535,13 +567,17 @@ class Variable_Configure_Page:
         )
         self.button_grid = QtWidgets.QGridLayout(self.button_widget)
 
-        self.ok_button = QtWidgets.QPushButton("OK", self.dialog)
-        self.cancel_button = QtWidgets.QPushButton("Cancel", self.dialog)
+        self.apply_button = GUI_Factory.create_button(
+            "Apply", "acceptButton", self.main_style
+        )
+        self.cancel_button = GUI_Factory.create_button(
+            "Cancle", "cancelButton", self.main_style
+        )
 
-        self.button_grid.addWidget(self.ok_button, 0, 0)
+        self.button_grid.addWidget(self.apply_button, 0, 0)
         self.button_grid.addWidget(self.cancel_button, 0, 1)
         # Connect buttons
-        self.ok_button.clicked.connect(self.accept)
+        self.apply_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
 
         self.dialog_grid_layout.addWidget(self.button_widget, 2, 0)
@@ -558,7 +594,15 @@ class Variable_Configure_Page:
         self.dialog.reject()
 
     def get_input(self):
-        return self.line_edit.text()
+        return {
+            "login_wait_time": self.login_wait_input.text(),
+            "banner_timeout": self.banner_timeout_input.text(),
+            "command_timeout": self.command_retriesdelay_input.text(),
+            "command_max_retries": self.command_maxretries_input.text(),
+            "bytesize": self.bytesize_input.text(),
+            "parity": self.parity_input.text(),
+            "stopbits": self.stopbits_input.text(),
+        }
 
     def result(self):
         return self.result
@@ -566,14 +610,19 @@ class Variable_Configure_Page:
 
 class GUI_Factory:
     @staticmethod
-    def center_window(Window: QtWidgets.QMainWindow):
+    def center_window(Window: QtWidgets.QWidget):
         window_geometry = Window.frameGeometry()
 
-        # Get the center point of the screen
-        screen_center = QtWidgets.QDesktopWidget().availableGeometry().center()
+        # Get the center point of the parent window
+        if isinstance(Window.parent(), QtWidgets.QMainWindow):
+            parent_geometry = Window.parent().frameGeometry()
+            center_point = parent_geometry.center()
+        else:
+            # Fallback to screen center if no parent is a QMainWindow
+            center_point = QtWidgets.QDesktopWidget().availableGeometry().center()
 
-        # Move the center of the window's geometry to the screen center
-        window_geometry.moveCenter(screen_center)
+        # Move the center of the window's geometry to the center point
+        window_geometry.moveCenter(center_point)
 
         # Move the top-left point of the window to the top-left of the adjusted geometry
         Window.move(window_geometry.topLeft())
@@ -603,6 +652,14 @@ class GUI_Factory:
         temp_widtet = QtWidgets.QWidget(parrent)
         temp_widtet.setObjectName(obj_name)
         temp_widtet.setStyleSheet(stylesheet)
+
+    @staticmethod
+    def create_button(text: str, obj_name: str, stylesheet: str):
+        temp_button = QtWidgets.QPushButton(text)
+        temp_button.setObjectName(obj_name)
+        temp_button.setStyleSheet(stylesheet)
+        temp_button.setCursor(QtCore.Qt.PointingHandCursor)
+        return temp_button
 
     @staticmethod
     def create_radio_button(text, image_path, botton_group):
@@ -641,6 +698,25 @@ class GUI_Factory:
         # Add the radio button to the button group
         botton_group.addButton(radio_button)
         return radio_button
+
+    @staticmethod
+    def create_info_icon(
+        icon_path: str, tooltip_text: str, stylesheet: str, size=(24, 24)
+    ):  # Default size is 16x16
+        # Create the QLabel for the icon
+        info_icon = QtWidgets.QLabel()
+        if icon_path:
+            pixmap = QtGui.QPixmap(icon_path).scaled(
+                size[0], size[1], QtCore.Qt.AspectRatioMode.KeepAspectRatio
+            )  # Resize the icon
+            info_icon.setStyleSheet(stylesheet)
+            info_icon.setPixmap(pixmap)  # Set the resized pixmap
+            info_icon.setToolTip(tooltip_text)  # Set the tooltip with information
+            info_icon.setAlignment(
+                QtCore.Qt.AlignmentFlag.AlignRight
+            )  # Align to the right
+
+        return info_icon
 
 
 class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
