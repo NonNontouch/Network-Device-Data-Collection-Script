@@ -41,7 +41,7 @@ class Main_Page:
         border-radius: 10px;
         padding: 5px;
         background-color: #4D4D4D;
-            
+        color: white;
     }
     #enable_pass_label{
         border: 2px solid black;  
@@ -49,6 +49,7 @@ class Main_Page:
         padding: 5px;
         background-color: #4D4D4D; 
         font-size: 18px;
+        color: white;
     }
     #input_lineedit{
         border: 2px solid black;
@@ -62,6 +63,32 @@ class Main_Page:
         border-radius: 10px;
         padding: 5px;
         background-color: #696969;
+        color: white;
+    }
+    #sub_connection_widget{
+        background-color: #4D4D4D;
+        border-radius: 10px;      
+        border: 2px solid black;  
+        padding: 10px;            
+    }
+    #connection_widget{
+        background-color: #252525;
+        border: 2px solid black;
+        border-radius: 10px;
+    }
+    #popup_dialog_button {
+        background-color: #4CAF50;  /* Green background */
+        color: white;  /* White text */
+        border: 2px solid #4CAF50;  /* Green border */
+        border-radius: 10px;  /* Rounded corners */
+        padding: 10px 20px;  /* Padding inside the button */
+        font-size: 16px;  /* Font size */
+    }
+    #popup_dialog_button:hover {
+        background-color: #45a049;  /* Darker green on hover */
+    }
+    #popup_dialog_button:pressed {
+        background-color: #388E3C;  /* Even darker green on press */
     }
     """
 
@@ -71,6 +98,7 @@ class Main_Page:
         self._window_parrent = window_parrent
         self.__set_input_grid()
         self.__set_connection_grid()
+        self.__set_json_grid()
 
     def get_widget(self):
         return self.main_widget
@@ -134,29 +162,10 @@ class Main_Page:
             obj_name="input_lineedit", stylesheet=self.main_style, is_password=True
         )
 
-        self.connection_setting_button = QtWidgets.QPushButton("Connection Setting")
+        self.connection_setting_button = GUI_Factory.create_button(
+            "Connection Setting", "popup_dialog_button", self.main_style
+        )
         self.connection_setting_button.clicked.connect(self.show_input_dialog)
-        self.connection_setting_button.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #4CAF50;  /* Green background */
-                color: white;  /* White text */
-                border: 2px solid #4CAF50;  /* Green border */
-                border-radius: 10px;  /* Rounded corners */
-                padding: 10px 20px;  /* Padding inside the button */
-                font-size: 16px;  /* Font size */
-            }
-            QPushButton:hover {
-                background-color: #45a049;  /* Darker green on hover */
-            }
-            QPushButton:pressed {
-                background-color: #388E3C;  /* Even darker green on press */
-            }
-        """
-        )
-        self.connection_setting_button.setCursor(
-            QtGui.QCursor(QtCore.Qt.PointingHandCursor)
-        )
         self.input_grid.addWidget(hostname_label, 0, 0)
         self.input_grid.addWidget(self.hostname_input, 0, 1)
         self.input_grid.addWidget(port_label, 0, 2)
@@ -181,34 +190,21 @@ class Main_Page:
         )
 
     def __set_connection_grid(self):
-        widget_default_style = """
-            #connection_widget{
-                border: 2px solid black;  
-                border-radius: 10px;      
-                padding: 10px;            
-                background-color: #4D4D4D;
-                }
-            """
-        self.connection_widget = QtWidgets.QWidget(self.main_widget)
-        self.connection_widget.setStyleSheet(
-            """
-            background-color: #252525;
-            border: 2px solid black;
-            border-radius: 10px;
-            color: white;  
-        """
+        self.connection_widget = GUI_Factory.create_widget(
+            self.main_widget, "connection_widget", self.main_style
         )
-        connection_top_widget = QtWidgets.QWidget(self.main_widget)
-        connection_top_widget.setObjectName("connection_widget")
-        connection_top_widget.setStyleSheet(widget_default_style)
 
-        connection_botton_widget = QtWidgets.QWidget(self.main_widget)
-        connection_botton_widget.setObjectName("connection_widget")
-        connection_botton_widget.setStyleSheet(widget_default_style)
+        connection_top_widget = GUI_Factory.create_widget(
+            self.main_widget, "sub_connection_widget", self.main_style
+        )
 
-        self.connection_grid = QtWidgets.QGridLayout(self.connection_widget)
-        self.connection_top_grid = QtWidgets.QGridLayout(connection_top_widget)
-        self.connection_botton_grid = QtWidgets.QGridLayout(connection_botton_widget)
+        connection_botton_widget = GUI_Factory.create_widget(
+            self.main_widget, "sub_connection_widget", self.main_style
+        )
+
+        connection_grid = QtWidgets.QGridLayout(self.connection_widget)
+        connection_top_grid = QtWidgets.QGridLayout(connection_top_widget)
+        connection_botton_grid = QtWidgets.QGridLayout(connection_botton_widget)
 
         self.connection_type_button_group = QtWidgets.QButtonGroup(self.main_widget)
         ssh_button = GUI_Factory.create_radio_button(
@@ -224,32 +220,13 @@ class Main_Page:
             "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
         )
 
-        self.connect_botton = QtWidgets.QPushButton("Connect")
-        self.connect_botton.setStyleSheet(
-            """
-            QPushButton {
-                background-color: #4CAF50; 
-                color: white; 
-                border: 2px solid #4CAF50; 
-                border-radius: 10px; 
-                padding: 10px 20px; 
-                font-size: 16px;
-            }
-            QPushButton:hover {
-                background-color: #45a049;  /* Darker green on hover */
-            }
-            QPushButton:pressed {
-                background-color: #388E3C;  /* darker green on press */
-            }
-        """
-        )
-        self.connect_botton.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        self.connect_botton = GUI_Factory.create_button("Connect","popup_dialog_button",self.main_style)
 
         self.comport_combo_box = ComboBoxWithDynamicArrow()
-        self.connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
+        connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
         self.comport_combo_box.setMinimumWidth(180)
 
-        self.connection_botton_grid.addWidget(
+        connection_botton_grid.addWidget(
             GUI_Factory.create_label(
                 label_text="Baudrate",
                 obj_name="connection_grid_label",
@@ -288,12 +265,12 @@ class Main_Page:
                 "921600",
             ]
         )
-        self.connection_botton_grid.addWidget(self.baudrate_combo_box, 0, 3)
-        self.connection_top_grid.addWidget(ssh_button, 0, 0)
-        self.connection_top_grid.addWidget(telnet_button, 0, 1)
-        self.connection_top_grid.addWidget(serial_button, 0, 2)
-        self.connection_top_grid.addWidget(self.connect_botton, 0, 3)
-        self.connection_botton_grid.addWidget(
+        connection_botton_grid.addWidget(self.baudrate_combo_box, 0, 3)
+        connection_top_grid.addWidget(ssh_button, 0, 0)
+        connection_top_grid.addWidget(telnet_button, 0, 1)
+        connection_top_grid.addWidget(serial_button, 0, 2)
+        connection_top_grid.addWidget(self.connect_botton, 0, 3)
+        connection_botton_grid.addWidget(
             GUI_Factory.create_label(
                 label_text="Comport",
                 obj_name="connection_grid_label",
@@ -302,10 +279,10 @@ class Main_Page:
             0,
             0,
         )
-        self.connection_grid.addWidget(
+        connection_grid.addWidget(
             connection_top_widget, 0, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
         )
-        self.connection_grid.addWidget(
+        connection_grid.addWidget(
             connection_botton_widget, 1, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
         )
         self.main_grid.addWidget(
@@ -313,6 +290,14 @@ class Main_Page:
             1,
             0,
         )
+
+    def __set_json_grid(self):
+    
+        json_edit_button = GUI_Factory.create_button(
+            "Edit Template", "popup_dialog_button", self.main_style
+        )
+        self.main_grid.addWidget(json_edit_button, 2, 0)
+        pass
 
     def show_input_dialog(self):
         # Create and show the input dialog
@@ -324,10 +309,17 @@ class Main_Page:
 
 class Variable_Configure_Page:
     main_style = """
+    #input_widget{
+        background-color: #252525;
+        border: 2px solid black;
+        border-radius: 10px;
+        color: white;  
+    }
     #input_label{
         border: 2px solid black;  
         border-radius: 10px;
         padding: 3px;
+        color: white;  
         background-color: #4D4D4D;    
         font: 16px;
         min-width: 160px
@@ -337,6 +329,7 @@ class Variable_Configure_Page:
         border-radius: 10px;
         padding: 3px;       
         min-width: 200px;
+        color: white;  
         background-color: #4D4D4D;  
         font-size: 16px;
     }
@@ -383,6 +376,12 @@ class Variable_Configure_Page:
     #cancelButton:pressed {
         background-color: #c62828;  /* Even darker red on press */
     }
+    QToolTip {
+        font-size: 16px;  /* Smaller font size */
+        padding: 5px;  /* Adjust padding */
+        background-color: #4D4D4D;  /* Background color */
+        color: white;  /* Text color */
+    }
     """
 
     def __init__(self, widget_parrent: QtWidgets.QMainWindow) -> None:
@@ -396,19 +395,13 @@ class Variable_Configure_Page:
         self._set_button_grid()
 
     def _set_ip_input_variable_grid(self):
-        self.input_widget = QtWidgets.QWidget(self._widget_parrent)
+        self.input_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget", self.main_style
+        )
 
         self.input_widget.setMinimumHeight(220)
         self.input_widget.setMinimumWidth(500)
         self.input_widget.setMaximumHeight(400)
-        self.input_widget.setStyleSheet(
-            """
-            background-color: #252525;
-            border: 2px solid black;
-            border-radius: 10px;
-            color: white;  
-            """
-        )
         self.ip_variable_grid = QtWidgets.QGridLayout(self.input_widget)
         self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
@@ -520,11 +513,19 @@ class Variable_Configure_Page:
         self.parity_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit",
             stylesheet=self.main_style,
-            placeholder_text='Default "N"',
+            placeholder_text="Default N",
         )
-        info_icon = GUI_Factory.create_info_icon(
+        parity_info = GUI_Factory.create_info_icon(
             icon_path="./src/Assets/info.png",
-            tooltip_text="Parity options:\n- None\n- Even\n- Odd\n- Mark\n- Space",
+            tooltip_text=(
+                "Select a parity option:\n"
+                "E: Even parity (serial.PARITY_EVEN)\n"
+                "N: No parity (serial.PARITY_NONE)\n"
+                "M: Mark parity (serial.PARITY_MARK)\n"
+                "O: Odd parity (serial.PARITY_ODD)\n"
+                "S: Space parity (serial.PARITY_SPACE)"
+            ),
+            obj_name="info_icon",
             stylesheet=self.main_style,
         )
 
@@ -540,12 +541,12 @@ class Variable_Configure_Page:
 
         self.serial_variable_grid.addWidget(banner_label, 0, 0, 1, 3)
         self.serial_variable_grid.addWidget(bytesize_label, 1, 0)
-        self.serial_variable_grid.addWidget(self.bytesize_input, 1, 1)
+        self.serial_variable_grid.addWidget(self.bytesize_input, 1, 1, 1, 2)
         self.serial_variable_grid.addWidget(parity_label, 2, 0)
         self.serial_variable_grid.addWidget(self.parity_input, 2, 1)
-        self.serial_variable_grid.addWidget(info_icon, 2, 2)
+        self.serial_variable_grid.addWidget(parity_info, 2, 2)
         self.serial_variable_grid.addWidget(stopbits_label, 3, 0)
-        self.serial_variable_grid.addWidget(self.stopbits_input, 3, 1)
+        self.serial_variable_grid.addWidget(self.stopbits_input, 3, 1, 1, 2)
         self.dialog_grid_layout.addWidget(
             self.serial_widget,
             1,
@@ -652,6 +653,7 @@ class GUI_Factory:
         temp_widtet = QtWidgets.QWidget(parrent)
         temp_widtet.setObjectName(obj_name)
         temp_widtet.setStyleSheet(stylesheet)
+        return temp_widtet
 
     @staticmethod
     def create_button(text: str, obj_name: str, stylesheet: str):
@@ -677,6 +679,7 @@ class GUI_Factory:
             border-radius: 10px;
             padding: 5px;
             border: none;
+            color: white;
             }
             QRadioButton::indicator {
                 width: 16px;
@@ -701,7 +704,7 @@ class GUI_Factory:
 
     @staticmethod
     def create_info_icon(
-        icon_path: str, tooltip_text: str, stylesheet: str, size=(24, 24)
+        icon_path: str, tooltip_text: str, stylesheet: str, obj_name: str, size=(24, 24)
     ):  # Default size is 16x16
         # Create the QLabel for the icon
         info_icon = QtWidgets.QLabel()
@@ -715,6 +718,7 @@ class GUI_Factory:
             info_icon.setAlignment(
                 QtCore.Qt.AlignmentFlag.AlignRight
             )  # Align to the right
+            info_icon.setObjectName(obj_name)
 
         return info_icon
 
