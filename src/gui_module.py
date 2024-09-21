@@ -96,6 +96,7 @@ class GUI:
         color: white; 
         padding: 10px; 
         background-color: #4D4D4D;
+        border-radius: 10px;
         text-align: center; /* Center the text */
         width: 100%; /* Make the label take full width */
     }
@@ -525,18 +526,11 @@ class Variable_Configure_Page:
         )
 
     def _set_button_grid(self):
-        self.button_widget = QtWidgets.QWidget(self._widget_parrent)
+        self.button_widget= GUI_Factory.create_widget(self._widget_parrent,"input_widget")
         self.button_widget.setMinimumHeight(40)
         self.button_widget.setMinimumWidth(500)
         self.button_widget.setMaximumHeight(100)
-        self.button_widget.setStyleSheet(
-            """
-            background-color: #252525;
-            border: 2px solid black;
-            border-radius: 10px;
-            color: white;  
-            """
-        )
+        
         self.button_grid = QtWidgets.QGridLayout(self.button_widget)
 
         self.apply_button = GUI_Factory.create_button(
