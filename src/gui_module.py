@@ -9,6 +9,9 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class GUI:
     main_style = """
+    #main_window{
+        background-color: #1C1C1C;
+    }
     #input_label{
         border: 2px solid black;  
         border-radius: 10px;
@@ -69,7 +72,7 @@ class GUI:
         border-radius: 10px;
         color: white;  
     }
-    #inout_label_configure_dialog{
+    #input_label_configure_dialog{
         border: 2px solid black;  
         border-radius: 10px;
         padding: 3px;
@@ -143,6 +146,7 @@ class GUI:
             self.App.setFont(default_text_font)
 
             self.Window = QtWidgets.QMainWindow()
+            self.Window.setStyleSheet(GUI.main_style)
             self.Window.setWindowTitle("Network Device Data Collection Script")
         except Exception as e:
             print(e)
@@ -181,16 +185,14 @@ class Main_Page:
         self.input_grid = QtWidgets.QGridLayout(self.input_widget)
         self.input_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
         hostname_label = GUI_Factory.create_label(
-            label_text="Hostname", obj_name="input_label", stylesheet=GUI.main_style
+            label_text="Hostname", obj_name="input_label"
         )
 
         self.hostname_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit", stylesheet=GUI.main_style
         )
 
-        port_label = GUI_Factory.create_label(
-            label_text="Port", obj_name="input_label", stylesheet=GUI.main_style
-        )
+        port_label = GUI_Factory.create_label(label_text="Port", obj_name="input_label")
 
         self.port_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit", stylesheet=GUI.main_style
@@ -210,17 +212,16 @@ class Main_Page:
         )
 
         self.password_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=GUI.main_style, is_password=True
+            obj_name="input_lineedit", is_password=True
         )
 
         enable_password = GUI_Factory.create_label(
             label_text="Enable Password",
             obj_name="enable_pass_label",
-            stylesheet=GUI.main_style,
         )
 
         self.enable_password_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=GUI.main_style, is_password=True
+            obj_name="input_lineedit", is_password=True
         )
 
         self.connection_setting_button = GUI_Factory.create_button(
@@ -293,7 +294,6 @@ class Main_Page:
             GUI_Factory.create_label(
                 label_text="Baudrate",
                 obj_name="connection_grid_label",
-                stylesheet=GUI.main_style,
             ),
             0,
             2,
@@ -337,7 +337,6 @@ class Main_Page:
             GUI_Factory.create_label(
                 label_text="Comport",
                 obj_name="connection_grid_label",
-                stylesheet=GUI.main_style,
             ),
             0,
             0,
@@ -398,24 +397,20 @@ class Variable_Configure_Page:
 
         login_wait_label = GUI_Factory.create_label(
             label_text="Login Wait Time",
-            obj_name="inout_label_configure_dialog",
-            stylesheet=GUI.main_style,
+            obj_name="input_label_configure_dialog",
         )
         self.login_wait_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            stylesheet=GUI.main_style,
             placeholder_text="Default 3",
         )
         self.login_wait_input.setValidator(QtGui.QDoubleValidator(self.input_widget))
 
         banner_timeout_label = GUI_Factory.create_label(
             label_text="Banner Timeout",
-            obj_name="inout_label_configure_dialog",
-            stylesheet=GUI.main_style,
+            obj_name="input_label_configure_dialog",
         )
         self.banner_timeout_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            stylesheet=GUI.main_style,
             placeholder_text="Default 15",
         )
         self.banner_timeout_input.setValidator(
@@ -424,12 +419,10 @@ class Variable_Configure_Page:
 
         command_retriesdelay_label = GUI_Factory.create_label(
             label_text="Command Timeout",
-            obj_name="inout_label_configure_dialog",
-            stylesheet=GUI.main_style,
+            obj_name="input_label_configure_dialog",
         )
         self.command_retriesdelay_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            stylesheet=GUI.main_style,
             placeholder_text="Default 4",
         )
         self.command_retriesdelay_input.setValidator(
@@ -438,12 +431,10 @@ class Variable_Configure_Page:
 
         command_maxretries_label = GUI_Factory.create_label(
             label_text="Command Max Retries",
-            obj_name="inout_label_configure_dialog",
-            stylesheet=GUI.main_style,
+            obj_name="input_label_configure_dialog",
         )
         self.command_maxretries_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            stylesheet=GUI.main_style,
             placeholder_text="Default 4",
         )
         self.command_maxretries_input.setValidator(
@@ -468,42 +459,32 @@ class Variable_Configure_Page:
         )
 
     def _set_serial_input_grid(self):
-        self.serial_widget = QtWidgets.QWidget(self._widget_parrent)
+        self.serial_widget = GUI_Factory.create_widget(self._widget_parrent,"input_widget")
+        
         self.serial_widget.setMinimumHeight(180)
         self.serial_widget.setMinimumWidth(500)
         self.serial_widget.setMaximumHeight(400)
-        self.serial_widget.setStyleSheet(
-            """
-            background-color: #252525;
-            border: 2px solid black;
-            border-radius: 10px;
-            color: white;  
-            """
-        )
+      
         self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
         banner_label = GUI_Factory.create_label(
             "Serial Configuration", "configure_dialog_banner", GUI.main_style
         )
         bytesize_label = GUI_Factory.create_label(
             label_text="Bytesize",
-            obj_name="inout_label_configure_dialog",
-            stylesheet=GUI.main_style,
+            obj_name="input_label_configure_dialog",
         )
         self.bytesize_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            stylesheet=GUI.main_style,
             placeholder_text="Default 8",
         )
         self.bytesize_input.setValidator(QtGui.QIntValidator(self.serial_widget))
 
         parity_label = GUI_Factory.create_label(
             label_text="Parity",
-            obj_name="inout_label_configure_dialog",
-            stylesheet=GUI.main_style,
+            obj_name="input_label_configure_dialog",
         )
         self.parity_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            stylesheet=GUI.main_style,
             placeholder_text="Default N",
         )
         parity_info = GUI_Factory.create_info_icon(
@@ -517,17 +498,14 @@ class Variable_Configure_Page:
                 "S: Space parity (serial.PARITY_SPACE)"
             ),
             obj_name="info_icon",
-            stylesheet=GUI.main_style,
         )
 
         stopbits_label = GUI_Factory.create_label(
             label_text="Stopbits",
-            obj_name="inout_label_configure_dialog",
-            stylesheet=GUI.main_style,
+            obj_name="input_label_configure_dialog",
         )
         self.stopbits_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            stylesheet=GUI.main_style,
             placeholder_text="Default 1",
         )
         self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.serial_widget))
@@ -622,19 +600,24 @@ class GUI_Factory:
         Window.move(window_geometry.topLeft())
 
     @staticmethod
-    def create_label(label_text: str, obj_name: str, stylesheet: str):
+    def create_label(label_text: str, obj_name: str, stylesheet: str = ""):
         temp_label = QtWidgets.QLabel(text=label_text)
         temp_label.setObjectName(obj_name)
-        temp_label.setStyleSheet(stylesheet)
+        if stylesheet:
+            temp_label.setStyleSheet(stylesheet)
         return temp_label
 
     @staticmethod
     def create_lineedit(
-        obj_name: str, stylesheet: str, is_password=False, placeholder_text=""
+        obj_name: str,
+        stylesheet: str = "",
+        is_password=False,
+        placeholder_text: str = "",
     ):
         temp_lineedit = QtWidgets.QLineEdit()
         temp_lineedit.setObjectName(obj_name)
-        temp_lineedit.setStyleSheet(stylesheet)
+        if stylesheet:
+            temp_lineedit.setStyleSheet(stylesheet)
         if is_password:
             temp_lineedit.setEchoMode(QtWidgets.QLineEdit.Password)
         if placeholder_text:
@@ -642,14 +625,15 @@ class GUI_Factory:
         return temp_lineedit
 
     @staticmethod
-    def create_widget(parrent: QtWidgets.QWidget, obj_name: str, stylesheet: str):
+    def create_widget(parrent: QtWidgets.QWidget, obj_name: str, stylesheet: str = ""):
         temp_widtet = QtWidgets.QWidget(parrent)
         temp_widtet.setObjectName(obj_name)
-        temp_widtet.setStyleSheet(stylesheet)
+        if stylesheet:
+            temp_widtet.setStyleSheet(stylesheet)
         return temp_widtet
 
     @staticmethod
-    def create_button(text: str, obj_name: str, stylesheet: str):
+    def create_button(text: str, obj_name: str, stylesheet: str = ""):
         temp_button = QtWidgets.QPushButton(text)
         temp_button.setObjectName(obj_name)
         temp_button.setStyleSheet(stylesheet)
@@ -697,7 +681,11 @@ class GUI_Factory:
 
     @staticmethod
     def create_info_icon(
-        icon_path: str, tooltip_text: str, stylesheet: str, obj_name: str, size=(24, 24)
+        icon_path: str,
+        tooltip_text: str,
+        obj_name: str,
+        stylesheet: str = "",
+        size=(24, 24),
     ):  # Default size is 16x16
         # Create the QLabel for the icon
         info_icon = QtWidgets.QLabel()
@@ -705,7 +693,8 @@ class GUI_Factory:
             pixmap = QtGui.QPixmap(icon_path).scaled(
                 size[0], size[1], QtCore.Qt.AspectRatioMode.KeepAspectRatio
             )  # Resize the icon
-            info_icon.setStyleSheet(stylesheet)
+            if stylesheet:
+                info_icon.setStyleSheet(stylesheet)
             info_icon.setPixmap(pixmap)  # Set the resized pixmap
             info_icon.setToolTip(tooltip_text)  # Set the tooltip with information
             info_icon.setAlignment(
