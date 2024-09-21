@@ -8,33 +8,6 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 
 class GUI:
-
-    def __init__(self) -> None:
-        try:
-            self.App = QtWidgets.QApplication(sys.argv)
-            font_id = QtGui.QFontDatabase.addApplicationFont(
-                os.path.abspath("./src/Assets/BAHNSCHRIFT.ttf")
-            )
-            font_families = QtGui.QFontDatabase.applicationFontFamilies(font_id)
-            default_text_font = QtGui.QFont(font_families[0], 18)
-            self.App.setFont(default_text_font)
-
-            self.Window = QtWidgets.QMainWindow()
-            self.Window.setWindowTitle("Network Device Data Collection Script")
-        except Exception as e:
-            print(e)
-
-    def setup_window(self):
-        self.Main_Page = Main_Page(self.Window)
-
-        self.Window.setCentralWidget(self.Main_Page.get_widget())
-
-        self.Window.show()
-        GUI_Factory.center_window(self.Window)
-        sys.exit(self.App.exec_())
-
-
-class Main_Page:
     main_style = """
     #input_label{
         border: 2px solid black;  
@@ -90,232 +63,13 @@ class Main_Page:
     #popup_dialog_button:pressed {
         background-color: #388E3C;  /* Even darker green on press */
     }
-    """
-
-    def __init__(self, window_parrent: QtWidgets.QMainWindow) -> None:
-        self.main_widget = QtWidgets.QWidget(window_parrent)
-        self.main_grid = QtWidgets.QGridLayout(self.main_widget)
-        self._window_parrent = window_parrent
-        self.__set_input_grid()
-        self.__set_connection_grid()
-        self.__set_json_grid()
-
-    def get_widget(self):
-        return self.main_widget
-
-    def __set_input_grid(self):
-        self.input_widget = QtWidgets.QWidget(self.main_widget)
-
-        self.input_widget.setMinimumHeight(150)
-        self.input_widget.setMinimumWidth(800)
-        self.input_widget.setMaximumHeight(230)
-        self.input_widget.setStyleSheet(
-            """
-            background-color: #252525;
-            border: 2px solid black;
-            border-radius: 10px;
-            color: white;  
-        """
-        )
-        self.input_grid = QtWidgets.QGridLayout(self.input_widget)
-        self.input_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
-        hostname_label = GUI_Factory.create_label(
-            label_text="Hostname", obj_name="input_label", stylesheet=self.main_style
-        )
-
-        self.hostname_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
-        )
-
-        port_label = GUI_Factory.create_label(
-            label_text="Port", obj_name="input_label", stylesheet=self.main_style
-        )
-
-        self.port_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
-        )
-        self.port_input.setValidator(QtGui.QIntValidator(self.input_widget))
-
-        username_label = GUI_Factory.create_label(
-            label_text="Username", obj_name="input_label", stylesheet=self.main_style
-        )
-
-        self.username_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style
-        )
-
-        password_label = GUI_Factory.create_label(
-            label_text="Password", obj_name="input_label", stylesheet=self.main_style
-        )
-
-        self.password_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style, is_password=True
-        )
-
-        enable_password = GUI_Factory.create_label(
-            label_text="Enable Password",
-            obj_name="enable_pass_label",
-            stylesheet=self.main_style,
-        )
-
-        self.enable_password_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit", stylesheet=self.main_style, is_password=True
-        )
-
-        self.connection_setting_button = GUI_Factory.create_button(
-            "Connection Setting", "popup_dialog_button", self.main_style
-        )
-        self.connection_setting_button.clicked.connect(self.show_input_dialog)
-        self.input_grid.addWidget(hostname_label, 0, 0)
-        self.input_grid.addWidget(self.hostname_input, 0, 1)
-        self.input_grid.addWidget(port_label, 0, 2)
-        self.input_grid.addWidget(self.port_input, 0, 3)
-        self.input_grid.addWidget(username_label, 1, 0)
-        self.input_grid.addWidget(self.username_input, 1, 1)
-        self.input_grid.addWidget(password_label, 1, 2)
-        self.input_grid.addWidget(self.password_input, 1, 3)
-        self.input_grid.addWidget(enable_password, 2, 0)
-        self.input_grid.addWidget(self.enable_password_input, 2, 1)
-        self.input_grid.addWidget(
-            self.connection_setting_button,
-            2,
-            2,
-            1,
-            2,
-        )
-        self.main_grid.addWidget(
-            self.input_widget,
-            0,
-            0,
-        )
-
-    def __set_connection_grid(self):
-        self.connection_widget = GUI_Factory.create_widget(
-            self.main_widget, "connection_widget", self.main_style
-        )
-
-        connection_top_widget = GUI_Factory.create_widget(
-            self.main_widget, "sub_connection_widget", self.main_style
-        )
-
-        connection_botton_widget = GUI_Factory.create_widget(
-            self.main_widget, "sub_connection_widget", self.main_style
-        )
-
-        connection_grid = QtWidgets.QGridLayout(self.connection_widget)
-        connection_top_grid = QtWidgets.QGridLayout(connection_top_widget)
-        connection_botton_grid = QtWidgets.QGridLayout(connection_botton_widget)
-
-        self.connection_type_button_group = QtWidgets.QButtonGroup(self.main_widget)
-        ssh_button = GUI_Factory.create_radio_button(
-            "SSH", "./src/Assets/SSH.png", self.connection_type_button_group
-        )
-        ssh_button.setChecked(True)
-
-        telnet_button = GUI_Factory.create_radio_button(
-            "Telnet", "./src/Assets/Telnet.png", self.connection_type_button_group
-        )
-
-        serial_button = GUI_Factory.create_radio_button(
-            "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
-        )
-
-        self.connect_botton = GUI_Factory.create_button("Connect","popup_dialog_button",self.main_style)
-
-        self.comport_combo_box = ComboBoxWithDynamicArrow()
-        connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
-        self.comport_combo_box.setMinimumWidth(180)
-
-        connection_botton_grid.addWidget(
-            GUI_Factory.create_label(
-                label_text="Baudrate",
-                obj_name="connection_grid_label",
-                stylesheet=self.main_style,
-            ),
-            0,
-            2,
-        )
-        self.baudrate_combo_box = ComboBoxWithDynamicArrow()
-        self.baudrate_combo_box.setMinimumWidth(150)
-
-        self.baudrate_combo_box.addItems(
-            [
-                "50",
-                "75",
-                "110",
-                "134",
-                "150",
-                "200",
-                "300",
-                "600",
-                "1200",
-                "1800",
-                "2400",
-                "4800",
-                "9600",
-                "19200",
-                "28800",
-                "38400",
-                "57600",
-                "76800",
-                "115200",
-                "230400",
-                "460800",
-                "576000",
-                "921600",
-            ]
-        )
-        connection_botton_grid.addWidget(self.baudrate_combo_box, 0, 3)
-        connection_top_grid.addWidget(ssh_button, 0, 0)
-        connection_top_grid.addWidget(telnet_button, 0, 1)
-        connection_top_grid.addWidget(serial_button, 0, 2)
-        connection_top_grid.addWidget(self.connect_botton, 0, 3)
-        connection_botton_grid.addWidget(
-            GUI_Factory.create_label(
-                label_text="Comport",
-                obj_name="connection_grid_label",
-                stylesheet=self.main_style,
-            ),
-            0,
-            0,
-        )
-        connection_grid.addWidget(
-            connection_top_widget, 0, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
-        )
-        connection_grid.addWidget(
-            connection_botton_widget, 1, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
-        )
-        self.main_grid.addWidget(
-            self.connection_widget,
-            1,
-            0,
-        )
-
-    def __set_json_grid(self):
-    
-        json_edit_button = GUI_Factory.create_button(
-            "Edit Template", "popup_dialog_button", self.main_style
-        )
-        self.main_grid.addWidget(json_edit_button, 2, 0)
-        pass
-
-    def show_input_dialog(self):
-        # Create and show the input dialog
-        dialog = Variable_Configure_Page(self.main_widget)
-        if dialog.exec_() == QtWidgets.QDialog.Accepted:
-            user_input = dialog.get_input()
-            print(user_input)
-
-
-class Variable_Configure_Page:
-    main_style = """
     #input_widget{
         background-color: #252525;
         border: 2px solid black;
         border-radius: 10px;
         color: white;  
     }
-    #input_label{
+    #inout_label_configure_dialog{
         border: 2px solid black;  
         border-radius: 10px;
         padding: 3px;
@@ -324,7 +78,7 @@ class Variable_Configure_Page:
         font: 16px;
         min-width: 160px
     }
-    #input_lineedit{
+    #input_lineedit_configure_dialog{
         border: 2px solid black;
         border-radius: 10px;
         padding: 3px;       
@@ -333,13 +87,7 @@ class Variable_Configure_Page:
         background-color: #4D4D4D;  
         font-size: 16px;
     }
-    #connection_grid_label{
-        border: 2px solid black;  
-        border-radius: 10px;
-        padding: 5px;
-        background-color: #696969;
-    }
-    #banner{
+    #configure_dialog_banner{
        font-size: 18px; 
         font-weight: bold; 
         color: white; 
@@ -384,6 +132,245 @@ class Variable_Configure_Page:
     }
     """
 
+    def __init__(self) -> None:
+        try:
+            self.App = QtWidgets.QApplication(sys.argv)
+            font_id = QtGui.QFontDatabase.addApplicationFont(
+                os.path.abspath("./src/Assets/BAHNSCHRIFT.ttf")
+            )
+            font_families = QtGui.QFontDatabase.applicationFontFamilies(font_id)
+            default_text_font = QtGui.QFont(font_families[0], 18)
+            self.App.setFont(default_text_font)
+
+            self.Window = QtWidgets.QMainWindow()
+            self.Window.setWindowTitle("Network Device Data Collection Script")
+        except Exception as e:
+            print(e)
+
+    def setup_window(self):
+        self.Main_Page = Main_Page(self.Window)
+
+        self.Window.setCentralWidget(self.Main_Page.get_widget())
+
+        self.Window.show()
+        GUI_Factory.center_window(self.Window)
+        sys.exit(self.App.exec_())
+
+
+class Main_Page:
+
+    def __init__(self, window_parrent: QtWidgets.QMainWindow) -> None:
+        self.main_widget = QtWidgets.QWidget(window_parrent)
+        self.main_grid = QtWidgets.QGridLayout(self.main_widget)
+        self._window_parrent = window_parrent
+        self.__set_input_grid()
+        self.__set_connection_grid()
+        self.__set_json_grid()
+
+    def get_widget(self):
+        return self.main_widget
+
+    def __set_input_grid(self):
+        self.input_widget = GUI_Factory.create_widget(
+            self.main_widget, "input_widget", GUI.main_style
+        )
+        self.input_widget.setMinimumHeight(150)
+        self.input_widget.setMinimumWidth(800)
+        self.input_widget.setMaximumHeight(230)
+
+        self.input_grid = QtWidgets.QGridLayout(self.input_widget)
+        self.input_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        hostname_label = GUI_Factory.create_label(
+            label_text="Hostname", obj_name="input_label", stylesheet=GUI.main_style
+        )
+
+        self.hostname_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit", stylesheet=GUI.main_style
+        )
+
+        port_label = GUI_Factory.create_label(
+            label_text="Port", obj_name="input_label", stylesheet=GUI.main_style
+        )
+
+        self.port_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit", stylesheet=GUI.main_style
+        )
+        self.port_input.setValidator(QtGui.QIntValidator(self.input_widget))
+
+        username_label = GUI_Factory.create_label(
+            label_text="Username", obj_name="input_label", stylesheet=GUI.main_style
+        )
+
+        self.username_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit", stylesheet=GUI.main_style
+        )
+
+        password_label = GUI_Factory.create_label(
+            label_text="Password", obj_name="input_label", stylesheet=GUI.main_style
+        )
+
+        self.password_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit", stylesheet=GUI.main_style, is_password=True
+        )
+
+        enable_password = GUI_Factory.create_label(
+            label_text="Enable Password",
+            obj_name="enable_pass_label",
+            stylesheet=GUI.main_style,
+        )
+
+        self.enable_password_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit", stylesheet=GUI.main_style, is_password=True
+        )
+
+        self.connection_setting_button = GUI_Factory.create_button(
+            "Connection Setting", "popup_dialog_button", GUI.main_style
+        )
+        self.connection_setting_button.clicked.connect(self.show_input_dialog)
+        self.input_grid.addWidget(hostname_label, 0, 0)
+        self.input_grid.addWidget(self.hostname_input, 0, 1)
+        self.input_grid.addWidget(port_label, 0, 2)
+        self.input_grid.addWidget(self.port_input, 0, 3)
+        self.input_grid.addWidget(username_label, 1, 0)
+        self.input_grid.addWidget(self.username_input, 1, 1)
+        self.input_grid.addWidget(password_label, 1, 2)
+        self.input_grid.addWidget(self.password_input, 1, 3)
+        self.input_grid.addWidget(enable_password, 2, 0)
+        self.input_grid.addWidget(self.enable_password_input, 2, 1)
+        self.input_grid.addWidget(
+            self.connection_setting_button,
+            2,
+            2,
+            1,
+            2,
+        )
+        self.main_grid.addWidget(
+            self.input_widget,
+            0,
+            0,
+        )
+
+    def __set_connection_grid(self):
+        self.connection_widget = GUI_Factory.create_widget(
+            self.main_widget, "connection_widget", GUI.main_style
+        )
+
+        connection_top_widget = GUI_Factory.create_widget(
+            self.main_widget, "sub_connection_widget", GUI.main_style
+        )
+
+        connection_botton_widget = GUI_Factory.create_widget(
+            self.main_widget, "sub_connection_widget", GUI.main_style
+        )
+
+        connection_grid = QtWidgets.QGridLayout(self.connection_widget)
+        connection_top_grid = QtWidgets.QGridLayout(connection_top_widget)
+        connection_botton_grid = QtWidgets.QGridLayout(connection_botton_widget)
+
+        self.connection_type_button_group = QtWidgets.QButtonGroup(self.main_widget)
+        ssh_button = GUI_Factory.create_radio_button(
+            "SSH", "./src/Assets/SSH.png", self.connection_type_button_group
+        )
+        ssh_button.setChecked(True)
+
+        telnet_button = GUI_Factory.create_radio_button(
+            "Telnet", "./src/Assets/Telnet.png", self.connection_type_button_group
+        )
+
+        serial_button = GUI_Factory.create_radio_button(
+            "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
+        )
+
+        self.connect_botton = GUI_Factory.create_button(
+            "Connect", "popup_dialog_button", GUI.main_style
+        )
+
+        self.comport_combo_box = ComboBoxWithDynamicArrow()
+        connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
+        self.comport_combo_box.setMinimumWidth(180)
+
+        connection_botton_grid.addWidget(
+            GUI_Factory.create_label(
+                label_text="Baudrate",
+                obj_name="connection_grid_label",
+                stylesheet=GUI.main_style,
+            ),
+            0,
+            2,
+        )
+        self.baudrate_combo_box = ComboBoxWithDynamicArrow()
+        self.baudrate_combo_box.setMinimumWidth(150)
+
+        self.baudrate_combo_box.addItems(
+            [
+                "50",
+                "75",
+                "110",
+                "134",
+                "150",
+                "200",
+                "300",
+                "600",
+                "1200",
+                "1800",
+                "2400",
+                "4800",
+                "9600",
+                "19200",
+                "28800",
+                "38400",
+                "57600",
+                "76800",
+                "115200",
+                "230400",
+                "460800",
+                "576000",
+                "921600",
+            ]
+        )
+        connection_botton_grid.addWidget(self.baudrate_combo_box, 0, 3)
+        connection_top_grid.addWidget(ssh_button, 0, 0)
+        connection_top_grid.addWidget(telnet_button, 0, 1)
+        connection_top_grid.addWidget(serial_button, 0, 2)
+        connection_top_grid.addWidget(self.connect_botton, 0, 3)
+        connection_botton_grid.addWidget(
+            GUI_Factory.create_label(
+                label_text="Comport",
+                obj_name="connection_grid_label",
+                stylesheet=GUI.main_style,
+            ),
+            0,
+            0,
+        )
+        connection_grid.addWidget(
+            connection_top_widget, 0, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
+        )
+        connection_grid.addWidget(
+            connection_botton_widget, 1, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
+        )
+        self.main_grid.addWidget(
+            self.connection_widget,
+            1,
+            0,
+        )
+
+    def __set_json_grid(self):
+        json_edit_button = GUI_Factory.create_button(
+            "Edit Template", "popup_dialog_button", GUI.main_style
+        )
+        self.main_grid.addWidget(json_edit_button, 2, 0)
+        pass
+
+    def show_input_dialog(self):
+        # Create and show the input dialog
+        dialog = Variable_Configure_Page(self.main_widget)
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            user_input = dialog.get_input()
+            print(user_input)
+
+
+class Variable_Configure_Page:
+
     def __init__(self, widget_parrent: QtWidgets.QMainWindow) -> None:
         # Create a QDialog instance
         self._widget_parrent = widget_parrent
@@ -396,7 +383,7 @@ class Variable_Configure_Page:
 
     def _set_ip_input_variable_grid(self):
         self.input_widget = GUI_Factory.create_widget(
-            self._widget_parrent, "input_widget", self.main_style
+            self._widget_parrent, "input_widget", GUI.main_style
         )
 
         self.input_widget.setMinimumHeight(220)
@@ -406,29 +393,29 @@ class Variable_Configure_Page:
         self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
         banner_label = GUI_Factory.create_label(
-            "IP Timer Configuration", "banner", self.main_style
+            "IP Timer Configuration", "configure_dialog_banner", GUI.main_style
         )
 
         login_wait_label = GUI_Factory.create_label(
             label_text="Login Wait Time",
-            obj_name="input_label",
-            stylesheet=self.main_style,
+            obj_name="inout_label_configure_dialog",
+            stylesheet=GUI.main_style,
         )
         self.login_wait_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit",
-            stylesheet=self.main_style,
+            obj_name="input_lineedit_configure_dialog",
+            stylesheet=GUI.main_style,
             placeholder_text="Default 3",
         )
         self.login_wait_input.setValidator(QtGui.QDoubleValidator(self.input_widget))
 
         banner_timeout_label = GUI_Factory.create_label(
             label_text="Banner Timeout",
-            obj_name="input_label",
-            stylesheet=self.main_style,
+            obj_name="inout_label_configure_dialog",
+            stylesheet=GUI.main_style,
         )
         self.banner_timeout_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit",
-            stylesheet=self.main_style,
+            obj_name="input_lineedit_configure_dialog",
+            stylesheet=GUI.main_style,
             placeholder_text="Default 15",
         )
         self.banner_timeout_input.setValidator(
@@ -437,12 +424,12 @@ class Variable_Configure_Page:
 
         command_retriesdelay_label = GUI_Factory.create_label(
             label_text="Command Timeout",
-            obj_name="input_label",
-            stylesheet=self.main_style,
+            obj_name="inout_label_configure_dialog",
+            stylesheet=GUI.main_style,
         )
         self.command_retriesdelay_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit",
-            stylesheet=self.main_style,
+            obj_name="input_lineedit_configure_dialog",
+            stylesheet=GUI.main_style,
             placeholder_text="Default 4",
         )
         self.command_retriesdelay_input.setValidator(
@@ -451,12 +438,12 @@ class Variable_Configure_Page:
 
         command_maxretries_label = GUI_Factory.create_label(
             label_text="Command Max Retries",
-            obj_name="input_label",
-            stylesheet=self.main_style,
+            obj_name="inout_label_configure_dialog",
+            stylesheet=GUI.main_style,
         )
         self.command_maxretries_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit",
-            stylesheet=self.main_style,
+            obj_name="input_lineedit_configure_dialog",
+            stylesheet=GUI.main_style,
             placeholder_text="Default 4",
         )
         self.command_maxretries_input.setValidator(
@@ -495,24 +482,28 @@ class Variable_Configure_Page:
         )
         self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
         banner_label = GUI_Factory.create_label(
-            "Serial Configuration", "banner", self.main_style
+            "Serial Configuration", "configure_dialog_banner", GUI.main_style
         )
         bytesize_label = GUI_Factory.create_label(
-            label_text="Bytesize", obj_name="input_label", stylesheet=self.main_style
+            label_text="Bytesize",
+            obj_name="inout_label_configure_dialog",
+            stylesheet=GUI.main_style,
         )
         self.bytesize_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit",
-            stylesheet=self.main_style,
+            obj_name="input_lineedit_configure_dialog",
+            stylesheet=GUI.main_style,
             placeholder_text="Default 8",
         )
         self.bytesize_input.setValidator(QtGui.QIntValidator(self.serial_widget))
 
         parity_label = GUI_Factory.create_label(
-            label_text="Parity", obj_name="input_label", stylesheet=self.main_style
+            label_text="Parity",
+            obj_name="inout_label_configure_dialog",
+            stylesheet=GUI.main_style,
         )
         self.parity_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit",
-            stylesheet=self.main_style,
+            obj_name="input_lineedit_configure_dialog",
+            stylesheet=GUI.main_style,
             placeholder_text="Default N",
         )
         parity_info = GUI_Factory.create_info_icon(
@@ -526,15 +517,17 @@ class Variable_Configure_Page:
                 "S: Space parity (serial.PARITY_SPACE)"
             ),
             obj_name="info_icon",
-            stylesheet=self.main_style,
+            stylesheet=GUI.main_style,
         )
 
         stopbits_label = GUI_Factory.create_label(
-            label_text="Stopbits", obj_name="input_label", stylesheet=self.main_style
+            label_text="Stopbits",
+            obj_name="inout_label_configure_dialog",
+            stylesheet=GUI.main_style,
         )
         self.stopbits_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit",
-            stylesheet=self.main_style,
+            obj_name="input_lineedit_configure_dialog",
+            stylesheet=GUI.main_style,
             placeholder_text="Default 1",
         )
         self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.serial_widget))
@@ -569,10 +562,10 @@ class Variable_Configure_Page:
         self.button_grid = QtWidgets.QGridLayout(self.button_widget)
 
         self.apply_button = GUI_Factory.create_button(
-            "Apply", "acceptButton", self.main_style
+            "Apply", "acceptButton", GUI.main_style
         )
         self.cancel_button = GUI_Factory.create_button(
-            "Cancle", "cancelButton", self.main_style
+            "Cancle", "cancelButton", GUI.main_style
         )
 
         self.button_grid.addWidget(self.apply_button, 0, 0)
