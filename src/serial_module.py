@@ -30,6 +30,9 @@ class serial_connection:
         self._parity: str = connection.parity
         self._stopbits: float = connection.stopbits
 
+    def get_parity_type(self):
+        return serial.PARITY_NAMES
+
     def set_serial_object(self):
         """_This function will create Serial Module with given varialbe._
 

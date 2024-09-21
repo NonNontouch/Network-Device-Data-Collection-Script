@@ -189,7 +189,8 @@ class connection_manager:
         Args:
             parity (str): _parity_ _bit_
         """
-        self.parity = parity
+        if parity in serial.get_parity_type():
+            self.parity = parity
 
     def set_stopbits(self, stopbits: float):
         """
