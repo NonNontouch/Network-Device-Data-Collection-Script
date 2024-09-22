@@ -61,6 +61,41 @@ class connection_manager:
     ]
     connection = None
 
+    def set_parameters(self, params: dict):
+        """Set multiple connection parameters from a dictionary.
+
+        Args:
+            params (dict): A dictionary containing connection parameters.
+        """
+        if "hostname" in params and params["hostname"].strip():
+            self.set_hostname(params["hostname"])
+        if "port" in params and params["port"].strip():
+            self.set_port(int(params["port"]))  # Convert to int if valid
+        if "username" in params and params["username"].strip():
+            self.set_username(params["username"])
+        if "password" in params and params["password"].strip():
+            self.set_password(params["password"])
+        if "enable_password" in params and params["enable_password"].strip():
+            self.set_enable_password(params["enable_password"])
+        if "timeout" in params and params["timeout"].strip():
+            self.set_timeout(float(params["timeout"]))  # Convert to float if valid
+        if "login_wait_time" in params and params["login_wait_time"].strip():
+            self.set_login_wait_time(float(params["login_wait_time"]))
+        if "command_retriesdelay" in params and params["command_retriesdelay"].strip():
+            self.set_command_retries_delay(float(params["command_retriesdelay"]))
+        if "banner_timeout" in params and params["banner_timeout"].strip():
+            self.set_banner_timeout(int(params["banner_timeout"]))
+        if "command_maxretries" in params and params["command_maxretries"].strip():
+            self.set_command_maxretries(int(params["command_maxretries"]))
+        if "baudrate" in params and params["baudrate"].strip():
+            self.set_baudrate(int(params["baudrate"]))
+        if "bytesize" in params and params["bytesize"].strip():
+            self.set_bytesize(int(params["bytesize"]))
+        if "parity" in params and params["parity"].strip():
+            self.set_parity(params["parity"])
+        if "stopbits" in params and params["stopbits"].strip():
+            self.set_stopbits(float(params["stopbits"]))
+
     def set_hostname(self, hostname: str):
         """Set the device hostname, which can be an IP address or a resolvable hostname.
 
