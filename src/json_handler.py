@@ -5,8 +5,6 @@ import os
 class json_file:
     file_list: set
     os_template: dict
-    command_list: list
-    command_list_json: dict
 
     def get_list_of_file(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -22,12 +20,12 @@ class json_file:
             return
 
     def read_json_file(self, file_name: str):
-    # Get the absolute path of the current file's directory
+        # Get the absolute path of the current file's directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
-        
+
         # Construct the absolute path to the command_template folder and the specific JSON file
-        file_path = os.path.join(current_dir, '..', 'command_template', file_name)
-        
+        file_path = os.path.join(current_dir, "..", "command_template", file_name)
+
         try:
             with open(file_path, "r") as f:
                 self.os_template = json.load(f)
@@ -45,3 +43,9 @@ class json_file:
         except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error getting command list for OS {OS}: {e}")
             return None
+
+    def get_os_keys(self):
+        """Return a list of OS keys from the loaded OS template."""
+        if isinstance(self.os_template, dict):
+            return list(self.os_template.keys())
+        return []
