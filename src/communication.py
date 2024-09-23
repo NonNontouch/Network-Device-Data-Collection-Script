@@ -250,15 +250,14 @@ class connection_manager:
         self.connection = ssh(self)
         try:
             self.connection.connect_to_device()
-        except OSError as e:
+        except (OSError, para.SSHException) as e:
             print(e)
             self.connection = None
-        except para.SSHException as e:
-            print(e)
-            self.connection = None
+            raise e  # Re-raise the exception for further handling
         except Exception as e:
             print(f"Error connecting to SSH: {e}")
             self.connection = None
+            raise e
 
     def set_telnet_connection(self):
         """Set connection as telnet and try connect and login to it"""
