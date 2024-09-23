@@ -2,6 +2,9 @@ import os
 import sys
 from time import sleep
 from PyQt5 import QtCore, QtGui, QtWidgets
+from src.communication import connection_manager
+from src.json_handler import json_file
+import src.error as Error
 
 
 # from PyQt5.QtWidgets import *
@@ -33,6 +36,7 @@ class GUI:
         padding: 5px;       
         min-width: 200px;
         background-color: #4D4D4D;  
+        color:white;
     }
     #connection_grid_label{
         border: 2px solid black;  
@@ -40,17 +44,6 @@ class GUI:
         padding: 5px;
         background-color: #696969;
         color: white;
-    }
-    #sub_connection_widget{
-        background-color: #4D4D4D;
-        border-radius: 10px;      
-        border: 2px solid black;  
-        padding: 10px;            
-    }
-    #connection_widget{
-        background-color: #252525;
-        border: 2px solid black;
-        border-radius: 10px;
     }
     #popup_dialog_button {
         background-color: #4CAF50;  /* Green background */
@@ -71,6 +64,12 @@ class GUI:
         border: 2px solid black;
         border-radius: 10px;
         color: white;  
+    }
+    #sub_input_widget{
+        background-color: #4D4D4D;
+        border-radius: 10px;      
+        border: 2px solid black;  
+        padding: 10px;            
     }
     #input_label_configure_dialog{
         border: 2px solid black;  
@@ -149,11 +148,12 @@ class GUI:
             self.Window = QtWidgets.QMainWindow()
             self.Window.setStyleSheet(GUI.main_style)
             self.Window.setWindowTitle("Network Device Data Collection Script")
+            self._connection_manager = connection_manager()
         except Exception as e:
             print(e)
 
     def setup_window(self):
-        self.Main_Page = Main_Page(self.Window)
+        self.Main_Page = Main_Page(self.Window, self._connection_manager)
 
         self.Window.setCentralWidget(self.Main_Page.get_widget())
 
@@ -164,10 +164,15 @@ class GUI:
 
 class Main_Page:
 
-    def __init__(self, window_parrent: QtWidgets.QMainWindow) -> None:
+    def __init__(
+        self,
+        window_parrent: QtWidgets.QMainWindow,
+        connection_manager: connection_manager,
+    ) -> None:
         self.main_widget = QtWidgets.QWidget(window_parrent)
         self.main_grid = QtWidgets.QGridLayout(self.main_widget)
         self._window_parrent = window_parrent
+        self._connection_manager = connection_manager
         self.__set_input_grid()
         self.__set_connection_grid()
         self.__set_json_grid()
@@ -199,6 +204,7 @@ class Main_Page:
             obj_name="input_lineedit", stylesheet=GUI.main_style
         )
         self.port_input.setValidator(QtGui.QIntValidator(self.input_widget))
+        self.port_input.setText("22")
 
         username_label = GUI_Factory.create_label(
             label_text="Username", obj_name="input_label", stylesheet=GUI.main_style
@@ -225,10 +231,10 @@ class Main_Page:
             obj_name="input_lineedit", is_password=True
         )
 
-        self.connection_setting_button = GUI_Factory.create_button(
-            "Connection Setting", "popup_dialog_button", GUI.main_style
+        self.connection_configure_button = GUI_Factory.create_button(
+            "Connection Configure", "popup_dialog_button", GUI.main_style
         )
-        self.connection_setting_button.clicked.connect(self.show_input_dialog)
+        self.connection_configure_button.clicked.connect(self.show_input_dialog)
         self.input_grid.addWidget(hostname_label, 0, 0)
         self.input_grid.addWidget(self.hostname_input, 0, 1)
         self.input_grid.addWidget(port_label, 0, 2)
@@ -240,7 +246,7 @@ class Main_Page:
         self.input_grid.addWidget(enable_password, 2, 0)
         self.input_grid.addWidget(self.enable_password_input, 2, 1)
         self.input_grid.addWidget(
-            self.connection_setting_button,
+            self.connection_configure_button,
             2,
             2,
             1,
@@ -254,15 +260,15 @@ class Main_Page:
 
     def __set_connection_grid(self):
         self.connection_widget = GUI_Factory.create_widget(
-            self.main_widget, "connection_widget", GUI.main_style
+            self.main_widget, "input_widget", GUI.main_style
         )
 
         connection_top_widget = GUI_Factory.create_widget(
-            self.main_widget, "sub_connection_widget", GUI.main_style
+            self.main_widget, "sub_input_widget", GUI.main_style
         )
 
         connection_botton_widget = GUI_Factory.create_widget(
-            self.main_widget, "sub_connection_widget", GUI.main_style
+            self.main_widget, "sub_input_widget", GUI.main_style
         )
 
         connection_grid = QtWidgets.QGridLayout(self.connection_widget)
@@ -274,18 +280,19 @@ class Main_Page:
             "SSH", "./src/Assets/SSH.png", self.connection_type_button_group
         )
         ssh_button.setChecked(True)
-
+        ssh_button.clicked.connect(lambda: self.update_port_lineedit(22))
         telnet_button = GUI_Factory.create_radio_button(
             "Telnet", "./src/Assets/Telnet.png", self.connection_type_button_group
         )
+        telnet_button.clicked.connect(lambda: self.update_port_lineedit(23))
 
         serial_button = GUI_Factory.create_radio_button(
             "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
         )
-
         self.connect_botton = GUI_Factory.create_button(
             "Connect", "popup_dialog_button", GUI.main_style
         )
+        self.connect_botton.clicked.connect(self.create_connection)
 
         self.comport_combo_box = ComboBoxWithDynamicArrow()
         connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
@@ -355,18 +362,133 @@ class Main_Page:
         )
 
     def __set_json_grid(self):
-        json_edit_button = GUI_Factory.create_button(
-            "Edit Template", "popup_dialog_button", GUI.main_style
+        # Create a new widget for the JSON grid layout
+        json_widget = GUI_Factory.create_widget(self.main_widget, "input_widget")
+        json_grid = QtWidgets.QGridLayout(json_widget)
+
+        # Create a label for JSON file selection
+        json_label = GUI_Factory.create_label(
+            "Select Device Configuration File:", "input_label"
         )
-        self.main_grid.addWidget(json_edit_button, 2, 0)
-        pass
+        json_grid.addWidget(json_label, 0, 0)  # Row 0, Column 0
+
+        # Create a dropdown using ComboBoxWithDynamicArrow for JSON files
+        self.json_dropdown = ComboBoxWithDynamicArrow(self.main_widget)
+        self.json_dropdown.setObjectName("json_dropdown")
+
+        # Create an instance of the json_file class and get the list of files
+        self.json_handler = json_file()
+        self.json_handler.get_list_of_file()
+
+        # Populate the JSON dropdown with the list of files, set default value to Dell.json
+        self.json_dropdown.addItems(
+            sorted(self.json_handler.file_list)
+        )  # Sort the file list
+        if "Dell.json" in self.json_handler.file_list:
+            self.json_dropdown.setCurrentText("Dell.json")
+
+        json_grid.addWidget(self.json_dropdown, 0, 1)  # Row 0, Column 1
+
+        # Create a label to show the OS version
+        os_label = GUI_Factory.create_label("Select OS Version:", "input_label")
+        json_grid.addWidget(os_label, 1, 0)  # Row 1, Column 0
+
+        # Create a dropdown for OS versions using ComboBoxWithDynamicArrow
+        self.os_version_dropdown = ComboBoxWithDynamicArrow(self.main_widget)
+        self.os_version_dropdown.setObjectName("os_version_dropdown")
+        json_grid.addWidget(self.os_version_dropdown, 1, 1)  # Row 1, Column 1
+
+        # Load the default JSON and populate the OS versions
+        self.load_os_versions("Dell.json")
+
+        # Connect the JSON dropdown's change event to update the OS version dropdown
+        self.json_dropdown.currentTextChanged.connect(self.update_os_versions)
+
+        json_edit_button = GUI_Factory.create_button(
+            "Connection Configure", "popup_dialog_button", GUI.main_style
+        )
+        json_grid.addWidget(json_edit_button, 2, 0, 2, 2)
+
+        # Add the json_widget (with the grid layout) to the main grid
+        self.main_grid.addWidget(
+            json_widget, 2, 0, 1, 2
+        )  # Place in row 2, spanning 2 columns
+
+    def load_os_versions(self, json_file):
+        """Load OS versions from the selected JSON file into the OS version dropdown."""
+        self.json_handler.read_json_file(json_file)
+        os_keys = self.json_handler.get_os_keys()
+        self.os_version_dropdown.clear()  # Clear existing items
+        self.os_version_dropdown.addItems(os_keys)  # Add new OS keys
+
+    def update_os_versions(self):
+        """Update the OS version dropdown based on the selected JSON file."""
+        selected_file = self.json_dropdown.currentText()
+        self.load_os_versions(selected_file)  # Load OS versions for the selected file
 
     def show_input_dialog(self):
         # Create and show the input dialog
         dialog = Variable_Configure_Page(self.main_widget)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             user_input = dialog.get_input()
-            print(user_input)
+            self._connection_manager.set_parameters(user_input)
+
+    def update_port_lineedit(self, port):
+        self.port_input.setText(str(port))  # Set the port input
+
+    def create_connection(self):
+        # Gather values from all QLineEdit inputs
+        connection_params = {
+            "hostname": self.hostname_input.text().strip(),
+            "port": self.port_input.text().strip(),
+            "username": self.username_input.text().strip(),
+            "password": self.password_input.text().strip(),
+            "enable_password": self.enable_password_input.text().strip(),
+        }
+        missing_fields = []
+        for key, value in connection_params.items():
+            if key != "enable_password" and not value:  # Check if the value is empty
+                missing_fields.append(key)
+
+        if missing_fields:
+            # Create an alert for missing variables
+            missing_fields_str = ", ".join(missing_fields)
+            QtWidgets.QMessageBox.warning(
+                self._window_parrent,
+                "Missing Input",
+                f"The following fields are required: {missing_fields_str}",
+            )
+            return  # Exit the method if there are missing fields
+        self._connection_manager.set_parameters(connection_params)
+        try:
+            if (
+                self.connection_type_button_group.checkedButton()
+                == self.connection_type_button_group.buttons()[0]
+            ):  # SSH
+                self._connection_manager.set_ssh_connection()
+            elif (
+                self.connection_type_button_group.checkedButton()
+                == self.connection_type_button_group.buttons()[1]
+            ):  # Telnet
+                self._connection_manager.set_telnet_connection()
+            elif (
+                self.connection_type_button_group.checkedButton()
+                == self.connection_type_button_group.buttons()[2]
+            ):  # Serial
+                self._connection_manager.set_serial_connection()
+
+            # Optionally, print or log the successful connection status
+            print(
+                "Connection established successfully with parameters:",
+                connection_params,
+            )
+
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self._window_parrent,
+                "Unexpected Error",
+                f"An unexpected error occurred: {str(e)}",
+            )
 
 
 class Variable_Configure_Page:
@@ -460,12 +582,14 @@ class Variable_Configure_Page:
         )
 
     def _set_serial_input_grid(self):
-        self.serial_widget = GUI_Factory.create_widget(self._widget_parrent,"input_widget")
-        
+        self.serial_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget"
+        )
+
         self.serial_widget.setMinimumHeight(180)
         self.serial_widget.setMinimumWidth(500)
         self.serial_widget.setMaximumHeight(400)
-      
+
         self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
         banner_label = GUI_Factory.create_label(
             "Serial Configuration", "configure_dialog_banner", GUI.main_style
@@ -526,11 +650,13 @@ class Variable_Configure_Page:
         )
 
     def _set_button_grid(self):
-        self.button_widget= GUI_Factory.create_widget(self._widget_parrent,"input_widget")
+        self.button_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget"
+        )
         self.button_widget.setMinimumHeight(40)
         self.button_widget.setMinimumWidth(500)
         self.button_widget.setMaximumHeight(100)
-        
+
         self.button_grid = QtWidgets.QGridLayout(self.button_widget)
 
         self.apply_button = GUI_Factory.create_button(
@@ -563,7 +689,7 @@ class Variable_Configure_Page:
         return {
             "login_wait_time": self.login_wait_input.text(),
             "banner_timeout": self.banner_timeout_input.text(),
-            "command_timeout": self.command_retriesdelay_input.text(),
+            "command_retriesdelay": self.command_retriesdelay_input.text(),
             "command_max_retries": self.command_maxretries_input.text(),
             "bytesize": self.bytesize_input.text(),
             "parity": self.parity_input.text(),
