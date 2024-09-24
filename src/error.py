@@ -59,3 +59,9 @@ class NoFontError(Exception):
     def __init__(self, font: str = ""):
         self.message = f"Program can't get {font} from your computer."
         super().__init__(self.message)
+
+
+class InvalidJsonFile(Exception):
+    def __init__(self, file: str = ""):
+        self.message = f"Program can read your {file}. Please check the file."
+        super().__init__(self.message)
