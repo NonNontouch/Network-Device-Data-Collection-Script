@@ -1,5 +1,6 @@
 import json
 import os
+import src.error as Error
 
 
 class json_file:
@@ -17,7 +18,7 @@ class json_file:
             self.file_list = os.listdir(folder_path)
         except FileNotFoundError:
             print(f"Error: Folder '{folder_path}' not found.")
-            return
+            raise Error.InvalidJsonFile(folder_path)
 
     def read_json_file(self, file_name: str):
         # Get the absolute path of the current file's directory
