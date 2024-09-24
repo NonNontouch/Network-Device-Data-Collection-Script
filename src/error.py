@@ -69,5 +69,13 @@ class InvalidJsonFile(Exception):
 
 class JsonFileNotFound(Exception):
     def __init__(self, file: str = ""):
-        self.message = f"Program can read your {file}. Please check the file."
+        self.message = f"Program can find your {file}. Please if the file is present."
+        super().__init__(self.message)
+
+
+class JsonOSTemplateError(Exception):
+    def __init__(self, OS: str = ""):
+        self.message = (
+            f"The program can't Procress the json template for {OS} you selected."
+        )
         super().__init__(self.message)
