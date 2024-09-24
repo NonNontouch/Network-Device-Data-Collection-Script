@@ -18,7 +18,7 @@ class json_file:
             self.file_list = os.listdir(folder_path)
         except FileNotFoundError:
             print(f"Error: Folder '{folder_path}' not found.")
-            raise Error.InvalidJsonFile(folder_path)
+            raise Error.JsonFileNotFound(folder_path)
 
     def read_json_file(self, file_name: str):
         # Get the absolute path of the current file's directory
@@ -33,17 +33,18 @@ class json_file:
                 return self.os_template
         except FileNotFoundError:
             print(f"Error: File '{file_path}' not found.")
-            return None
+            raise Error.JsonFileNotFound(file_path)
+
         except json.JSONDecodeError:
             print(f"Error: Invalid JSON in file '{file_path}'.")
-            return None
+            raise Error.InvalidJsonFile(file_path)
 
     def get_command_json(self, OS: str):
         try:
             return self.os_template[OS]
         except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error getting command list for OS {OS}: {e}")
-            return None
+            raise Error.JsonOSTemplateError(OS)
 
     def get_os_keys(self):
         """Return a list of OS keys from the loaded OS template."""

@@ -65,3 +65,9 @@ class InvalidJsonFile(Exception):
     def __init__(self, file: str = ""):
         self.message = f"Program can read your {file}. Please check the file."
         super().__init__(self.message)
+
+
+class JsonFileNotFound(Exception):
+    def __init__(self, file: str = ""):
+        self.message = f"Program can read your {file}. Please check the file."
+        super().__init__(self.message)
