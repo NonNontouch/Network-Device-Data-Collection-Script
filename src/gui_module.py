@@ -7,9 +7,6 @@ from src.json_handler import json_file
 import src.error as Error
 
 
-# from PyQt5.QtWidgets import *
-
-
 class GUI:
     main_style = """
     #main_window{
@@ -416,10 +413,36 @@ class Main_Page:
 
     def load_os_versions(self, json_file):
         """Load OS versions from the selected JSON file into the OS version dropdown."""
-        self.json_handler.read_json_file(json_file)
-        os_keys = self.json_handler.get_os_keys()
-        self.os_version_dropdown.clear()  # Clear existing items
-        self.os_version_dropdown.addItems(os_keys)  # Add new OS keys
+        try:
+            self.json_handler.read_json_file(json_file)
+            os_keys = self.json_handler.get_os_keys()
+            self.os_version_dropdown.clear()  # Clear existing items
+            self.os_version_dropdown.addItems(os_keys)  # Add new OS keys
+
+            # Set the default selection to "os-10"
+            if "os-10" in os_keys:
+                self.os_version_dropdown.setCurrentText("os-10")
+        except Error.JsonFileNotFound as e:
+            QtWidgets.QMessageBox.critical(
+                self._window_parrent,
+                "File Not Found",
+                f"The specified JSON file could not be found: {e}",
+            )
+            self.os_version_dropdown.clear()  # Clear choices on error
+        except Error.InvalidJsonFile as e:
+            QtWidgets.QMessageBox.critical(
+                self._window_parrent,
+                "Invalid JSON",
+                f"The JSON file is invalid: {e}",
+            )
+            self.os_version_dropdown.clear()  # Clear choices on error
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self._window_parrent,
+                "Error",
+                f"An unexpected error occurred: {e}",
+            )
+            self.os_version_dropdown.clear()  # Clear choices on error
 
     def update_os_versions(self):
         """Update the OS version dropdown based on the selected JSON file."""
