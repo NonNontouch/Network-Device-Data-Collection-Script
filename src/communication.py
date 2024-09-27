@@ -270,6 +270,7 @@ class connection_manager:
         except Exception as e:
             print(f"Error connecting to Telnet: {e}")
             self.connection = None
+            raise e
 
     def set_serial_connection(self):
         """
@@ -284,6 +285,7 @@ class connection_manager:
         except Exception as e:
             print(f"Error connecting to Serial: {e}")
             self.connection = None
+            raise e
 
     def get_serial_port(self):
         """_Get list of all avaiable serial port in computer._"""
@@ -326,7 +328,7 @@ class connection_manager:
         ) as e:
             # return เพราะ enable ไม่ได้
             print(e, ".While trying to enable device.", sep="")
-            return None
+            raise Error.LoginError("Program can't enable device")
 
         if "show vlt number" in command_dict_json:
             vlt_domain = self.get_vlt_number(command_dict_json)
@@ -343,19 +345,20 @@ class connection_manager:
 
             except Error.ErrorCommand as e:
                 print(e)
+                result[command_list_json[i]] = str(e)
                 continue
             except Error.CommandTimeoutError as e:
                 print(e)
                 if self.connection.is_connection_alive():
                     # connection is alive but command doesn't return with anything skip this command
+                    result[command_list_json[i]] = str(e)
                     continue
                 else:
                     # connection is loss
                     raise Error.ConnectionLossConnect(command)
             except Error.ConnectionLossConnect as e:
                 # connection loss must reconnect
-                print(e)
-                continue
+                raise Error.ConnectionLossConnect(command)
 
         for i in result.values():
             print(i, end=" ")
