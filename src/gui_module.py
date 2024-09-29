@@ -1,10 +1,10 @@
 import os
 import sys
-from time import sleep
 from PyQt5 import QtCore, QtGui, QtWidgets
 from src.communication import connection_manager
 from src.json_handler import json_file
 import src.error as Error
+from src.text_to_pic_module import text_to_pic
 
 
 class GUI:
@@ -150,7 +150,7 @@ class GUI:
             print(e)
 
     def setup_window(self):
-        self.Main_Page = Main_Page(self.Window, self._connection_manager)
+        self.Main_Page = MainPage(self.Window, self._connection_manager)
 
         self.Window.setCentralWidget(self.Main_Page.get_widget())
 
@@ -159,31 +159,29 @@ class GUI:
         sys.exit(self.App.exec_())
 
 
-class Main_Page:
+class MainPage:
 
     def __init__(
         self,
-        window_parrent: QtWidgets.QMainWindow,
+        window_parent: QtWidgets.QMainWindow,
         connection_manager: connection_manager,
     ) -> None:
-        self.main_widget = QtWidgets.QWidget(window_parrent)
+        self.main_widget = QtWidgets.QWidget(window_parent)
         self.main_grid = QtWidgets.QGridLayout(self.main_widget)
-        self._window_parrent = window_parrent
-        self._connection_manager = connection_manager
-        self.__set_input_grid()
-        self.__set_connection_grid()
-        self.__set_json_grid()
+        self._window_parent = window_parent
+        self.connection_manager = connection_manager
+        self.data_collection_in_progress = False
+        self.__setup_input_grid()
+        self.__setup_connection_grid()
+        self.__setup_json_grid()
 
     def get_widget(self):
         return self.main_widget
 
-    def __set_input_grid(self):
+    def __setup_input_grid(self):
         self.input_widget = GUI_Factory.create_widget(
-            self.main_widget, "input_widget", GUI.main_style
+            self.main_widget, "input_widget", GUI.main_style, 150, 800, 230
         )
-        self.input_widget.setMinimumHeight(150)
-        self.input_widget.setMinimumWidth(800)
-        self.input_widget.setMaximumHeight(230)
 
         self.input_grid = QtWidgets.QGridLayout(self.input_widget)
         self.input_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
@@ -231,7 +229,7 @@ class Main_Page:
         self.connection_configure_button = GUI_Factory.create_button(
             "Connection Configure", "popup_dialog_button", GUI.main_style
         )
-        self.connection_configure_button.clicked.connect(self.show_input_dialog)
+        self.connection_configure_button.clicked.connect(self.__show_input_dialog)
         self.input_grid.addWidget(hostname_label, 0, 0)
         self.input_grid.addWidget(self.hostname_input, 0, 1)
         self.input_grid.addWidget(port_label, 0, 2)
@@ -255,7 +253,7 @@ class Main_Page:
             0,
         )
 
-    def __set_connection_grid(self):
+    def __setup_connection_grid(self):
         self.connection_widget = GUI_Factory.create_widget(
             self.main_widget, "input_widget", GUI.main_style
         )
@@ -277,11 +275,11 @@ class Main_Page:
             "SSH", "./src/Assets/SSH.png", self.connection_type_button_group
         )
         ssh_button.setChecked(True)
-        ssh_button.clicked.connect(lambda: self.update_port_lineedit(22))
+        ssh_button.clicked.connect(lambda: self.__update_port_lineedit(22))
         telnet_button = GUI_Factory.create_radio_button(
             "Telnet", "./src/Assets/Telnet.png", self.connection_type_button_group
         )
-        telnet_button.clicked.connect(lambda: self.update_port_lineedit(23))
+        telnet_button.clicked.connect(lambda: self.__update_port_lineedit(23))
 
         serial_button = GUI_Factory.create_radio_button(
             "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
@@ -289,7 +287,7 @@ class Main_Page:
         self.connect_botton = GUI_Factory.create_button(
             "Connect", "popup_dialog_button", GUI.main_style
         )
-        self.connect_botton.clicked.connect(self.create_connection)
+        self.connect_botton.clicked.connect(self.__create_connection)
 
         self.comport_combo_box = ComboBoxWithDynamicArrow()
         connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
@@ -358,7 +356,7 @@ class Main_Page:
             0,
         )
 
-    def __set_json_grid(self):
+    def __setup_json_grid(self):
         # Create a new widget for the JSON grid layout
         json_widget = GUI_Factory.create_widget(self.main_widget, "input_widget")
         json_grid = QtWidgets.QGridLayout(json_widget)
@@ -396,7 +394,7 @@ class Main_Page:
         json_grid.addWidget(self.os_version_dropdown, 1, 1)  # Row 1, Column 1
 
         # Load the default JSON and populate the OS versions
-        self.load_os_versions("Dell.json")
+        self.__load_os_versions("Dell.json")
 
         # Connect the JSON dropdown's change event to update the OS version dropdown
         self.json_dropdown.currentTextChanged.connect(self.update_os_versions)
@@ -411,7 +409,7 @@ class Main_Page:
             json_widget, 2, 0, 1, 2
         )  # Place in row 2, spanning 2 columns
 
-    def load_os_versions(self, json_file):
+    def __load_os_versions(self, json_file):
         """Load OS versions from the selected JSON file into the OS version dropdown."""
         try:
             self.json_handler.read_json_file(json_file)
@@ -424,21 +422,21 @@ class Main_Page:
                 self.os_version_dropdown.setCurrentText("os-10")
         except Error.JsonFileNotFound as e:
             QtWidgets.QMessageBox.critical(
-                self._window_parrent,
+                self._window_parent,
                 "File Not Found",
                 f"The specified JSON file could not be found: {e}",
             )
             self.os_version_dropdown.clear()  # Clear choices on error
         except Error.InvalidJsonFile as e:
             QtWidgets.QMessageBox.critical(
-                self._window_parrent,
+                self._window_parent,
                 "Invalid JSON",
                 f"The JSON file is invalid: {e}",
             )
             self.os_version_dropdown.clear()  # Clear choices on error
         except Exception as e:
             QtWidgets.QMessageBox.critical(
-                self._window_parrent,
+                self._window_parent,
                 "Error",
                 f"An unexpected error occurred: {e}",
             )
@@ -447,19 +445,154 @@ class Main_Page:
     def update_os_versions(self):
         """Update the OS version dropdown based on the selected JSON file."""
         selected_file = self.json_dropdown.currentText()
-        self.load_os_versions(selected_file)  # Load OS versions for the selected file
+        self.__load_os_versions(selected_file)  # Load OS versions for the selected file
 
-    def show_input_dialog(self):
+    def __show_input_dialog(self):
         # Create and show the input dialog
-        dialog = Variable_Configure_Page(self.main_widget)
+        dialog = VariableConfigurePage(self.main_widget)
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             user_input = dialog.get_input()
-            self._connection_manager.set_parameters(user_input)
+            self.connection_manager.set_parameters(user_input)
 
-    def update_port_lineedit(self, port):
+    def __update_port_lineedit(self, port):
         self.port_input.setText(str(port))  # Set the port input
 
-    def create_connection(self):
+    def __create_connection(self):
+        """Main function to create a connection to the device."""
+        # First, check for required fields
+        if not self.__check_required_fields():
+            return  # Alert will be shown in the __check_required_fields method
+
+        selected_os_version = self.__get_selected_os_version()
+        if selected_os_version is None:
+            return  # User was alerted
+
+        command_dict_json = self.__get_command_dict(selected_os_version)
+        if command_dict_json is None:
+            return  # User was alerted
+
+        # Create and show the loading window
+        loading_window = LoadingWindow(self._window_parent)
+        loading_window.show()
+
+        try:
+            # Attempt to connect to the device
+            self.__connect_to_device()  # Connect to the device
+
+            # Start the data collection thread after successful connection
+            self.data_collector_thread = DataCollectorThread(
+                self.connection_manager, command_dict_json
+            )
+
+            # Connect signals to handle data collection and errors
+            self.data_collector_thread.data_collected.connect(self.on_data_collected)
+            self.data_collector_thread.error_occurred.connect(self.on_error_occurred)
+            self.data_collector_thread.finished.connect(
+                loading_window.accept
+            )  # Close loading on thread finish
+
+            self.data_collector_thread.start()  # Start the thread
+        except Exception as e:
+            loading_window.accept()  # Close loading window if there's an error
+            GUI_Factory.create_alert_window(
+                self._window_parent, str(e)
+            )  # Show alert for connection error
+
+    def on_data_collected(self, result):
+        """Handle the collected data and show the result page."""
+        if result is not None:
+            self._result = result
+            self._show_result_page()  # Show the result page
+
+    def on_error_occurred(self, error_message):
+        """Handle errors and show a message box."""
+        QtWidgets.QMessageBox.critical(
+            self._window_parent, "Connection Error", error_message
+        )
+
+    def __execute_connection(self, command_dict_json, loading_window):
+        """Execute the connection process and send commands."""
+        try:
+            # Attempt to send commands after the connection has been established
+            self._result = self.__send_commands(
+                command_dict_json
+            )  # Send commands to the device
+        except Exception as e:
+            self._result = None  # Handle error scenario
+            # You can emit a signal here to indicate an error if you want to catch it in the main thread
+            print(f"Error during command execution: {e}")
+        finally:
+            loading_window.accept()  # Close the loading dialog
+            self.data_collection_in_progress = False  # Reset flag
+
+            # Show result page if data collection is complete
+            if self._result is not None:
+                self._show_result_page()  # Show the result page
+            else:
+                QtWidgets.QMessageBox.critical(
+                    self._window_parent,
+                    "Error",
+                    "No result was returned from the commands.",
+                )
+
+    def __check_required_fields(self):
+        """Check if all required fields are filled."""
+        connection_params = {
+            "hostname": self.hostname_input.text().strip(),
+            "port": self.port_input.text().strip(),
+            "username": self.username_input.text().strip(),
+            "password": self.password_input.text().strip(),
+        }
+
+        missing_fields = [key for key, value in connection_params.items() if not value]
+
+        if missing_fields:
+            # Alert for missing fields
+            missing_fields_str = ", ".join(missing_fields)
+            QtWidgets.QMessageBox.warning(
+                self._window_parent,
+                "Missing Input",
+                f"The following fields are required: {missing_fields_str}",
+            )
+            return False  # Indicate that not all required fields are filled
+
+        return True  # All required fields are filled
+
+    def __get_selected_os_version(self):
+        """Get the selected OS version from the dropdown and validate it."""
+        selected_os_version = self.os_version_dropdown.currentText()
+
+        if not selected_os_version:
+            QtWidgets.QMessageBox.warning(
+                self._window_parent,
+                "Missing OS Version",
+                "Please select an OS version before attempting to connect.",
+            )
+            return None  # Indicate that the selection was invalid
+
+        return selected_os_version
+
+    def __get_command_dict(self, os_version):
+        """Retrieve the command dictionary for the selected OS version."""
+        try:
+            command_dict_json = self.json_handler.get_command_json(os_version)
+            if command_dict_json is None:
+                QtWidgets.QMessageBox.warning(
+                    self._window_parent,
+                    "Invalid OS Version",
+                    f"No commands found for the selected OS version: {os_version}.",
+                )
+                return None  # Indicate that no commands were found
+            return command_dict_json
+        except Error.JsonOSTemplateError as e:
+            QtWidgets.QMessageBox.critical(
+                self._window_parent,
+                "OS Template Error",
+                f"Error processing commands for OS version: {str(e)}",
+            )
+            return None  # Indicate an error occurred
+
+    def __connect_to_device(self):
         # Gather values from all QLineEdit inputs
         connection_params = {
             "hostname": self.hostname_input.text().strip(),
@@ -477,28 +610,28 @@ class Main_Page:
             # Create an alert for missing variables
             missing_fields_str = ", ".join(missing_fields)
             QtWidgets.QMessageBox.warning(
-                self._window_parrent,
+                self._window_parent,
                 "Missing Input",
                 f"The following fields are required: {missing_fields_str}",
             )
             return  # Exit the method if there are missing fields
-        self._connection_manager.set_parameters(connection_params)
+        self.connection_manager.set_parameters(connection_params)
         try:
             if (
                 self.connection_type_button_group.checkedButton()
                 == self.connection_type_button_group.buttons()[0]
             ):  # SSH
-                self._connection_manager.set_ssh_connection()
+                self.connection_manager.set_ssh_connection()
             elif (
                 self.connection_type_button_group.checkedButton()
                 == self.connection_type_button_group.buttons()[1]
             ):  # Telnet
-                self._connection_manager.set_telnet_connection()
+                self.connection_manager.set_telnet_connection()
             elif (
                 self.connection_type_button_group.checkedButton()
                 == self.connection_type_button_group.buttons()[2]
             ):  # Serial
-                self._connection_manager.set_serial_connection()
+                self.connection_manager.set_serial_connection()
 
             # Optionally, print or log the successful connection status
             print(
@@ -507,33 +640,74 @@ class Main_Page:
             )
 
         except Exception as e:
+            GUI_Factory.create_alert_window(self._window_parent, str(e))
+
+            raise e
+
+    def __send_commands(self, command_dict_json):
+        """Send the commands to the connection manager."""
+        try:
+            result = self.connection_manager.send_list_command(command_dict_json)
+            print(f"Commands sent successfully for OS version.")
+            return result
+        except Error.ConnectionError as e:
             QtWidgets.QMessageBox.critical(
-                self._window_parrent,
+                self._window_parent,
+                "Connection Error",
+                f"Error connecting to the device: {str(e)}",
+            )
+        except Exception as e:
+            QtWidgets.QMessageBox.critical(
+                self._window_parent,
                 "Unexpected Error",
                 f"An unexpected error occurred: {str(e)}",
             )
 
+    def _show_result_page(self):
+        """Show the result page dialog."""
+        """ dummy_results = {
+            "Tetminal Length 0": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show running-configuration": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show interface status": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show cpu usage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show memory": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show system status": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show vlt number": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show vlt status": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show tech-support": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "Tetminal Length 0 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show running-configuration 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show interface status 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show cpu usage 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show memory 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show system status 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show vlt number 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show vlt status 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+            "show tech-support 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+        }"""
+        dialog = ResultPage(self._window_parent, self._result)
+        dialog.exec_()  # Show the result page
 
-class Variable_Configure_Page:
 
-    def __init__(self, widget_parrent: QtWidgets.QMainWindow) -> None:
+class VariableConfigurePage:
+
+    def __init__(self, widget_parent: QtWidgets.QMainWindow) -> None:
         # Create a QDialog instance
-        self._widget_parrent = widget_parrent
-        self.dialog = QtWidgets.QDialog(widget_parrent)
-        self.dialog_grid_layout = QtWidgets.QGridLayout(self.dialog)
-        self.dialog.setWindowTitle("Input Dialog")
-        self._set_ip_input_variable_grid()
-        self._set_serial_input_grid()
+        self._widget_parrent = widget_parent
+        self.varialbe_configure_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.verialbe_configure_page_grid_layout = QtWidgets.QGridLayout(
+            self.varialbe_configure_page_dialog
+        )
+        self.varialbe_configure_page_dialog.setWindowTitle("Input Dialog")
+        self.__set_ip_input_variable_grid()
+        self.__set_serial_input_grid()
         self._set_button_grid()
 
-    def _set_ip_input_variable_grid(self):
+    def __set_ip_input_variable_grid(self):
         self.input_widget = GUI_Factory.create_widget(
-            self._widget_parrent, "input_widget", GUI.main_style
+            self._widget_parrent, "input_widget", GUI.main_style, 220, 500, 400
         )
 
-        self.input_widget.setMinimumHeight(220)
-        self.input_widget.setMinimumWidth(500)
-        self.input_widget.setMaximumHeight(400)
         self.ip_variable_grid = QtWidgets.QGridLayout(self.input_widget)
         self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
@@ -598,20 +772,16 @@ class Variable_Configure_Page:
         self.ip_variable_grid.addWidget(self.command_retriesdelay_input, 3, 1)
         self.ip_variable_grid.addWidget(command_maxretries_label, 4, 0)
         self.ip_variable_grid.addWidget(self.command_maxretries_input, 4, 1)
-        self.dialog_grid_layout.addWidget(
+        self.verialbe_configure_page_grid_layout.addWidget(
             self.input_widget,
             0,
             0,
         )
 
-    def _set_serial_input_grid(self):
+    def __set_serial_input_grid(self):
         self.serial_widget = GUI_Factory.create_widget(
-            self._widget_parrent, "input_widget"
+            self._widget_parrent, "input_widget", GUI.main_style, 180, 500, 400
         )
-
-        self.serial_widget.setMinimumHeight(180)
-        self.serial_widget.setMinimumWidth(500)
-        self.serial_widget.setMaximumHeight(400)
 
         self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
         banner_label = GUI_Factory.create_label(
@@ -666,7 +836,7 @@ class Variable_Configure_Page:
         self.serial_variable_grid.addWidget(parity_info, 2, 2)
         self.serial_variable_grid.addWidget(stopbits_label, 3, 0)
         self.serial_variable_grid.addWidget(self.stopbits_input, 3, 1, 1, 2)
-        self.dialog_grid_layout.addWidget(
+        self.verialbe_configure_page_grid_layout.addWidget(
             self.serial_widget,
             1,
             0,
@@ -674,11 +844,8 @@ class Variable_Configure_Page:
 
     def _set_button_grid(self):
         self.button_widget = GUI_Factory.create_widget(
-            self._widget_parrent, "input_widget"
+            self._widget_parrent, "input_widget", GUI.main_style, 40, 500, 100
         )
-        self.button_widget.setMinimumHeight(40)
-        self.button_widget.setMinimumWidth(500)
-        self.button_widget.setMaximumHeight(100)
 
         self.button_grid = QtWidgets.QGridLayout(self.button_widget)
 
@@ -695,18 +862,18 @@ class Variable_Configure_Page:
         self.apply_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
 
-        self.dialog_grid_layout.addWidget(self.button_widget, 2, 0)
+        self.verialbe_configure_page_grid_layout.addWidget(self.button_widget, 2, 0)
 
     def exec_(self):
-        return self.dialog.exec_()
+        return self.varialbe_configure_page_dialog.exec_()
 
     def accept(self):
         self.result = QtWidgets.QDialog.Accepted
-        self.dialog.accept()
+        self.varialbe_configure_page_dialog.accept()
 
     def reject(self):
         self.result = QtWidgets.QDialog.Rejected
-        self.dialog.reject()
+        self.varialbe_configure_page_dialog.reject()
 
     def get_input(self):
         return {
@@ -723,7 +890,135 @@ class Variable_Configure_Page:
         return self.result
 
 
+class LoadingWindow(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Loading")
+        self.setModal(True)
+        self.setFixedSize(500, 300)
+
+        layout = QtWidgets.QVBoxLayout(self)
+        self.label = QtWidgets.QLabel("Processing, please wait...")
+        self.progress = QtWidgets.QProgressBar()
+        self.progress.setRange(0, 0)  # Indeterminate progress
+        layout.addWidget(self.label)
+        layout.addWidget(self.progress)
+
+
+class DataCollectorThread(QtCore.QThread):
+    data_collected = QtCore.pyqtSignal(dict)
+    error_occurred = QtCore.pyqtSignal(str)
+
+    def __init__(self, connection_manager, command_dict_json):
+        super().__init__()
+        self.connection_manager = connection_manager
+        self.command_dict_json = command_dict_json
+
+    def run(self):
+        """Run the connection and command sending in a separate thread."""
+        try:
+            result = self.connection_manager.send_list_command(self.command_dict_json)
+            self.data_collected.emit(result)  # Emit the collected data
+        except Exception as e:
+            self.error_occurred.emit(str(e))  # Emit error message
+
+
+class ResultPage:
+    def __init__(self, widget_parent, result: dict) -> None:
+        self._widget_parent = widget_parent
+        self.result_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.result_page_dialog.setWindowTitle("Result Viewer")
+        self._result = result
+        self.text_to_picture = text_to_pic()  # Instance of text_to_pic
+        self.__set_result_grid()
+
+    def __set_result_grid(self):
+        result_widget = GUI_Factory.create_widget(None, "input_widget", GUI.main_style)
+
+        # Create a vertical layout for the dialog
+        result_grid = QtWidgets.QVBoxLayout(result_widget)
+
+        # Create a scroll area
+        scroll_area = QtWidgets.QScrollArea()
+        scroll_area.setWidgetResizable(True)
+
+        # Create a widget to hold the results
+        results_content_widget = (
+            QtWidgets.QWidget()
+        )  # Create a QWidget for the scroll area content
+        results_layout = QtWidgets.QVBoxLayout(
+            results_content_widget
+        )  # Layout for the results content
+
+        # Populate the results content with QLabel or any other widgets displaying results
+        for title, result in self._result.items():
+            # Create the image from the result text
+            banner_label = GUI_Factory.create_label(title, "")
+            banner_label.setStyleSheet(
+                "font-weight: bold; font-size: 16px; background-color: #2F2F2F; color: white; padding: 5px;"
+            )
+
+            image = self.text_to_picture.create_text_image(result)
+
+            # Convert PIL Image to QImage and then to QPixmap
+            q_image = self.pil_to_qimage(image)  # Convert the image
+            image_pixmap = QtGui.QPixmap.fromImage(
+                q_image
+            )  # Create QPixmap from QImage
+
+            # Create a QLabel to display the image
+            image_label = QtWidgets.QLabel()
+            image_label.setPixmap(image_pixmap)
+            image_label.setScaledContents(True)  # Enable scaling
+            image_label.setMaximumSize(1280, 720)  # Set a maximum size for display
+            results_layout.addWidget(banner_label)
+            results_layout.addWidget(image_label)
+
+            # Create a button to save the image
+            save_button = QtWidgets.QPushButton(f"Save {title} Image")
+            save_button.clicked.connect(
+                lambda checked, img=image, title=title: self.save_image(img, title)
+            )
+            results_layout.addWidget(save_button)
+
+        # Set the results widget for the scroll area
+        scroll_area.setWidget(results_content_widget)
+
+        # Add the scroll area to the main layout
+        result_grid.addWidget(scroll_area)
+
+        # Set the main layout to the dialog
+        self.result_page_dialog.setLayout(result_grid)
+
+    def save_image(self, image, title: str):
+        """Open a file dialog to save the image."""
+        options = QtWidgets.QFileDialog.Options()
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.result_page_dialog,
+            f"Save {title} Image",
+            f"{title}.png",
+            "Images (*.png);;All Files (*)",
+            options=options,
+        )
+        if file_path:
+            image.save(file_path)  # Save the image to the selected path
+
+    def pil_to_qimage(self, pil_image):
+        """Convert PIL Image to QImage."""
+        rgb_image = pil_image.convert("RGBA")
+        data = rgb_image.tobytes("raw", "RGBA")
+        q_image = QtGui.QImage(
+            data, rgb_image.width, rgb_image.height, QtGui.QImage.Format_RGBA8888
+        )
+        return q_image
+
+    def exec_(self):
+        """Show the result dialog."""
+        return self.result_page_dialog.exec_()  # Call exec_ on the dialog instance
+
+
 class GUI_Factory:
+
     @staticmethod
     def center_window(Window: QtWidgets.QWidget):
         window_geometry = Window.frameGeometry()
@@ -768,19 +1063,35 @@ class GUI_Factory:
         return temp_lineedit
 
     @staticmethod
-    def create_widget(parrent: QtWidgets.QWidget, obj_name: str, stylesheet: str = ""):
-        temp_widtet = QtWidgets.QWidget(parrent)
-        temp_widtet.setObjectName(obj_name)
+    def create_widget(
+        parent,
+        obj_name,
+        stylesheet="",
+        min_height=None,
+        min_width=None,
+        max_height=None,
+        max_width=None,
+    ):
+        widget = QtWidgets.QWidget(parent)
+        widget.setObjectName(obj_name)
         if stylesheet:
-            temp_widtet.setStyleSheet(stylesheet)
-        return temp_widtet
+            widget.setStyleSheet(stylesheet)
+        if min_height:
+            widget.setMinimumHeight(min_height)
+        if min_width:
+            widget.setMinimumWidth(min_width)
+        if max_height:
+            widget.setMaximumHeight(max_height)
+        if max_width:
+            widget.setMaximumWidth(max_width)
+        return widget
 
     @staticmethod
     def create_button(text: str, obj_name: str, stylesheet: str = ""):
         temp_button = QtWidgets.QPushButton(text)
         temp_button.setObjectName(obj_name)
         temp_button.setStyleSheet(stylesheet)
-        temp_button.setCursor(QtCore.Qt.PointingHandCursor)
+        temp_button.setCursor(QtCore.Qt.CursorShape.PointingHandCursor)
         return temp_button
 
     @staticmethod
@@ -846,6 +1157,14 @@ class GUI_Factory:
             info_icon.setObjectName(obj_name)
 
         return info_icon
+
+    @staticmethod
+    def create_alert_window(parrent: QtWidgets.QMainWindow, message: str):
+        return QtWidgets.QMessageBox.critical(
+            parrent,
+            "Unexpected Error",
+            f"An unexpected error occurred: {str(message)}",
+        )
 
 
 class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
