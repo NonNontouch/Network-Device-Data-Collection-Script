@@ -6,9 +6,13 @@ class text_to_pic:
     width: int
     height: int
     bg_color: tuple[float, ...] = (0, 0, 0)
-    text_color: tuple[float, ...] = (0, 0, 0)
+    text_color: tuple[float, ...] = (255, 255, 255)
     font: ImageFont
     line_spacing: int = 5
+    padding: int = 10
+
+    def __init__(self) -> None:
+        self.set_font("./src/Assets/BAHNSCHRIFT.ttf", 24)
 
     def set_width(self, width: int):
         if width <= 0:
@@ -26,8 +30,6 @@ class text_to_pic:
     def set_text_color(self, text_color):
         self.text_color = text_color
 
-    def set_text(self, text: str):
-        self.text = text
 
     def set_line_spacing(self, line_spacing: int):
         self.line_spacing = line_spacing
@@ -41,7 +43,10 @@ class text_to_pic:
         except OSError as e:
             raise Error.NoFontError(font_path) from e
 
-    def create_text_image(self, text: str, padding=10, line_spacing=5):
+    def set_paadding(self, padding: int):
+        self.padding = padding
+
+    def create_text_image(self, text: str):
         # Load a font
 
         # Create a drawing context to calculate text size
@@ -62,23 +67,28 @@ class text_to_pic:
         )
 
         # Calculate the image size, adding padding
-        image_width = max_width + 2 * padding
-        image_height = total_height + 2 * padding + (len(lines) - 1) * line_spacing
+        image_width = max_width + 2 * self.padding
+        image_height = (
+            total_height + 2 * self.padding + (len(lines) - 1) * self.line_spacing
+        )
 
         # Create an image with the calculated size
         image = Image.new("RGB", (image_width, image_height), color=self.bg_color)
         draw = ImageDraw.Draw(image)
 
         # Draw the text on the image with padding
-        y_offset = padding
+        y_offset = self.padding
         for line in lines:
             draw.text(
-                xy=(padding, y_offset), text=line, font=self.font, fill=self.text_color
+                xy=(self.padding, y_offset),
+                text=line,
+                font=self.font,
+                fill=self.text_color,
             )
             y_offset += (
                 draw.textbbox(xy=(0, 0), text=line, font=self.font)[3]
                 - draw.textbbox(xy=(0, 0), text=line, font=self.font)[1]
-                + line_spacing
+                + self.line_spacing
             )
 
         return image
