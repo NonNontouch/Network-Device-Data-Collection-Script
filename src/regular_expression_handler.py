@@ -4,9 +4,9 @@ import re
 class data_handling:
 
     def find_prompt(output: str):
-        if output != "":
+        if output:
             last_line = output.splitlines()[-1].strip()
-            if re.match(r"([\w-]+)(>|(?:\(config.*\))*#)", last_line):
+            if re.match(r"^\s*([\w-]+)(>|#)\s*$", last_line):
                 return True
         return False
 
