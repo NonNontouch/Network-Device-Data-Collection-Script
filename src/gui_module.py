@@ -1,5 +1,7 @@
 import os
+import subprocess
 import sys
+import tempfile
 from PyQt5 import QtCore, QtGui, QtWidgets
 from src.communication import connection_manager
 from src.json_handler import json_file
@@ -10,7 +12,7 @@ from src.text_to_pic_module import text_to_pic
 class GUI:
     main_style = """
     #main_window{
-        background-color: #1C1C1C;
+        background-color: #4D4D4D;
     }
     #input_label{
         border: 2px solid black;  
@@ -86,7 +88,7 @@ class GUI:
         background-color: #4D4D4D;  
         font-size: 16px;
     }
-    #configure_dialog_banner{
+    #label_banner{
        font-size: 18px; 
         font-weight: bold; 
         color: white; 
@@ -143,8 +145,19 @@ class GUI:
             self.App.setFont(default_text_font)
 
             self.Window = QtWidgets.QMainWindow()
+            self.Window.setObjectName("main_window")
             self.Window.setStyleSheet(GUI.main_style)
             self.Window.setWindowTitle("Network Device Data Collection Script")
+
+            icon_path = os.path.abspath("./src/Assets/AppIcon.png")
+            if os.path.exists(icon_path):  # Check if the icon file exists
+                self.App.setWindowIcon(QtGui.QIcon(icon_path))
+                self.Window.setWindowIcon(
+                    QtGui.QIcon(icon_path)
+                )  # Set icon for the window
+            else:
+                print(f"Icon file not found: {icon_path}")
+
             self._connection_manager = connection_manager()
         except Exception as e:
             print(e)
@@ -472,7 +485,7 @@ class MainPage:
             return  # User was alerted
 
         # Create and show the loading window
-        loading_window = LoadingWindow(self._window_parent)
+        loading_window = GUI_Factory.create_loading_window(self._window_parent)
         loading_window.show()
 
         try:
@@ -494,6 +507,7 @@ class MainPage:
             self.data_collector_thread.start()  # Start the thread
         except Exception as e:
             loading_window.accept()  # Close loading window if there's an error
+            print("alert in create connection")
             GUI_Factory.create_alert_window(
                 self._window_parent, str(e)
             )  # Show alert for connection error
@@ -509,31 +523,6 @@ class MainPage:
         QtWidgets.QMessageBox.critical(
             self._window_parent, "Connection Error", error_message
         )
-
-    def __execute_connection(self, command_dict_json, loading_window):
-        """Execute the connection process and send commands."""
-        try:
-            # Attempt to send commands after the connection has been established
-            self._result = self.__send_commands(
-                command_dict_json
-            )  # Send commands to the device
-        except Exception as e:
-            self._result = None  # Handle error scenario
-            # You can emit a signal here to indicate an error if you want to catch it in the main thread
-            print(f"Error during command execution: {e}")
-        finally:
-            loading_window.accept()  # Close the loading dialog
-            self.data_collection_in_progress = False  # Reset flag
-
-            # Show result page if data collection is complete
-            if self._result is not None:
-                self._show_result_page()  # Show the result page
-            else:
-                QtWidgets.QMessageBox.critical(
-                    self._window_parent,
-                    "Error",
-                    "No result was returned from the commands.",
-                )
 
     def __check_required_fields(self):
         """Check if all required fields are filled."""
@@ -640,8 +629,8 @@ class MainPage:
             )
 
         except Exception as e:
+            print("alert in connect to device")
             GUI_Factory.create_alert_window(self._window_parent, str(e))
-
             raise e
 
     def __send_commands(self, command_dict_json):
@@ -712,7 +701,7 @@ class VariableConfigurePage:
         self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
         banner_label = GUI_Factory.create_label(
-            "IP Timer Configuration", "configure_dialog_banner", GUI.main_style
+            "IP Timer Configuration", "label_banner", GUI.main_style
         )
 
         login_wait_label = GUI_Factory.create_label(
@@ -785,7 +774,7 @@ class VariableConfigurePage:
 
         self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
         banner_label = GUI_Factory.create_label(
-            "Serial Configuration", "configure_dialog_banner", GUI.main_style
+            "Serial Configuration", "label_banner", GUI.main_style
         )
         bytesize_label = GUI_Factory.create_label(
             label_text="Bytesize",
@@ -890,21 +879,6 @@ class VariableConfigurePage:
         return self.result
 
 
-class LoadingWindow(QtWidgets.QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowTitle("Loading")
-        self.setModal(True)
-        self.setFixedSize(500, 300)
-
-        layout = QtWidgets.QVBoxLayout(self)
-        self.label = QtWidgets.QLabel("Processing, please wait...")
-        self.progress = QtWidgets.QProgressBar()
-        self.progress.setRange(0, 0)  # Indeterminate progress
-        layout.addWidget(self.label)
-        layout.addWidget(self.progress)
-
-
 class DataCollectorThread(QtCore.QThread):
     data_collected = QtCore.pyqtSignal(dict)
     error_occurred = QtCore.pyqtSignal(str)
@@ -930,91 +904,158 @@ class ResultPage:
         self.result_page_dialog.setWindowTitle("Result Viewer")
         self._result = result
         self.text_to_picture = text_to_pic()  # Instance of text_to_pic
+        self.temp_image_paths = []  # To store paths of temp images
         self.__set_result_grid()
 
     def __set_result_grid(self):
-        result_widget = GUI_Factory.create_widget(None, "input_widget", GUI.main_style)
+        # Create the main grid layout
+        main_grid = QtWidgets.QGridLayout(self._widget_parent)
 
-        # Create a vertical layout for the dialog
-        result_grid = QtWidgets.QVBoxLayout(result_widget)
+        # Create a widget to hold the results
+        result_widget = GUI_Factory.create_widget(None, "input_widget", GUI.main_style)
+        results_layout = QtWidgets.QGridLayout(result_widget)
 
         # Create a scroll area
         scroll_area = QtWidgets.QScrollArea()
         scroll_area.setWidgetResizable(True)
+        scroll_area.setWidget(
+            result_widget
+        )  # Set the result widget as the scroll area content
 
-        # Create a widget to hold the results
-        results_content_widget = (
-            QtWidgets.QWidget()
-        )  # Create a QWidget for the scroll area content
-        results_layout = QtWidgets.QVBoxLayout(
-            results_content_widget
-        )  # Layout for the results content
-
-        # Populate the results content with QLabel or any other widgets displaying results
+        # Populate the results content with buttons for each result
+        i = 0
         for title, result in self._result.items():
-            # Create the image from the result text
-            banner_label = GUI_Factory.create_label(title, "")
-            banner_label.setStyleSheet(
-                "font-weight: bold; font-size: 16px; background-color: #2F2F2F; color: white; padding: 5px;"
+            sub_widget = GUI_Factory.create_widget(
+                self._widget_parent, "single_result_widget", GUI.main_style, 400, 100
             )
+            sub_grid = QtWidgets.QGridLayout(sub_widget)
+            command_banner = GUI_Factory.create_label(
+                f"{title}", "label_banner", GUI.main_style
+            )
+            sub_grid.addWidget(command_banner, 0, 0, 1, 2)
+            # Create a temporary file to hold the generated image
+            temp_image_path = self.generate_image(result)
 
-            image = self.text_to_picture.create_text_image(result)
-
-            # Convert PIL Image to QImage and then to QPixmap
-            q_image = self.pil_to_qimage(image)  # Convert the image
-            image_pixmap = QtGui.QPixmap.fromImage(
-                q_image
-            )  # Create QPixmap from QImage
-
-            # Create a QLabel to display the image
-            image_label = QtWidgets.QLabel()
-            image_label.setPixmap(image_pixmap)
-            image_label.setScaledContents(True)  # Enable scaling
-            image_label.setMaximumSize(1280, 720)  # Set a maximum size for display
-            results_layout.addWidget(banner_label)
-            results_layout.addWidget(image_label)
+            # Create a button to preview the image
+            preview_button = GUI_Factory.create_button(
+                f"Preview {title} Image", "", GUI.main_style
+            )
+            preview_button.clicked.connect(
+                lambda checked, img_path=temp_image_path: self.preview_image(img_path)
+            )
+            sub_grid.addWidget(preview_button, 1, 0, 1, 2)
 
             # Create a button to save the image
-            save_button = QtWidgets.QPushButton(f"Save {title} Image")
-            save_button.clicked.connect(
-                lambda checked, img=image, title=title: self.save_image(img, title)
+            save_image_button = QtWidgets.QPushButton(f"Save {title} Image")
+            save_image_button.clicked.connect(
+                lambda checked, img_path=temp_image_path, title=title: self.save_image(
+                    img_path, title
+                )
             )
-            results_layout.addWidget(save_button)
+            sub_grid.addWidget(save_image_button, 2, 0)
 
-        # Set the results widget for the scroll area
-        scroll_area.setWidget(results_content_widget)
+            # Create a button to save the text
+            save_text_button = QtWidgets.QPushButton(f"Save {title} Text")
+            save_text_button.clicked.connect(
+                lambda checked, text=result, title=title: self.save_text(text, title)
+            )
+            sub_grid.addWidget(save_text_button, 2, 1)
+            results_layout.addWidget(sub_widget, i, 0)
+            i += 1
 
-        # Add the scroll area to the main layout
-        result_grid.addWidget(scroll_area)
+        # Add the scroll area to the main grid layout
+        main_grid.addWidget(scroll_area, 0, 0)
 
         # Set the main layout to the dialog
-        self.result_page_dialog.setLayout(result_grid)
+        self.result_page_dialog.setLayout(main_grid)
 
-    def save_image(self, image, title: str):
-        """Open a file dialog to save the image."""
+    def save_text(self, text, title):
+        """Open a file dialog to save the text."""
         options = QtWidgets.QFileDialog.Options()
+        # Get the current working directory
+        default_path = os.getcwd()
+        # Set default file name
+        default_file_name = f"{title}.txt"
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.result_page_dialog,
-            f"Save {title} Image",
-            f"{title}.png",
-            "Images (*.png);;All Files (*)",
+            f"Save {title} Text",
+            os.path.join(default_path, default_file_name),
+            "Text Files (*.txt);;All Files (*)",
             options=options,
         )
         if file_path:
-            image.save(file_path)  # Save the image to the selected path
+            with open(file_path, "w") as file:
+                file.write(text)  # Save the text to the selected path
 
-    def pil_to_qimage(self, pil_image):
-        """Convert PIL Image to QImage."""
-        rgb_image = pil_image.convert("RGBA")
-        data = rgb_image.tobytes("raw", "RGBA")
-        q_image = QtGui.QImage(
-            data, rgb_image.width, rgb_image.height, QtGui.QImage.Format_RGBA8888
+    def save_image(self, image_path, title):
+        """Open a file dialog to save the image."""
+        options = QtWidgets.QFileDialog.Options()
+        # Get the current working directory
+        default_path = os.getcwd()
+        # Set default file name based on the title
+        default_file_name = f"{title}.png"  # Assuming you want to save it as a PNG
+        file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
+            self.result_page_dialog,
+            f"Save {title} Image",
+            os.path.join(default_path, default_file_name),
+            "Images (*.png *.jpg *.bmp);;All Files (*)",
+            options=options,
         )
-        return q_image
+        if file_path:
+            # Copy the temporary image to the new location
+            with open(image_path, "rb") as src_file:
+                with open(file_path, "wb") as dst_file:
+                    dst_file.write(
+                        src_file.read()
+                    )  # Save the image to the selected path
+
+    def generate_image(self, text: str) -> str:
+        """Generate an image from the given text and return the file path."""
+        image = self.text_to_picture.create_text_image(text)
+
+        # Create a temporary file
+        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        temp_file_path = temp_file.name
+
+        # Save the image to the temporary file
+        image.save(temp_file_path)  # Save the image
+        temp_file.close()  # Close the temp file so it can be accessed later
+
+        # Store the temp file path for cleanup
+        self.temp_image_paths.append(temp_file_path)
+
+        return temp_file_path  # Return the path to the temporary image
+
+    def cleanup_temp_images(self):
+        """Delete all temporary image files created."""
+        for path in self.temp_image_paths:
+            if os.path.exists(path):
+                os.remove(path)
+
+    def preview_image(self, image_path: str):
+        """Open the image using the default image viewer."""
+        # Check if the image file exists
+        if os.path.exists(image_path):
+            try:
+                # subprocess.Popen(["xdg-open", image_path], shell=True)  # For Linux
+                subprocess.Popen(["open", image_path])  # For macOS
+                # subprocess.Popen(['start', image_path], shell=True)  # For Windows
+            except Exception as e:
+                QtWidgets.QMessageBox.warning(
+                    self._widget_parent, "Error", f"Failed to open image: {str(e)}"
+                )
+        else:
+            QtWidgets.QMessageBox.warning(
+                self._widget_parent,
+                "File Not Found",
+                f"The specified image file does not exist: {image_path}",
+            )
 
     def exec_(self):
-        """Show the result dialog."""
-        return self.result_page_dialog.exec_()  # Call exec_ on the dialog instance
+        """Show the result dialog and cleanup temp images on close."""
+        result = self.result_page_dialog.exec_()
+        self.cleanup_temp_images()  # Clean up temp images when dialog is closed
+        return result
 
 
 class GUI_Factory:
@@ -1165,6 +1206,28 @@ class GUI_Factory:
             "Unexpected Error",
             f"An unexpected error occurred: {str(message)}",
         )
+
+    @staticmethod
+    def create_loading_window(
+        parent=None,
+        width: int = 400,
+        height: int = 150,
+        message="Processing, please wait...",
+    ):
+        """Create a loading window with a progress bar."""
+        loading_window = QtWidgets.QDialog(parent)
+        loading_window.setWindowTitle("Loading")
+        loading_window.setModal(True)
+        loading_window.setFixedSize(width, height)
+
+        layout = QtWidgets.QVBoxLayout(loading_window)
+        label = QtWidgets.QLabel(message)
+        progress = QtWidgets.QProgressBar()
+        progress.setRange(0, 0)  # Indeterminate progress
+        layout.addWidget(label)
+        layout.addWidget(progress)
+
+        return loading_window
 
 
 class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
