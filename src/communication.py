@@ -294,75 +294,89 @@ class connection_manager:
             return self.serial_port_list
 
     def send_list_command(self, command_dict_json: dict):
-        """_Send command to device from sequnce given in dict argument._
+        """
+        Send command to device from the sequence given in the dict argument.
 
         Args:
-            command_list_json (dict): _A dict variable which contain command template._
+            command_dict_json (dict): A dict variable containing command templates.
 
         Raises:
-            Error.ConnectionError: _If connection is None, Functino will raise this error._
+            Error.ConnectionError: If connection is None, this function will raise this error.
 
         Returns:
-            dict: _A dict of command result from given command._
+            dict: A dict of command results from the given commands.
         """
-        result: dict = {}
-        if self.connection == None:
-            raise Error.ConnectionError
+        # Create a copy of the command dictionary to avoid modifying the original
+        temp_command_dict_json = command_dict_json.copy()
+        result = {}
+
+        # Check connection status
+        if self.connection is None:
+            raise Error.ConnectionError("No connection established.")
+
+        # Attempt to enable the device if necessary
+        self._enable_device_if_needed(temp_command_dict_json)
+
+        # Check for VLT number command and update command list if present
+        self._update_vlt_status(temp_command_dict_json)
+
+        # Prepare the command list
+        command_list_json = list(temp_command_dict_json.keys())
+        command_list = list(temp_command_dict_json.values())
+
+        # Send commands to the device
+        for command_key, command in zip(command_list_json, command_list):
+            result[command_key] = self._send_command(command_key, command)
+
+        # Log results and close connection
+        self.connection.close_connection()
+        for output in result.values():
+            print(output, end=" ")
+
+        return result
+
+    def _enable_device_if_needed(self, command_dict):
+        """Enable the device if it's not already enabled."""
         try:
-            if self.connection.is_enable() is False:
-                if "Enable Device" in command_dict_json:
-                    self.connection.enable_device(
-                        enable_command=command_dict_json["Enable Device"],
-                        password=self.enable_password,
-                    )
-                    del command_dict_json["Enable Device"]
+            if not self.connection.is_enable():
+                enable_command = command_dict.pop("Enable Device", None)
+                if enable_command:
+                    self.connection.enable_device(enable_command, self.enable_password)
                 else:
                     raise Error.LoginError("Program can't enable device")
-            else:
-                pass
         except (
             Error.ErrorCommand,
             Error.ConnectionLossConnect,
             Error.CommandTimeoutError,
             Error.ErrorEnable_Password,
         ) as e:
-            # return เพราะ enable ไม่ได้
             print(e, ".While trying to enable device.", sep="")
             raise Error.LoginError("Program can't enable device")
 
-        if "show vlt number" in command_dict_json:
-            vlt_domain = self.get_vlt_number(command_dict_json)
-            command_dict_json["show vlt status"] = f"show vlt {vlt_domain}"
-            pass
-
-        command_list = list(command_dict_json.values())
-        command_list_json = list(command_dict_json.keys())
-
-        for i in range(len(command_list_json)):
+    def _update_vlt_status(self, command_dict):
+        """Update the VLT status in the command dictionary if 'show vlt number' is present."""
+        if "show vlt number" in command_dict:
             try:
-                command = command_list[i]
-                result[command_list_json[i]] = self.connection.send_command(command)
+                vlt_domain = self.get_vlt_number(command_dict)
+                command_dict["show vlt status"] = f"show vlt {vlt_domain}"
+            except Exception:
+                raise Error.ErrorGetVLTNumber()
 
-            except Error.ErrorCommand as e:
-                print(e)
-                result[command_list_json[i]] = str(e)
-                continue
-            except Error.CommandTimeoutError as e:
-                print(e)
-                if self.connection.is_connection_alive():
-                    # connection is alive but command doesn't return with anything skip this command
-                    result[command_list_json[i]] = str(e)
-                    continue
-                else:
-                    # connection is loss
-                    raise Error.ConnectionLossConnect(command)
-            except Error.ConnectionLossConnect as e:
-                # connection loss must reconnect
+    def _send_command(self, command_key, command):
+        """Send a single command and handle errors."""
+        try:
+            return self.connection.send_command(command)
+        except Error.ErrorCommand as e:
+            print(e)
+            return str(e)
+        except Error.CommandTimeoutError as e:
+            print(e)
+            if self.connection.is_connection_alive():
+                return str(e)  # Skip this command if connection is alive
+            else:
                 raise Error.ConnectionLossConnect(command)
-
-        for i in result.values():
-            print(i, end=" ")
-        return result
+        except Error.ConnectionLossConnect as e:
+            raise Error.ConnectionLossConnect(command)
 
     def get_vlt_number(self, command_dict_json: dict):
         raw_vlt_num = self.connection.send_command(command_dict_json["show vlt number"])

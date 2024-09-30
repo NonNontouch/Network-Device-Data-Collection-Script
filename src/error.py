@@ -19,6 +19,13 @@ class ErrorEnable_Password(Exception):
         super().__init__(self.message)
 
 
+class ErrorGetVLTNumber(Exception):
+    def __init__(self):
+        self.message = f"An error occurred while trying to get VLT number"
+
+        super().__init__(self.message)
+
+
 class ConnectionError(Exception):
     def __init__(self, message: str = "The Connection variable is still null"):
         self.message = message
