@@ -1,4 +1,5 @@
 import os
+import platform
 import subprocess
 import sys
 import tempfile
@@ -132,6 +133,33 @@ class GUI:
         background-color: #4D4D4D;  /* Background color */
         color: white;  /* Text color */
     }
+    #result_button_preview{
+        background-color:  #2196F3;  /* Sky blue background */
+        color: white;  /* White text */
+        border: 2px solid  #2196F3 ;  /* Sky blue border */
+        border-radius: 10px;  /* Rounded corners */
+        padding: 10px 20px;  /* Padding inside the button */
+        font-size: 16px;  /* Font size */
+    }
+    #result_button_save_image{
+        background-color:  #FFA500;  /* orange background */
+        color: white;  /* White text */
+        border: 2px solid  #2196F3 ;  /* orange border */
+        border-radius: 10px;  /* Rounded corners */
+        padding: 10px 20px;  /* Padding inside the button */
+        font-size: 16px;  /* Font size */
+    }
+    #result_button_save_text{
+        background-color:  #ADD8E6;  /* light blue background */
+        color: black;  /* White text */
+        border: 2px solid  #ADD8E6 ;  /* light blue border */
+        border-radius: 10px;  /* Rounded corners */
+        padding: 10px 20px;  /* Padding inside the button */
+        font-size: 16px;  /* Font size */
+    }
+    #single_result_widget{
+        
+    }
     """
 
     def __init__(self) -> None:
@@ -143,7 +171,6 @@ class GUI:
             font_families = QtGui.QFontDatabase.applicationFontFamilies(font_id)
             default_text_font = QtGui.QFont(font_families[0], 18)
             self.App.setFont(default_text_font)
-
             self.Window = QtWidgets.QMainWindow()
             self.Window.setObjectName("main_window")
             self.Window.setStyleSheet(GUI.main_style)
@@ -183,13 +210,25 @@ class MainPage:
         self.main_grid = QtWidgets.QGridLayout(self.main_widget)
         self._window_parent = window_parent
         self.connection_manager = connection_manager
-        self.data_collection_in_progress = False
         self.__setup_input_grid()
         self.__setup_connection_grid()
         self.__setup_json_grid()
 
+        self.debug_button = GUI_Factory.create_button(
+            "Open Debug Window", "popup_dialog_button", GUI.main_style
+        )
+        self.debug_button.clicked.connect(self.open_debug_window)
+        self.main_grid.addWidget(
+            self.debug_button, 3, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
+        )
+
     def get_widget(self):
         return self.main_widget
+
+    def open_debug_window(self):
+        """Open a debug window that captures printed output."""
+        self.debug_window = DebugWindow(self._window_parent)
+        self.debug_window.show()
 
     def __setup_input_grid(self):
         self.input_widget = GUI_Factory.create_widget(
@@ -484,9 +523,12 @@ class MainPage:
         if command_dict_json is None:
             return  # User was alerted
 
-        # Create and show the loading window
+        # Create the loading window but do not block interaction
         loading_window = GUI_Factory.create_loading_window(self._window_parent)
-        loading_window.show()
+        loading_window.setWindowModality(
+            QtCore.Qt.WindowModality.NonModal
+        )  # Set as non-modal
+        loading_window.show()  # Show the loading window
 
         try:
             # Attempt to connect to the device
@@ -508,9 +550,8 @@ class MainPage:
         except Exception as e:
             loading_window.accept()  # Close loading window if there's an error
             print("alert in create connection")
-            GUI_Factory.create_alert_window(
-                self._window_parent, str(e)
-            )  # Show alert for connection error
+
+            # Show alert for connection error
 
     def on_data_collected(self, result):
         """Handle the collected data and show the result page."""
@@ -654,28 +695,54 @@ class MainPage:
 
     def _show_result_page(self):
         """Show the result page dialog."""
-        """ dummy_results = {
-            "Tetminal Length 0": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show running-configuration": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show interface status": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show cpu usage": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show memory": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show system status": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show vlt number": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show vlt status": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show tech-support": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "Tetminal Length 0 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show running-configuration 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show interface status 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show cpu usage 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show memory 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show system status 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show vlt number 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show vlt status 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-            "show tech-support 1": "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
-        }"""
         dialog = ResultPage(self._window_parent, self._result)
         dialog.exec_()  # Show the result page
+
+
+class DebugWindow(QtWidgets.QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.setWindowTitle("Debug Output")
+        self.setGeometry(100, 100, 600, 400)  # Set size and position
+
+        # Create a QTextEdit to display debug output
+        self.text_edit = QtWidgets.QTextEdit(self)
+        self.text_edit.setReadOnly(True)
+
+        layout = QtWidgets.QVBoxLayout()
+        layout.addWidget(self.text_edit)
+        self.setLayout(layout)
+
+        # Redirect stdout to the QTextEdit
+        self.original_stdout = sys.stdout  # Save the original stdout
+        sys.stdout = self  # Redirect stdout to this instance
+
+    def write(self, message):
+        """Write message to the QTextEdit and ensure it auto-scrolls."""
+        self.text_edit.append(message)
+        # Scroll to the bottom
+        self.text_edit.verticalScrollBar().setValue(
+            self.text_edit.verticalScrollBar().maximum()
+        )
+
+    def flush(self):
+        """Flush method for the stdout redirection."""
+        pass  # No need to implement flush for QTextEdit
+
+    def closeEvent(self, event):
+        """Restore stdout when the debug window is closed."""
+        sys.stdout = self.original_stdout  # Restore original stdout
+        event.accept()  # Accept the close event
+
+    def contextMenuEvent(self, event):
+        """Create a context menu for the QTextEdit."""
+        context_menu = QtWidgets.QMenu(self)
+
+        clear_action = context_menu.addAction("Clear")
+        action = context_menu.exec_(event.globalPos())
+
+        if action == clear_action:
+            self.text_edit.clear()  # Clear the QTextEdit content
 
 
 class VariableConfigurePage:
@@ -909,10 +976,12 @@ class ResultPage:
 
     def __set_result_grid(self):
         # Create the main grid layout
-        main_grid = QtWidgets.QGridLayout(self._widget_parent)
+        main_grid = QtWidgets.QGridLayout()
 
         # Create a widget to hold the results
-        result_widget = GUI_Factory.create_widget(None, "input_widget", GUI.main_style)
+        result_widget = GUI_Factory.create_widget(
+            self._widget_parent, "main_window", GUI.main_style
+        )
         results_layout = QtWidgets.QGridLayout(result_widget)
 
         # Create a scroll area
@@ -926,40 +995,70 @@ class ResultPage:
         i = 0
         for title, result in self._result.items():
             sub_widget = GUI_Factory.create_widget(
-                self._widget_parent, "single_result_widget", GUI.main_style, 400, 100
+                self._widget_parent,
+                "input_widget",
+                "",
+                170,
+                350,
             )
             sub_grid = QtWidgets.QGridLayout(sub_widget)
             command_banner = GUI_Factory.create_label(
                 f"{title}", "label_banner", GUI.main_style
             )
             sub_grid.addWidget(command_banner, 0, 0, 1, 2)
-            # Create a temporary file to hold the generated image
-            temp_image_path = self.generate_image(result)
 
-            # Create a button to preview the image
-            preview_button = GUI_Factory.create_button(
-                f"Preview {title} Image", "", GUI.main_style
-            )
-            preview_button.clicked.connect(
-                lambda checked, img_path=temp_image_path: self.preview_image(img_path)
-            )
-            sub_grid.addWidget(preview_button, 1, 0, 1, 2)
-
-            # Create a button to save the image
-            save_image_button = QtWidgets.QPushButton(f"Save {title} Image")
-            save_image_button.clicked.connect(
-                lambda checked, img_path=temp_image_path, title=title: self.save_image(
-                    img_path, title
+            if "show tech-support" in title.lower():
+                # If the title is "show tech-support", do not generate the image
+                # Only create the Save Text button
+                save_text_button = GUI_Factory.create_button(
+                    f"Save {title} Text", "result_button_save_text"
                 )
-            )
-            sub_grid.addWidget(save_image_button, 2, 0)
+                save_text_button.clicked.connect(
+                    lambda checked, text=result, title=title: self.save_text(
+                        text, title
+                    )
+                )
+                sub_grid.addWidget(
+                    save_text_button, 1, 0, 1, 2
+                )  # Span across both columns
+            else:
+                # Create a temporary file to hold the generated image
+                temp_image_path = self.generate_image(result)
 
-            # Create a button to save the text
-            save_text_button = QtWidgets.QPushButton(f"Save {title} Text")
-            save_text_button.clicked.connect(
-                lambda checked, text=result, title=title: self.save_text(text, title)
-            )
-            sub_grid.addWidget(save_text_button, 2, 1)
+                # Create a button to preview the image
+                preview_button = GUI_Factory.create_button(
+                    f"Preview {title} Image", "result_button_preview"
+                )
+                preview_button.clicked.connect(
+                    lambda checked, img_path=temp_image_path: self.preview_image(
+                        img_path
+                    )
+                )
+                sub_grid.addWidget(preview_button, 1, 0, 1, 2)
+
+                # Create a button to save the image
+                save_image_button = GUI_Factory.create_button(
+                    f"Save {title} Image", "result_button_save_image"
+                )
+
+                save_image_button.clicked.connect(
+                    lambda checked, img_path=temp_image_path, title=title: self.save_image(
+                        img_path, title
+                    )
+                )
+                sub_grid.addWidget(save_image_button, 2, 0)
+
+                # Create a button to save the text
+                save_text_button = GUI_Factory.create_button(
+                    f"Save {title} Text", "result_button_save_text"
+                )
+                save_text_button.clicked.connect(
+                    lambda checked, text=result, title=title: self.save_text(
+                        text, title
+                    )
+                )
+                sub_grid.addWidget(save_text_button, 2, 1)  # Add to the right column
+
             results_layout.addWidget(sub_widget, i, 0)
             i += 1
 
@@ -1037,9 +1136,19 @@ class ResultPage:
         # Check if the image file exists
         if os.path.exists(image_path):
             try:
-                # subprocess.Popen(["xdg-open", image_path], shell=True)  # For Linux
-                subprocess.Popen(["open", image_path])  # For macOS
-                # subprocess.Popen(['start', image_path], shell=True)  # For Windows
+                current_os = platform.system()  # Get the OS name
+                if current_os == "Linux":
+                    subprocess.Popen(["xdg-open", image_path])  # For Linux
+                elif current_os == "Darwin":
+                    subprocess.Popen(["open", image_path])  # For macOS
+                elif current_os == "Windows":
+                    subprocess.Popen(["start", image_path], shell=True)  # For Windows
+                else:
+                    QtWidgets.QMessageBox.warning(
+                        self._widget_parent,
+                        "Unsupported OS",
+                        "This operating system is not supported for opening images.",
+                    )
             except Exception as e:
                 QtWidgets.QMessageBox.warning(
                     self._widget_parent, "Error", f"Failed to open image: {str(e)}"
