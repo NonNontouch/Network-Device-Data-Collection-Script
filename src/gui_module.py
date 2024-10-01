@@ -158,7 +158,16 @@ class GUI:
         font-size: 16px;  /* Font size */
     }
     #single_result_widget{
-        
+        background-color: #252525;
+        border: 2px solid black;
+        border-radius: 10px;
+        color: white;  
+    }
+    #result_widget_error{
+        background-color:#DC143C;
+        border: 2px solid black;
+        border-radius: 10px;
+        color: white;  
     }
     """
 
@@ -210,6 +219,7 @@ class MainPage:
         self.main_grid = QtWidgets.QGridLayout(self.main_widget)
         self._window_parent = window_parent
         self.connection_manager = connection_manager
+        self.json_handler = json_file()
         self.__setup_input_grid()
         self.__setup_connection_grid()
         self.__setup_json_grid()
@@ -218,9 +228,7 @@ class MainPage:
             "Open Debug Window", "popup_dialog_button", GUI.main_style
         )
         self.debug_button.clicked.connect(self.open_debug_window)
-        self.main_grid.addWidget(
-            self.debug_button, 3, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
-        )
+        self.main_grid.addWidget(self.debug_button, 3, 0)
 
     def get_widget(self):
         return self.main_widget
@@ -232,11 +240,10 @@ class MainPage:
 
     def __setup_input_grid(self):
         self.input_widget = GUI_Factory.create_widget(
-            self.main_widget, "input_widget", GUI.main_style, 150, 800, 230
+            self.main_widget, "input_widget", GUI.main_style, 160, 800, 230
         )
-
         self.input_grid = QtWidgets.QGridLayout(self.input_widget)
-        self.input_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
         hostname_label = GUI_Factory.create_label(
             label_text="Hostname", obj_name="input_label"
         )
@@ -307,7 +314,7 @@ class MainPage:
 
     def __setup_connection_grid(self):
         self.connection_widget = GUI_Factory.create_widget(
-            self.main_widget, "input_widget", GUI.main_style
+            self.main_widget, "input_widget", GUI.main_style, 160, 800, 230
         )
 
         connection_top_widget = GUI_Factory.create_widget(
@@ -341,20 +348,26 @@ class MainPage:
         )
         self.connect_botton.clicked.connect(self.__create_connection)
 
+        comport_label = GUI_Factory.create_label(
+            label_text="Comport",
+            obj_name="connection_grid_label",
+        )
+        comport_label.setMaximumWidth(100)
         self.comport_combo_box = ComboBoxWithDynamicArrow()
         connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
-        self.comport_combo_box.setMinimumWidth(180)
-
+        self.comport_combo_box.setMinimumWidth(150)
+        baudrate_label = GUI_Factory.create_label(
+            label_text="Baudrate",
+            obj_name="connection_grid_label",
+        )
+        baudrate_label.setMaximumWidth(100)
         connection_botton_grid.addWidget(
-            GUI_Factory.create_label(
-                label_text="Baudrate",
-                obj_name="connection_grid_label",
-            ),
+            baudrate_label,
             0,
             2,
         )
         self.baudrate_combo_box = ComboBoxWithDynamicArrow()
-        self.baudrate_combo_box.setMinimumWidth(150)
+        self.baudrate_combo_box.setMinimumWidth(100)
 
         self.baudrate_combo_box.addItems(
             [
@@ -387,21 +400,14 @@ class MainPage:
         connection_top_grid.addWidget(ssh_button, 0, 0)
         connection_top_grid.addWidget(telnet_button, 0, 1)
         connection_top_grid.addWidget(serial_button, 0, 2)
-        connection_top_grid.addWidget(self.connect_botton, 0, 3)
+        connection_top_grid.addWidget(self.connect_botton, 0, 3, 1, 3)
         connection_botton_grid.addWidget(
-            GUI_Factory.create_label(
-                label_text="Comport",
-                obj_name="connection_grid_label",
-            ),
+            comport_label,
             0,
             0,
         )
-        connection_grid.addWidget(
-            connection_top_widget, 0, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
-        )
-        connection_grid.addWidget(
-            connection_botton_widget, 1, 0, QtCore.Qt.AlignmentFlag.AlignHCenter
-        )
+        connection_grid.addWidget(connection_top_widget, 0, 0)
+        connection_grid.addWidget(connection_botton_widget, 1, 0)
         self.main_grid.addWidget(
             self.connection_widget,
             1,
@@ -410,13 +416,16 @@ class MainPage:
 
     def __setup_json_grid(self):
         # Create a new widget for the JSON grid layout
-        json_widget = GUI_Factory.create_widget(self.main_widget, "input_widget")
+        json_widget = GUI_Factory.create_widget(
+            self.main_widget, "input_widget", GUI.main_style, 160, 800, 230
+        )
         json_grid = QtWidgets.QGridLayout(json_widget)
 
         # Create a label for JSON file selection
         json_label = GUI_Factory.create_label(
             "Select Device Configuration File:", "input_label"
         )
+        json_label.setMaximumWidth(300)
         json_grid.addWidget(json_label, 0, 0)  # Row 0, Column 0
 
         # Create a dropdown using ComboBoxWithDynamicArrow for JSON files
@@ -424,7 +433,7 @@ class MainPage:
         self.json_dropdown.setObjectName("json_dropdown")
 
         # Create an instance of the json_file class and get the list of files
-        self.json_handler = json_file()
+
         self.json_handler.get_list_of_file()
 
         # Populate the JSON dropdown with the list of files, set default value to Dell.json
@@ -452,13 +461,13 @@ class MainPage:
         self.json_dropdown.currentTextChanged.connect(self.update_os_versions)
 
         json_edit_button = GUI_Factory.create_button(
-            "Connection Configure", "popup_dialog_button", GUI.main_style
+            "Edit OS Template", "popup_dialog_button", GUI.main_style
         )
-        json_grid.addWidget(json_edit_button, 2, 0, 2, 2)
+        json_grid.addWidget(json_edit_button, 2, 0, 1, 2)
 
         # Add the json_widget (with the grid layout) to the main grid
         self.main_grid.addWidget(
-            json_widget, 2, 0, 1, 2
+            json_widget, 2, 0
         )  # Place in row 2, spanning 2 columns
 
     def __load_os_versions(self, json_file):
@@ -524,34 +533,40 @@ class MainPage:
             return  # User was alerted
 
         # Create the loading window but do not block interaction
-        loading_window = GUI_Factory.create_loading_window(self._window_parent)
-        loading_window.setWindowModality(
-            QtCore.Qt.WindowModality.NonModal
-        )  # Set as non-modal
-        loading_window.show()  # Show the loading window
+        self._loading_window = GUI_Factory.create_loading_window(self._window_parent)
 
-        try:
-            # Attempt to connect to the device
-            self.__connect_to_device()  # Connect to the device
+        self._loading_window.show()  # Show the loading window
 
-            # Start the data collection thread after successful connection
-            self.data_collector_thread = DataCollectorThread(
-                self.connection_manager, command_dict_json
-            )
+        # Gather values from all QLineEdit inputs for the new thread
+        connection_params = {
+            "hostname": self.hostname_input.text().strip(),
+            "port": self.port_input.text().strip(),
+            "username": self.username_input.text().strip(),
+            "password": self.password_input.text().strip(),
+            "enable_password": self.enable_password_input.text().strip(),
+            "connection_type": self.connection_type_button_group.checkedButton().text(),
+        }
 
-            # Connect signals to handle data collection and errors
-            self.data_collector_thread.data_collected.connect(self.on_data_collected)
-            self.data_collector_thread.error_occurred.connect(self.on_error_occurred)
-            self.data_collector_thread.finished.connect(
-                loading_window.accept
-            )  # Close loading on thread finish
+        # Create and start the new connection thread
+        self.connection_thread = DataCollectorThread(
+            params=connection_params,
+            connection_manager=self.connection_manager,
+            command_dict_json=command_dict_json,
+        )
+        self.connection_thread.connection_successful.connect(
+            self.on_connection_successful
+        )
+        self.connection_thread.error_occurred.connect(self.on_error_occurred)
+        self.connection_thread.data_collected.connect(self.on_data_collected)
+        self.connection_thread.finished.connect(self._loading_window.accept)
 
-            self.data_collector_thread.start()  # Start the thread
-        except Exception as e:
-            loading_window.accept()  # Close loading window if there's an error
-            print("alert in create connection")
+        self.connection_thread.start()  # Start the thread
 
-            # Show alert for connection error
+    def on_connection_successful(self, params):
+        """Handle successful connection."""
+        print("Connection established successfully with parameters:", params)
+
+        self._loading_window.update_label("Connected, Collecting data...")
 
     def on_data_collected(self, result):
         """Handle the collected data and show the result page."""
@@ -564,6 +579,7 @@ class MainPage:
         QtWidgets.QMessageBox.critical(
             self._window_parent, "Connection Error", error_message
         )
+        self._loading_window.accept()
 
     def __check_required_fields(self):
         """Check if all required fields are filled."""
@@ -621,77 +637,6 @@ class MainPage:
                 f"Error processing commands for OS version: {str(e)}",
             )
             return None  # Indicate an error occurred
-
-    def __connect_to_device(self):
-        # Gather values from all QLineEdit inputs
-        connection_params = {
-            "hostname": self.hostname_input.text().strip(),
-            "port": self.port_input.text().strip(),
-            "username": self.username_input.text().strip(),
-            "password": self.password_input.text().strip(),
-            "enable_password": self.enable_password_input.text().strip(),
-        }
-        missing_fields = []
-        for key, value in connection_params.items():
-            if key != "enable_password" and not value:  # Check if the value is empty
-                missing_fields.append(key)
-
-        if missing_fields:
-            # Create an alert for missing variables
-            missing_fields_str = ", ".join(missing_fields)
-            QtWidgets.QMessageBox.warning(
-                self._window_parent,
-                "Missing Input",
-                f"The following fields are required: {missing_fields_str}",
-            )
-            return  # Exit the method if there are missing fields
-        self.connection_manager.set_parameters(connection_params)
-        try:
-            if (
-                self.connection_type_button_group.checkedButton()
-                == self.connection_type_button_group.buttons()[0]
-            ):  # SSH
-                self.connection_manager.set_ssh_connection()
-            elif (
-                self.connection_type_button_group.checkedButton()
-                == self.connection_type_button_group.buttons()[1]
-            ):  # Telnet
-                self.connection_manager.set_telnet_connection()
-            elif (
-                self.connection_type_button_group.checkedButton()
-                == self.connection_type_button_group.buttons()[2]
-            ):  # Serial
-                self.connection_manager.set_serial_connection()
-
-            # Optionally, print or log the successful connection status
-            print(
-                "Connection established successfully with parameters:",
-                connection_params,
-            )
-
-        except Exception as e:
-            print("alert in connect to device")
-            GUI_Factory.create_alert_window(self._window_parent, str(e))
-            raise e
-
-    def __send_commands(self, command_dict_json):
-        """Send the commands to the connection manager."""
-        try:
-            result = self.connection_manager.send_list_command(command_dict_json)
-            print(f"Commands sent successfully for OS version.")
-            return result
-        except Error.ConnectionError as e:
-            QtWidgets.QMessageBox.critical(
-                self._window_parent,
-                "Connection Error",
-                f"Error connecting to the device: {str(e)}",
-            )
-        except Exception as e:
-            QtWidgets.QMessageBox.critical(
-                self._window_parent,
-                "Unexpected Error",
-                f"An unexpected error occurred: {str(e)}",
-            )
 
     def _show_result_page(self):
         """Show the result page dialog."""
@@ -947,21 +892,42 @@ class VariableConfigurePage:
 
 
 class DataCollectorThread(QtCore.QThread):
+    connection_successful = QtCore.pyqtSignal(dict)
     data_collected = QtCore.pyqtSignal(dict)
     error_occurred = QtCore.pyqtSignal(str)
 
-    def __init__(self, connection_manager, command_dict_json):
+    def __init__(
+        self,
+        params: dict,
+        connection_manager: connection_manager,
+        command_dict_json: dict,
+    ):
         super().__init__()
         self.connection_manager = connection_manager
         self.command_dict_json = command_dict_json
+        self.params = params
 
     def run(self):
-        """Run the connection and command sending in a separate thread."""
         try:
+            self.connection_manager.set_parameters(self.params)
+
+            # Set the connection type based on the parameters
+            if self.params.get("connection_type") == "SSH":
+                self.connection_manager.set_ssh_connection()
+            elif self.params.get("connection_type") == "Telnet":
+                self.connection_manager.set_telnet_connection()
+            elif self.params.get("connection_type") == "Serial":
+                self.connection_manager.set_serial_connection()
+
+            # Emit success signal
+            self.connection_successful.emit(self.params)
             result = self.connection_manager.send_list_command(self.command_dict_json)
             self.data_collected.emit(result)  # Emit the collected data
+
         except Exception as e:
+            print(e)
             self.error_occurred.emit(str(e))  # Emit error message
+        """Run the connection and command sending in a separate thread."""
 
 
 class ResultPage:
@@ -994,13 +960,22 @@ class ResultPage:
         # Populate the results content with buttons for each result
         i = 0
         for title, result in self._result.items():
-            sub_widget = GUI_Factory.create_widget(
-                self._widget_parent,
-                "input_widget",
-                "",
-                170,
-                350,
-            )
+            if "An error occurred while executing the" in result:
+                sub_widget = GUI_Factory.create_widget(
+                    self._widget_parent,
+                    "result_widget_error",
+                    "",
+                    170,
+                    350,
+                )
+            else:
+                sub_widget = GUI_Factory.create_widget(
+                    self._widget_parent,
+                    "single_result_widget",
+                    "",
+                    170,
+                    350,
+                )
             sub_grid = QtWidgets.QGridLayout(sub_widget)
             command_banner = GUI_Factory.create_label(
                 f"{title}", "label_banner", GUI.main_style
@@ -1319,24 +1294,40 @@ class GUI_Factory:
     @staticmethod
     def create_loading_window(
         parent=None,
-        width: int = 400,
+        width: int = 550,
         height: int = 150,
-        message="Processing, please wait...",
+        message="Connecting to device, Please wait....",
+        WindowModality=QtCore.Qt.WindowModality.NonModal,
     ):
-        """Create a loading window with a progress bar."""
-        loading_window = QtWidgets.QDialog(parent)
-        loading_window.setWindowTitle("Loading")
-        loading_window.setModal(True)
-        loading_window.setFixedSize(width, height)
-
-        layout = QtWidgets.QVBoxLayout(loading_window)
-        label = QtWidgets.QLabel(message)
-        progress = QtWidgets.QProgressBar()
-        progress.setRange(0, 0)  # Indeterminate progress
-        layout.addWidget(label)
-        layout.addWidget(progress)
-
+        """Create and return an instance of the LoadingWindow class."""
+        loading_window = GUI_Factory.__LoadingWindow(parent, width, height, message)
+        loading_window.setWindowModality(WindowModality)
         return loading_window
+
+    class __LoadingWindow(QtWidgets.QDialog):
+        def __init__(
+            self,
+            parent,
+            width,
+            height,
+            message,
+        ):
+            super().__init__(parent)
+            self.setWindowTitle("Loading")
+            self.setModal(True)
+            self.setFixedSize(width, height)
+
+            self.layout = QtWidgets.QVBoxLayout(self)
+            self.label = QtWidgets.QLabel(message)
+            self.progress = QtWidgets.QProgressBar()
+            self.progress.setRange(0, 0)  # Indeterminate progress
+
+            self.layout.addWidget(self.label)
+            self.layout.addWidget(self.progress)
+
+        def update_label(self, new_message: str):
+            """Update the label text of the loading window."""
+            self.label.setText(new_message)
 
 
 class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
