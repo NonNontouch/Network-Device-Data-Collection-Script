@@ -360,8 +360,6 @@ class connection_manager:
                 # connection loss must reconnect
                 raise Error.ConnectionLossConnect(command)
 
-        for i in result.values():
-            print(i, end=" ")
         return result
 
     def get_vlt_number(self, command_dict_json: dict):
