@@ -14,7 +14,7 @@ class data_handling:
         # หาคำว่า invalid หรือ command not found ถ้ามี ให้return True ถ้าไม่มี return false
         return (
             re.search(
-                r"Invalid input|command not found|Unrecognized|Unknown command|Incomplete command|Illegal command",
+                r"Invalid input|command not found|Unrecognized|Unknown command|Incomplete command|Illegal command|Error: Value out of range",
                 output,
                 flags=re.IGNORECASE,
             )
