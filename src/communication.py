@@ -318,13 +318,12 @@ class connection_manager:
                     del command_dict_json["Enable Device"]
                 else:
                     raise Error.LoginError("Program can't enable device")
-            else:
-                pass
         except (
             Error.ErrorCommand,
             Error.ConnectionLossConnect,
             Error.CommandTimeoutError,
             Error.ErrorEnable_Password,
+            Exception,
         ) as e:
             # return เพราะ enable ไม่ได้
             print(e, ".While trying to enable device.", sep="")
