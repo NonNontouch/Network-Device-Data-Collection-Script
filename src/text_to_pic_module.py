@@ -1,18 +1,21 @@
-from PIL import Image, ImageDraw, ImageFont
+import cv2
+import numpy as np
 import src.error as Error
 
 
 class text_to_pic:
     width: int
     height: int
-    bg_color: tuple[float, ...] = (0, 0, 0)
-    text_color: tuple[float, ...] = (255, 255, 255)
-    font: ImageFont
-    line_spacing: int = 5
-    padding: int = 10
+    bg_color: tuple[int, int, int] = (0, 0, 0)
+    text_color: tuple[int, int, int] = (255, 255, 255)
+    font: int = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale: float = 1
+    thickness: int = 2
+    line_spacing: int = 8
+    padding: int = 20
 
     def __init__(self) -> None:
-        self.set_font("./src/Assets/BAHNSCHRIFT.ttf", 24)
+        self.set_font_scale(1)
 
     def set_width(self, width: int):
         if width <= 0:
@@ -24,71 +27,95 @@ class text_to_pic:
             return
         self.height = height
 
-    def set_bg_color(self, bg_color: tuple[float, ...]):
+    def set_bg_color(self, bg_color: tuple[int, int, int]):
         self.bg_color = bg_color
 
-    def set_text_color(self, text_color):
+    def set_text_color(self, text_color: tuple[int, int, int]):
         self.text_color = text_color
-
 
     def set_line_spacing(self, line_spacing: int):
         self.line_spacing = line_spacing
 
-    def set_font(self, font_path=None, font_size=24):
-        try:
-            if font_path == None:
-                self.font = ImageFont.load_default(font_size)
-            else:
-                self.font = ImageFont.truetype(font_path, font_size)
-        except OSError as e:
-            raise Error.NoFontError(font_path) from e
+    def set_font_scale(self, font_scale: float):
+        self.font_scale = font_scale
 
-    def set_paadding(self, padding: int):
-        self.padding = padding
+    def get_available_fonts(self):
+        # List of OpenCV fonts
+        return [
+            "FONT_HERSHEY_SIMPLEX",
+            "FONT_HERSHEY_PLAIN",
+            "FONT_HERSHEY_DUPLEX",
+            "FONT_HERSHEY_COMPLEX",
+            "FONT_HERSHEY_TRIPLEX",
+            "FONT_HERSHEY_COMPLEX_SMALL",
+            "FONT_HERSHEY_SCRIPT_SIMPLEX",
+            "FONT_HERSHEY_SCRIPT_COMPLEX",
+            "FONT_ITALIC",
+        ]
+
+    def change_font(self, font_name: str):
+        # Map font names to OpenCV font constants
+        font_map = {
+            "FONT_HERSHEY_SIMPLEX": cv2.FONT_HERSHEY_SIMPLEX,
+            "FONT_HERSHEY_PLAIN": cv2.FONT_HERSHEY_PLAIN,
+            "FONT_HERSHEY_DUPLEX": cv2.FONT_HERSHEY_DUPLEX,
+            "FONT_HERSHEY_COMPLEX": cv2.FONT_HERSHEY_COMPLEX,
+            "FONT_HERSHEY_TRIPLEX": cv2.FONT_HERSHEY_TRIPLEX,
+            "FONT_HERSHEY_COMPLEX_SMALL": cv2.FONT_HERSHEY_COMPLEX_SMALL,
+            "FONT_HERSHEY_SCRIPT_SIMPLEX": cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+            "FONT_HERSHEY_SCRIPT_COMPLEX": cv2.FONT_HERSHEY_SCRIPT_COMPLEX,
+        }
+
+        # Set the font if it exists in the map
+        if font_name in font_map:
+            self.font = font_map[font_name]
+        else:
+            print(f"Font '{font_name}' not found. Using default font.")
+
+    def set_thickness(self, thickness: int):
+        self.thickness = thickness
 
     def create_text_image(self, text: str):
-        # Load a font
-
-        # Create a drawing context to calculate text size
-        dummy_image = Image.new("RGB", (1, 1))
-        draw = ImageDraw.Draw(dummy_image)
-
         # Split the text into lines
         lines = text.splitlines()
 
-        # Calculate the maximum width and total height of the text
-        max_width = max(
-            draw.textbbox((0, 0), line, font=self.font)[2] for line in lines
-        )
-        total_height = sum(
-            draw.textbbox((0, 0), line, font=self.font)[3]
-            - draw.textbbox((0, 0), line, font=self.font)[1]
-            for line in lines
-        )
+        # Calculate the size of the text
+        max_width = 0
+        total_height = 0
 
-        # Calculate the image size, adding padding
-        image_width = max_width + 2 * self.padding
-        image_height = (
-            total_height + 2 * self.padding + (len(lines) - 1) * self.line_spacing
-        )
-
-        # Create an image with the calculated size
-        image = Image.new("RGB", (image_width, image_height), color=self.bg_color)
-        draw = ImageDraw.Draw(image)
-
-        # Draw the text on the image with padding
-        y_offset = self.padding
         for line in lines:
-            draw.text(
-                xy=(self.padding, y_offset),
-                text=line,
-                font=self.font,
-                fill=self.text_color,
+            (line_width, line_height), baseline = cv2.getTextSize(
+                line, self.font, self.font_scale, self.thickness
             )
-            y_offset += (
-                draw.textbbox(xy=(0, 0), text=line, font=self.font)[3]
-                - draw.textbbox(xy=(0, 0), text=line, font=self.font)[1]
-                + self.line_spacing
+            max_width = max(max_width, line_width)
+            total_height += line_height + self.line_spacing  # Include line spacing
+
+        # Set the width and height including padding
+        self.width = max_width + 2 * self.padding
+        self.height = total_height + 2 * self.padding
+
+        # Create the image with the calculated size
+        image = np.full((self.height, self.width, 3), self.bg_color, dtype=np.uint8)
+
+        # Calculate the starting position for the first line
+        y = (
+            self.padding
+            + total_height
+            - (len(lines) * (line_height + self.line_spacing))
+            + line_height
+        )
+
+        # Draw each line of text onto the image
+        for line in lines:
+            cv2.putText(
+                image,
+                line,
+                (self.padding, y),
+                self.font,
+                self.font_scale,
+                self.text_color,
+                self.thickness,
             )
+            y += line_height + self.line_spacing
 
         return image

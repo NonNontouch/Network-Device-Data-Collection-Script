@@ -1111,6 +1111,8 @@ class ResultPage:
 
     def generate_image(self, text: str) -> str:
         """Generate an image from the given text and return the file path."""
+        import cv2
+
         image = self.text_to_picture.create_text_image(text)
 
         # Create a temporary file
@@ -1118,7 +1120,7 @@ class ResultPage:
         temp_file_path = temp_file.name
 
         # Save the image to the temporary file
-        image.save(temp_file_path)  # Save the image
+        cv2.imwrite(temp_file_path, image)  # Save the image
         temp_file.close()  # Close the temp file so it can be accessed later
 
         # Store the temp file path for cleanup
