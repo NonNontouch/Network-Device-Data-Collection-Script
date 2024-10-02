@@ -240,7 +240,7 @@ class MainPage:
 
     def __setup_input_grid(self):
         self.input_widget = GUI_Factory.create_widget(
-            self.main_widget, "input_widget", GUI.main_style, 160, 800, 230
+            self.main_widget, "input_widget", GUI.main_style, 160, 825, 230
         )
         self.input_grid = QtWidgets.QGridLayout(self.input_widget)
 
@@ -314,7 +314,7 @@ class MainPage:
 
     def __setup_connection_grid(self):
         self.connection_widget = GUI_Factory.create_widget(
-            self.main_widget, "input_widget", GUI.main_style, 160, 800, 230
+            self.main_widget, "input_widget", GUI.main_style, 160, 825, 230
         )
 
         connection_top_widget = GUI_Factory.create_widget(
@@ -352,22 +352,22 @@ class MainPage:
             label_text="Comport",
             obj_name="connection_grid_label",
         )
-        comport_label.setMaximumWidth(100)
+        comport_label.setMinimumWidth(150)
         self.comport_combo_box = ComboBoxWithDynamicArrow()
         connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
-        self.comport_combo_box.setMinimumWidth(150)
+        self.comport_combo_box.setMinimumWidth(450)
         baudrate_label = GUI_Factory.create_label(
             label_text="Baudrate",
             obj_name="connection_grid_label",
         )
-        baudrate_label.setMaximumWidth(100)
+        baudrate_label.setMinimumWidth(150)
         connection_botton_grid.addWidget(
             baudrate_label,
             0,
             2,
         )
         self.baudrate_combo_box = ComboBoxWithDynamicArrow()
-        self.baudrate_combo_box.setMinimumWidth(100)
+        self.baudrate_combo_box.setMinimumWidth(250)
 
         self.baudrate_combo_box.addItems(
             [
@@ -417,7 +417,7 @@ class MainPage:
     def __setup_json_grid(self):
         # Create a new widget for the JSON grid layout
         json_widget = GUI_Factory.create_widget(
-            self.main_widget, "input_widget", GUI.main_style, 160, 800, 230
+            self.main_widget, "input_widget", GUI.main_style, 160, 825, 230
         )
         json_grid = QtWidgets.QGridLayout(json_widget)
 
@@ -425,7 +425,7 @@ class MainPage:
         json_label = GUI_Factory.create_label(
             "Select Device Configuration File:", "input_label"
         )
-        json_label.setMaximumWidth(300)
+        json_label.setMinimumWidth(350)
         json_grid.addWidget(json_label, 0, 0)  # Row 0, Column 0
 
         # Create a dropdown using ComboBoxWithDynamicArrow for JSON files
@@ -528,7 +528,7 @@ class MainPage:
         if selected_os_version is None:
             return  # User was alerted
 
-        command_dict_json = self.__get_command_dict(selected_os_version)
+        command_dict_json = self.__get_command_dict(selected_os_version).copy()
         if command_dict_json is None:
             return  # User was alerted
 
@@ -552,12 +552,14 @@ class MainPage:
             params=connection_params,
             connection_manager=self.connection_manager,
             command_dict_json=command_dict_json,
+            is_done_create_img=False,
         )
         self.connection_thread.connection_successful.connect(
             self.on_connection_successful
         )
         self.connection_thread.error_occurred.connect(self.on_error_occurred)
         self.connection_thread.data_collected.connect(self.on_data_collected)
+        self.connection_thread.image_generated.connect(self.on_image_generated)
         self.connection_thread.finished.connect(self._loading_window.accept)
 
         self.connection_thread.start()  # Start the thread
@@ -571,8 +573,11 @@ class MainPage:
     def on_data_collected(self, result):
         """Handle the collected data and show the result page."""
         if result is not None:
-            self._result = result
-            self._show_result_page()  # Show the result page
+            self._loading_window.update_label(
+                "Collecting data Done, Generating image..."
+            )
+            self._result_page = ResultPage(self._window_parent, result)
+            self.connection_thread.set_result_page(self._result_page)
 
     def on_error_occurred(self, error_message):
         """Handle errors and show a message box."""
@@ -580,6 +585,10 @@ class MainPage:
             self._window_parent, "Connection Error", error_message
         )
         self._loading_window.accept()
+
+    def on_image_generated(self):
+        self._result_page.set_result_grid()
+        self._result_page.exec_()  # Show the result page
 
     def __check_required_fields(self):
         """Check if all required fields are filled."""
@@ -637,11 +646,6 @@ class MainPage:
                 f"Error processing commands for OS version: {str(e)}",
             )
             return None  # Indicate an error occurred
-
-    def _show_result_page(self):
-        """Show the result page dialog."""
-        dialog = ResultPage(self._window_parent, self._result)
-        dialog.exec_()  # Show the result page
 
 
 class DebugWindow(QtWidgets.QDialog):
@@ -894,6 +898,7 @@ class VariableConfigurePage:
 class DataCollectorThread(QtCore.QThread):
     connection_successful = QtCore.pyqtSignal(dict)
     data_collected = QtCore.pyqtSignal(dict)
+    image_generated = QtCore.pyqtSignal()
     error_occurred = QtCore.pyqtSignal(str)
 
     def __init__(
@@ -901,11 +906,14 @@ class DataCollectorThread(QtCore.QThread):
         params: dict,
         connection_manager: connection_manager,
         command_dict_json: dict,
+        is_done_create_img: bool,
     ):
         super().__init__()
         self.connection_manager = connection_manager
         self.command_dict_json = command_dict_json
         self.params = params
+        self.is_done_create_img = is_done_create_img
+        self.result_page = None
 
     def run(self):
         try:
@@ -923,11 +931,22 @@ class DataCollectorThread(QtCore.QThread):
             self.connection_successful.emit(self.params)
             result = self.connection_manager.send_list_command(self.command_dict_json)
             self.data_collected.emit(result)  # Emit the collected data
+            from time import sleep
 
+            while True:
+                sleep(0.1)
+                if self.result_page != None:
+                    print(self.result_page._result)
+                    self.result_page.generate_all_image()
+                    self.image_generated.emit()
+                    break
         except Exception as e:
             print(e)
             self.error_occurred.emit(str(e))  # Emit error message
         """Run the connection and command sending in a separate thread."""
+
+    def set_result_page(self, result_page):
+        self.result_page = result_page
 
 
 class ResultPage:
@@ -938,9 +957,11 @@ class ResultPage:
         self._result = result
         self.text_to_picture = text_to_pic()  # Instance of text_to_pic
         self.temp_image_paths = []  # To store paths of temp images
-        self.__set_result_grid()
 
-    def __set_result_grid(self):
+    def set_result(self, result: dict):
+        self._result = result
+
+    def set_result_grid(self):
         # Create the main grid layout
         main_grid = QtWidgets.QGridLayout()
 
@@ -998,16 +1019,15 @@ class ResultPage:
                 )  # Span across both columns
             else:
                 # Create a temporary file to hold the generated image
-                temp_image_path = self.generate_image(result)
 
                 # Create a button to preview the image
                 preview_button = GUI_Factory.create_button(
                     f"Preview {title} Image", "result_button_preview"
                 )
                 preview_button.clicked.connect(
-                    lambda checked, img_path=temp_image_path: self.preview_image(
-                        img_path
-                    )
+                    lambda checked, img_path=self.temp_image_paths[
+                        i
+                    ]: self.preview_image(img_path)
                 )
                 sub_grid.addWidget(preview_button, 1, 0, 1, 2)
 
@@ -1017,9 +1037,9 @@ class ResultPage:
                 )
 
                 save_image_button.clicked.connect(
-                    lambda checked, img_path=temp_image_path, title=title: self.save_image(
-                        img_path, title
-                    )
+                    lambda checked, img_path=self.temp_image_paths[
+                        i
+                    ], title=title: self.save_image(img_path, title)
                 )
                 sub_grid.addWidget(save_image_button, 2, 0)
 
@@ -1082,6 +1102,12 @@ class ResultPage:
                     dst_file.write(
                         src_file.read()
                     )  # Save the image to the selected path
+
+    def generate_all_image(
+        self,
+    ):
+        for title, result in self._result.items():
+            self.generate_image(result)
 
     def generate_image(self, text: str) -> str:
         """Generate an image from the given text and return the file path."""
