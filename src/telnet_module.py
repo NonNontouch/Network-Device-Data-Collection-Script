@@ -49,12 +49,15 @@ class telnet_connection:
         Returns:
             bool: _True if logged in, False if not._
         """
-        self.connect.write(b"\n")
-        sleep(1)
-        console_name = (
-            self.connect.read_eager().decode("utf-8").splitlines()[-1].strip()
-        )
-        return True if data_handling.find_prompt(console_name) else False
+        #self.connect.write(b"\n")
+        sleep(self._login_wait_time)
+        try:
+            console_name = (
+                self.connect.read_eager().decode("utf-8").splitlines()[-1].strip()
+            )
+            return True if data_handling.find_prompt(console_name) else False
+        except Exception:
+            raise Error.LoginError("Program can't find the username form in login form")
 
     def login(self):
         try:
