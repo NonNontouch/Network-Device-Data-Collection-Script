@@ -84,7 +84,6 @@ class connection_manager:
 
     def get_curr_conf(self):
         """Get all connection parameters as a dictionary.
-
         Returns:
             dict: A dictionary containing all connection parameters.
         """
@@ -298,9 +297,9 @@ class connection_manager:
 
     def get_serial_port(self):
         """_Get list of all avaiable serial port in computer._"""
-        if isinstance(self.connection, serial):
-            self.serial_port_list = self.connection.list_serial_ports()
-            return self.serial_port_list
+        temp_serial_obj = serial(self)
+        self.serial_port_list = temp_serial_obj.list_serial_ports()
+        return self.serial_port_list
 
     def send_list_command(self, command_dict_json: dict):
         """
@@ -336,11 +335,9 @@ class connection_manager:
         # Send commands to the device
         for command_key, command in zip(command_list_json, command_list):
             result[command_key] = self._send_command(command_key, command)
-
+            print("Sending", command, "Done")
         # Log results and close connection
         self.connection.close_connection()
-        for output in result.values():
-            print(output, end=" ")
 
         return result
 
@@ -353,7 +350,7 @@ class connection_manager:
                         enable_command=command_dict["Enable Device"],
                         password=self.enable_password,
                     )
-
+                    print("Enable Done")
                 else:
                     raise Error.LoginError("Program can't enable device")
             if "Enable Device" in command_dict:
