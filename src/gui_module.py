@@ -90,14 +90,13 @@ class GUI:
         font-size: 16px;
     }
     #label_banner{
-       font-size: 18px; 
+        font-size: 18px; 
         font-weight: bold; 
         color: white; 
         padding: 10px; 
         background-color: #4D4D4D;
         border-radius: 10px;
-        text-align: center; /* Center the text */
-        width: 100%; /* Make the label take full width */
+        text-align: center;
     }
     #acceptButton{
         background-color: #4CAF50;  /* Light green background */
@@ -348,14 +347,17 @@ class MainPage:
         )
         self.connect_botton.clicked.connect(self.__create_connection)
 
-        comport_label = GUI_Factory.create_label(
-            label_text="Comport",
+        serial_port_label = GUI_Factory.create_label(
+            label_text="Serial Port",
             obj_name="connection_grid_label",
         )
-        comport_label.setMinimumWidth(150)
-        self.comport_combo_box = ComboBoxWithDynamicArrow()
-        connection_botton_grid.addWidget(self.comport_combo_box, 0, 1)
-        self.comport_combo_box.setMinimumWidth(450)
+        serial_port_label.setMinimumWidth(150)
+        self.serial_port_combo_box = GUI_Factory.create_serial_combobox(
+            self.connection_manager
+        )
+        connection_botton_grid.addWidget(self.serial_port_combo_box, 0, 1)
+        self.serial_port_combo_box.setMinimumWidth(450)
+
         baudrate_label = GUI_Factory.create_label(
             label_text="Baudrate",
             obj_name="connection_grid_label",
@@ -366,7 +368,9 @@ class MainPage:
             0,
             2,
         )
-        self.baudrate_combo_box = ComboBoxWithDynamicArrow()
+        self.baudrate_combo_box = GUI_Factory.create_combobox(
+            self.main_widget, font_size=22
+        )
         self.baudrate_combo_box.setMinimumWidth(250)
 
         self.baudrate_combo_box.addItems(
@@ -402,7 +406,7 @@ class MainPage:
         connection_top_grid.addWidget(serial_button, 0, 2)
         connection_top_grid.addWidget(self.connect_botton, 0, 3, 1, 3)
         connection_botton_grid.addWidget(
-            comport_label,
+            serial_port_label,
             0,
             0,
         )
@@ -429,7 +433,7 @@ class MainPage:
         json_grid.addWidget(json_label, 0, 0)  # Row 0, Column 0
 
         # Create a dropdown using ComboBoxWithDynamicArrow for JSON files
-        self.json_dropdown = ComboBoxWithDynamicArrow(self.main_widget)
+        self.json_dropdown = GUI_Factory.create_combobox(self.main_widget, font_size=22)
         self.json_dropdown.setObjectName("json_dropdown")
 
         # Create an instance of the json_file class and get the list of files
@@ -450,7 +454,9 @@ class MainPage:
         json_grid.addWidget(os_label, 1, 0)  # Row 1, Column 0
 
         # Create a dropdown for OS versions using ComboBoxWithDynamicArrow
-        self.os_version_dropdown = ComboBoxWithDynamicArrow(self.main_widget)
+        self.os_version_dropdown = GUI_Factory.create_combobox(
+            self.main_widget, font_size=22
+        )
         self.os_version_dropdown.setObjectName("os_version_dropdown")
         json_grid.addWidget(self.os_version_dropdown, 1, 1)  # Row 1, Column 1
 
@@ -510,7 +516,9 @@ class MainPage:
 
     def __show_input_dialog(self):
         # Create and show the input dialog
-        dialog = VariableConfigurePage(self.main_widget)
+        dialog = VariableConfigurePage(
+            self.main_widget, self.connection_manager.get_curr_conf()
+        )
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             user_input = dialog.get_input()
             self.connection_manager.set_parameters(user_input)
@@ -696,9 +704,10 @@ class DebugWindow(QtWidgets.QDialog):
 
 class VariableConfigurePage:
 
-    def __init__(self, widget_parent: QtWidgets.QMainWindow) -> None:
+    def __init__(self, widget_parent: QtWidgets.QMainWindow, curr_conf: dict) -> None:
         # Create a QDialog instance
         self._widget_parrent = widget_parent
+        self.curr_conf = curr_conf
         self.varialbe_configure_page_dialog = QtWidgets.QDialog(widget_parent)
         self.verialbe_configure_page_grid_layout = QtWidgets.QGridLayout(
             self.varialbe_configure_page_dialog
@@ -717,7 +726,11 @@ class VariableConfigurePage:
         self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
 
         banner_label = GUI_Factory.create_label(
-            "IP Timer Configuration", "label_banner", GUI.main_style
+            "IP Timer Configuration",
+            "label_banner",
+            alignment=QtCore.Qt.AlignCenter,
+            HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
+            VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
         )
 
         login_wait_label = GUI_Factory.create_label(
@@ -726,7 +739,7 @@ class VariableConfigurePage:
         )
         self.login_wait_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            placeholder_text="Default 3",
+            placeholder_text=f'Default {self.curr_conf["login_wait_time"]}',
         )
         self.login_wait_input.setValidator(QtGui.QDoubleValidator(self.input_widget))
 
@@ -736,19 +749,19 @@ class VariableConfigurePage:
         )
         self.banner_timeout_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            placeholder_text="Default 15",
+            placeholder_text=f'Default {self.curr_conf["banner_timeout"]}',
         )
         self.banner_timeout_input.setValidator(
             QtGui.QDoubleValidator(self.input_widget)
         )
 
         command_retriesdelay_label = GUI_Factory.create_label(
-            label_text="Command Timeout",
+            label_text="Command Retries Delay",
             obj_name="input_label_configure_dialog",
         )
         self.command_retriesdelay_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            placeholder_text="Default 4",
+            placeholder_text=f'Default {self.curr_conf["command_retriesdelay"]}',
         )
         self.command_retriesdelay_input.setValidator(
             QtGui.QDoubleValidator(self.input_widget)
@@ -760,7 +773,7 @@ class VariableConfigurePage:
         )
         self.command_maxretries_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            placeholder_text="Default 4",
+            placeholder_text=f'Default {self.curr_conf["command_maxretries"]}',
         )
         self.command_maxretries_input.setValidator(
             QtGui.QDoubleValidator(self.input_widget)
@@ -790,7 +803,11 @@ class VariableConfigurePage:
 
         self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
         banner_label = GUI_Factory.create_label(
-            "Serial Configuration", "label_banner", GUI.main_style
+            "Serial Configuration",
+            "label_banner",
+            alignment=QtCore.Qt.AlignCenter,
+            HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
+            VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
         )
         bytesize_label = GUI_Factory.create_label(
             label_text="Bytesize",
@@ -798,7 +815,7 @@ class VariableConfigurePage:
         )
         self.bytesize_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            placeholder_text="Default 8",
+            placeholder_text=f'Default {self.curr_conf["bytesize"]}',
         )
         self.bytesize_input.setValidator(QtGui.QIntValidator(self.serial_widget))
 
@@ -808,7 +825,7 @@ class VariableConfigurePage:
         )
         self.parity_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            placeholder_text="Default N",
+            placeholder_text=f'Default {self.curr_conf["parity"]}',
         )
         parity_info = GUI_Factory.create_info_icon(
             icon_path="./src/Assets/info.png",
@@ -829,7 +846,215 @@ class VariableConfigurePage:
         )
         self.stopbits_input = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
-            placeholder_text="Default 1",
+            placeholder_text=f'Default {self.curr_conf["stopbits"]}',
+        )
+        self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.serial_widget))
+
+        self.serial_variable_grid.addWidget(banner_label, 0, 0, 1, 3)
+        self.serial_variable_grid.addWidget(bytesize_label, 1, 0)
+        self.serial_variable_grid.addWidget(self.bytesize_input, 1, 1, 1, 2)
+        self.serial_variable_grid.addWidget(parity_label, 2, 0)
+        self.serial_variable_grid.addWidget(self.parity_input, 2, 1)
+        self.serial_variable_grid.addWidget(parity_info, 2, 2)
+        self.serial_variable_grid.addWidget(stopbits_label, 3, 0)
+        self.serial_variable_grid.addWidget(self.stopbits_input, 3, 1, 1, 2)
+        self.verialbe_configure_page_grid_layout.addWidget(
+            self.serial_widget,
+            1,
+            0,
+        )
+
+    def _set_button_grid(self):
+        self.button_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget", GUI.main_style, 40, 500, 100
+        )
+
+        self.button_grid = QtWidgets.QGridLayout(self.button_widget)
+
+        self.apply_button = GUI_Factory.create_button(
+            "Apply", "acceptButton", GUI.main_style
+        )
+        self.cancel_button = GUI_Factory.create_button(
+            "Cancle", "cancelButton", GUI.main_style
+        )
+
+        self.button_grid.addWidget(self.apply_button, 0, 0)
+        self.button_grid.addWidget(self.cancel_button, 0, 1)
+        self.apply_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.reject)
+
+        self.verialbe_configure_page_grid_layout.addWidget(self.button_widget, 2, 0)
+
+    def exec_(self):
+        return self.varialbe_configure_page_dialog.exec_()
+
+    def accept(self):
+        self.result = QtWidgets.QDialog.Accepted
+        self.varialbe_configure_page_dialog.accept()
+
+    def reject(self):
+        self.result = QtWidgets.QDialog.Rejected
+        self.varialbe_configure_page_dialog.reject()
+
+    def get_input(self):
+        return {
+            "login_wait_time": self.login_wait_input.text(),
+            "banner_timeout": self.banner_timeout_input.text(),
+            "command_retriesdelay": self.command_retriesdelay_input.text(),
+            "command_max_retries": self.command_maxretries_input.text(),
+            "bytesize": self.bytesize_input.text(),
+            "parity": self.parity_input.text(),
+            "stopbits": self.stopbits_input.text(),
+        }
+
+    def result(self):
+        return self.result
+
+
+class OSTemplateConfigurePage:
+
+    def __init__(self, widget_parent: QtWidgets.QMainWindow) -> None:
+        # Create a QDialog instance
+        self._widget_parrent = widget_parent
+        self.varialbe_configure_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.verialbe_configure_page_grid_layout = QtWidgets.QGridLayout(
+            self.varialbe_configure_page_dialog
+        )
+        self.varialbe_configure_page_dialog.setWindowTitle("Input Dialog")
+        self.__set_ip_input_variable_grid()
+        self.__set_serial_input_grid()
+        self._set_button_grid()
+
+    def __set_ip_input_variable_grid(self):
+        self.input_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget", GUI.main_style, 220, 500, 400
+        )
+
+        self.ip_variable_grid = QtWidgets.QGridLayout(self.input_widget)
+        self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+
+        banner_label = GUI_Factory.create_label(
+            "IP Timer Configuration",
+            "label_banner",
+            alignment=QtCore.Qt.AlignCenter,
+            HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
+            VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
+        )
+
+        login_wait_label = GUI_Factory.create_label(
+            label_text="Login Wait Time",
+            obj_name="input_label_configure_dialog",
+        )
+        self.login_wait_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f'Default {self.curr_conf["login_wait_time"]}',
+        )
+        self.login_wait_input.setValidator(QtGui.QDoubleValidator(self.input_widget))
+
+        banner_timeout_label = GUI_Factory.create_label(
+            label_text="Banner Timeout",
+            obj_name="input_label_configure_dialog",
+        )
+        self.banner_timeout_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f'Default {self.curr_conf["banner_timeout"]}',
+        )
+        self.banner_timeout_input.setValidator(
+            QtGui.QDoubleValidator(self.input_widget)
+        )
+
+        command_retriesdelay_label = GUI_Factory.create_label(
+            label_text="Command Retries Delay",
+            obj_name="input_label_configure_dialog",
+        )
+        self.command_retriesdelay_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f'Default {self.curr_conf["command_retriesdelay"]}',
+        )
+        self.command_retriesdelay_input.setValidator(
+            QtGui.QDoubleValidator(self.input_widget)
+        )
+
+        command_maxretries_label = GUI_Factory.create_label(
+            label_text="Command Max Retries",
+            obj_name="input_label_configure_dialog",
+        )
+        self.command_maxretries_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f'Default {self.curr_conf["command_maxretries"]}',
+        )
+        self.command_maxretries_input.setValidator(
+            QtGui.QDoubleValidator(self.input_widget)
+        )
+
+        # Add New Widgets to Grid
+        self.ip_variable_grid.addWidget(banner_label, 0, 0, 1, 2)
+
+        self.ip_variable_grid.addWidget(login_wait_label, 1, 0)
+        self.ip_variable_grid.addWidget(self.login_wait_input, 1, 1)
+        self.ip_variable_grid.addWidget(banner_timeout_label, 2, 0)
+        self.ip_variable_grid.addWidget(self.banner_timeout_input, 2, 1)
+        self.ip_variable_grid.addWidget(command_retriesdelay_label, 3, 0)
+        self.ip_variable_grid.addWidget(self.command_retriesdelay_input, 3, 1)
+        self.ip_variable_grid.addWidget(command_maxretries_label, 4, 0)
+        self.ip_variable_grid.addWidget(self.command_maxretries_input, 4, 1)
+        self.verialbe_configure_page_grid_layout.addWidget(
+            self.input_widget,
+            0,
+            0,
+        )
+
+    def __set_serial_input_grid(self):
+        self.serial_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget", GUI.main_style, 180, 500, 400
+        )
+
+        self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
+        banner_label = GUI_Factory.create_label(
+            "Serial Configuration",
+            "label_banner",
+            alignment=QtCore.Qt.AlignCenter,
+            HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
+            VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
+        )
+        bytesize_label = GUI_Factory.create_label(
+            label_text="Bytesize",
+            obj_name="input_label_configure_dialog",
+        )
+        self.bytesize_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f'Default {self.curr_conf["bytesize"]}',
+        )
+        self.bytesize_input.setValidator(QtGui.QIntValidator(self.serial_widget))
+
+        parity_label = GUI_Factory.create_label(
+            label_text="Parity",
+            obj_name="input_label_configure_dialog",
+        )
+        self.parity_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f'Default {self.curr_conf["parity"]}',
+        )
+        parity_info = GUI_Factory.create_info_icon(
+            icon_path="./src/Assets/info.png",
+            tooltip_text=(
+                "Select a parity option:\n"
+                "E: Even parity (serial.PARITY_EVEN)\n"
+                "N: No parity (serial.PARITY_NONE)\n"
+                "M: Mark parity (serial.PARITY_MARK)\n"
+                "O: Odd parity (serial.PARITY_ODD)\n"
+                "S: Space parity (serial.PARITY_SPACE)"
+            ),
+            obj_name="info_icon",
+        )
+
+        stopbits_label = GUI_Factory.create_label(
+            label_text="Stopbits",
+            obj_name="input_label_configure_dialog",
+        )
+        self.stopbits_input = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f'Default {self.curr_conf["stopbits"]}',
         )
         self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.serial_widget))
 
@@ -938,6 +1163,7 @@ class DataCollectorThread(QtCore.QThread):
                     self.result_page.generate_all_image()
                     self.image_generated.emit()
                     break
+            self.quit()
         except Exception as e:
             print(e)
             self.error_occurred.emit(str(e))  # Emit error message
@@ -963,7 +1189,7 @@ class ResultPage:
 
     def set_configure_grid(self):
         result_configure_widget = GUI_Factory.create_widget(
-            self._widget_parent, "result_configure_widget"
+            self._widget_parent, "result_configure_widget", "", 50, 600
         )
         result_configure_grid = QtWidgets.QGridLayout(result_configure_widget)
         configure_button = GUI_Factory.create_button(
@@ -980,7 +1206,7 @@ class ResultPage:
 
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             user_input = dialog.get_input()
-
+            print(user_input)
             # Set new parameters for image generation
             self.text_to_picture.set_parameters(user_input)
 
@@ -1044,7 +1270,11 @@ class ResultPage:
                 )
             sub_grid = QtWidgets.QGridLayout(sub_widget)
             command_banner = GUI_Factory.create_label(
-                f"{title}", "label_banner", GUI.main_style
+                f"{title}",
+                "label_banner",
+                alignment=QtCore.Qt.AlignCenter,
+                HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
+                VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
             )
             sub_grid.addWidget(command_banner, 0, 0, 1, 2)
 
@@ -1078,7 +1308,7 @@ class ResultPage:
 
                 # Create a button to save the image
                 save_image_button = GUI_Factory.create_button(
-                    f"Save {title} Image", "result_button_save_image"
+                    f"Save Image", "result_button_save_image"
                 )
 
                 save_image_button.clicked.connect(
@@ -1090,7 +1320,7 @@ class ResultPage:
 
                 # Create a button to save the text
                 save_text_button = GUI_Factory.create_button(
-                    f"Save {title} Text", "result_button_save_text"
+                    f"Save Text", "result_button_save_text"
                 )
                 save_text_button.clicked.connect(
                     lambda checked, text=result, title=title: self.save_text(
@@ -1277,7 +1507,9 @@ class ResultImageConfigurePage:
         font_label = GUI_Factory.create_label(
             f"Font: {self.font}", "input_label_configure_dialog"
         )
-        self.font_dropdown = ComboBoxWithDynamicArrow(self._widget_parrent, fontsize=16)
+        self.font_dropdown = GUI_Factory.create_combobox(
+            self._widget_parrent, font_size=18
+        )
         self.font_dropdown.addItems(
             [
                 "FONT_HERSHEY_SIMPLEX",
@@ -1467,11 +1699,22 @@ class GUI_Factory:
         Window.move(window_geometry.topLeft())
 
     @staticmethod
-    def create_label(label_text: str, obj_name: str, stylesheet: str = ""):
+    def create_label(
+        label_text: str,
+        obj_name: str,
+        stylesheet: str = "",
+        alignment=None,
+        HorSizePolicy=None,
+        VerSizePolicy=None,
+    ):
         temp_label = QtWidgets.QLabel(text=label_text)
         temp_label.setObjectName(obj_name)
         if stylesheet:
             temp_label.setStyleSheet(stylesheet)
+        if alignment:
+            temp_label.setAlignment(alignment)
+        if HorSizePolicy is not None and VerSizePolicy is not None:
+            temp_label.setSizePolicy(HorSizePolicy, VerSizePolicy)
         return temp_label
 
     @staticmethod
@@ -1535,11 +1778,18 @@ class GUI_Factory:
         radio_button.setStyleSheet(
             """
             QRadioButton {
-            background-color: #696969; 
-            border-radius: 10px;
-            padding: 5px;
-            border: none;
-            color: white;
+                background-color: #696969; 
+                border-radius: 10px;
+                padding: 5px;
+                border: none;
+                color: white;
+            }
+            QRadioButton::checked{
+                background-color: green; 
+                border-radius: 10px;
+                padding: 5px;
+                border: none;
+                color: white;
             }
             QRadioButton::indicator {
                 width: 16px;
@@ -1604,11 +1854,24 @@ class GUI_Factory:
         WindowModality=QtCore.Qt.WindowModality.NonModal,
     ):
         """Create and return an instance of the LoadingWindow class."""
-        loading_window = GUI_Factory.__LoadingWindow(parent, width, height, message)
+        loading_window = GUI_Factory.LoadingWindow(parent, width, height, message)
         loading_window.setWindowModality(WindowModality)
         return loading_window
 
-    class __LoadingWindow(QtWidgets.QDialog):
+    @staticmethod
+    def create_combobox(parent=None, font_size: int = 18):
+        temp_combobox = GUI_Factory.ComboBoxWithDynamicArrow(parent, font_size)
+        return temp_combobox
+
+    def create_serial_combobox(
+        connection_manager: connection_manager, parent=None, font_size: int = 18
+    ):
+        temp_combobox = GUI_Factory.SerialPortComboBox(
+            connection_manager, parent, font_size
+        )
+        return temp_combobox
+
+    class LoadingWindow(QtWidgets.QDialog):
         def __init__(
             self,
             parent,
@@ -1633,61 +1896,101 @@ class GUI_Factory:
             """Update the label text of the loading window."""
             self.label.setText(new_message)
 
+    class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
+        def __init__(self, parent=None, fontsize=18):
+            super(GUI_Factory.ComboBoxWithDynamicArrow, self).__init__(parent)
 
-class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
-    def __init__(self, parent=None, fontsize=18):
-        super(ComboBoxWithDynamicArrow, self).__init__(parent)
-        self.combobox_style = f""" 
-        QComboBox {{
-            background-color: #696969; /* Dark background color */
-            border: 1px solid #2F2F2F;
-            border-radius: 5px;
-            padding: 5px;
-            color: white; 
-            font-size: {fontsize}px;
-        }}
+            self.combobox_style = f""" 
+            QComboBox {{
+                background-color: #696969; /* Dark background color */
+                border: 1px solid #2F2F2F;
+                border-radius: 5px;
+                padding: 5px;
+                color: white; 
+                font-size: {str(fontsize)}px;
+            }}
 
-        QComboBox::drop-down {{
-            subcontrol-origin: padding;
-            subcontrol-position: top right;
-            width: 25px;
-            border-left-width: 1px;
-            border-left-color: #2F2F2F;
-            border-left-style: solid;
-            border-top-right-radius: 3px;
-            background: #3A3A3A; /* Darker drop-down background */
-            
-        }}
+            QComboBox::drop-down {{
+                subcontrol-origin: padding;
+                subcontrol-position: top right;
+                width: 25px;
+                border-left-width: 1px;
+                border-left-color: #2F2F2F;
+                border-left-style: solid;
+                border-top-right-radius: 3px;
+                background: #3A3A3A; /* Darker drop-down background */
+                
+            }}
 
-        QComboBox QAbstractItemView {{
-            border: 1px solid #2F2F2F;
-            background-color: #2F2F2F; /* Darker background for the drop-down list */
-            selection-background-color: #3A3A3A; /* Selection background color */
-            selection-color: white; /* Selection text color */
-            color: white;
-            min-height: 15px;
-        }}
-        QComboBox::down-arrow {{
-                image: url(./src/Assets/arrow_down.png); 
-                width: 15px;
-                height: 15px;
-            }}"""
-        # Set the default arrow (down)
-        self.setStyleSheet(self.combobox_style)
+            QComboBox QAbstractItemView {{
+                border: 1px solid #2F2F2F;
+                background-color: #2F2F2F; /* Darker background for the drop-down list */
+                selection-background-color: #3A3A3A; /* Selection background color */
+                selection-color: white; /* Selection text color */
+                color: white;
+                min-height: 15px;
+            }}
+            QComboBox::down-arrow {{
+                    image: url(./src/Assets/arrow_down.png); 
+                    width: 15px;
+                    height: 15px;
+                }}"""
+            # Set the default arrow (down)
+            self.setStyleSheet(self.combobox_style)
 
-        # Connect signals for popup and close
-        self.view().window().installEventFilter(self)
-        self.popup_open = False
+            # Connect signals for popup and close
+            self.view().window().installEventFilter(self)
 
-    def eventFilter(self, source, event):
-        if event.type() == event.Show:
-            self.set_arrow_up()
-        elif event.type() == event.Hide:
-            self.set_arrow_down()
-        return super(ComboBoxWithDynamicArrow, self).eventFilter(source, event)
+        def eventFilter(self, source, event):
+            if event.type() == event.Show:
+                self.set_arrow_up()
+            elif event.type() == event.Hide:
+                self.set_arrow_down()
+            return super(GUI_Factory.ComboBoxWithDynamicArrow, self).eventFilter(
+                source, event
+            )
 
-    def set_arrow_up(self):
-        self.setStyleSheet(self.combobox_style.replace("arrow_down", "arrow_up"))
+        def set_arrow_up(self):
+            self.setStyleSheet(self.combobox_style.replace("arrow_down", "arrow_up"))
 
-    def set_arrow_down(self):
-        self.setStyleSheet(self.combobox_style)
+        def set_arrow_down(self):
+            self.setStyleSheet(self.combobox_style)
+
+    class SerialPortComboBox(ComboBoxWithDynamicArrow):
+        def __init__(self, connection_manager, parent=None, fontsize=18):
+            # Call the parent constructor (ComboBoxWithDynamicArrow)
+            super().__init__(parent=parent, fontsize=fontsize)
+
+            # Store the connection manager reference
+            self.connection_manager = connection_manager
+
+            # Populate the combo box with serial ports on startup
+            self.populate_serial_ports()
+
+            # Connect the signal for when the user clicks the combo box (showing the dropdown)
+            self.view().window().installEventFilter(self)
+
+        def populate_serial_ports(self):
+            """Populate the combo box with the available serial ports."""
+            # Get the list of available serial ports from the connection manager
+            try:
+                serial_ports = self.connection_manager.get_serial_port()
+
+                # Clear the combo box before repopulating
+                self.clear()
+
+                # Add the serial ports to the combo box
+                for port in serial_ports:
+                    self.addItem(port)
+            except Exception:
+                self.clear()
+                # raise Error.NoSerialPortError()
+
+        def eventFilter(self, source, event):
+            """Event filter to handle when the combo box is clicked."""
+            if event.type() == QtCore.QEvent.Show and source is self.view().window():
+                # Populate the combo box with available serial ports on click
+                self.populate_serial_ports()
+            return super(GUI_Factory.SerialPortComboBox, self).eventFilter(
+                source, event
+            )
