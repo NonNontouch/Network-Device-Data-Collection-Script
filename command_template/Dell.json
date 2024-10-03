@@ -1,26 +1,78 @@
 {
     "os-6": {
-        "Enable Device": "enable",
-        "Tetminal Length 0": "terminal length 0",
-        "show running-configuration": "show running-config",
-        "show interface status": "show interface status",
-        "show cpu usage": "show process cpu",
-        "show memory usage": "show memory cpu",
-        "show fan status": "show system fan",
-        "show power status": "show system power",
-        "show temperature": "show system temperature",
-        "show tech-support": "show tech-support"
+        "Enable Device": {
+            "command": "enable",
+            "active": true
+        },
+        "Tetminal Length 0": {
+            "command": "terminal length 0",
+            "active": true
+        },
+        "show running-configuration": {
+            "command": "show running-config",
+            "active": true
+        },
+        "show interface status": {
+            "command": "show interface status",
+            "active": true
+        },
+        "show cpu usage": {
+            "command": "show process cpu",
+            "active": false
+        },
+        "show memory usage": {
+            "command": "show memory cpu",
+            "active": true
+        },
+        "show fan status": {
+            "command": "show system fan",
+            "active": false
+        },
+        "show power status": {
+            "command": "show system power",
+            "active": true
+        },
+        "show temperature": {
+            "command": "show system temperature",
+            "active": true
+        }
     },
     "os-10": {
-        "Enable Device": "enable",
-        "Tetminal Length 0": "terminal length 0",
-        "show running-configuration": "show running-config",
-        "show interface status": "show interface status",
-        "show cpu usage": "show processes cpu summary",
-        "show memory": "show processes memory",
-        "show system status": "show system brief",
-        "show vlt number": "show running-configuration vlt",
-        "show vlt status": "show vlt <vlt domain>",
-        "show tech-support": "show tech-support"
+        "Enable Device": {
+            "command": "enable",
+            "active": true
+        },
+        "Tetminal Length 0": {
+            "command": "terminal length 0",
+            "active": true
+        },
+        "show running-configuration": {
+            "command": "show running-config",
+            "active": true
+        },
+        "show interface status": {
+            "command": "show interface status",
+            "active": true
+        },
+        "show cpu usage": {
+            "command": "show processes cpu summary",
+            "active": true
+        },
+        "show memory": {
+            "command": "show processes memory",
+            "active": false
+        },
+        "show system status": {
+            "command": "show system brief",
+            "active": true
+        },
+        "show vlt number": {
+            "command": "show running-configuration vlt",
+            "active": true
+        },
+        "show vlt status": {
+            "command": "show vlt <vlt domain>",
+            "active": false
+        }
     }
 }
