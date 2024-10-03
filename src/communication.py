@@ -335,15 +335,20 @@ class connection_manager:
 
         return result
 
-    def _enable_device_if_needed(self, command_dict):
+    def _enable_device_if_needed(self, command_dict: dict):
         """Enable the device if it's not already enabled."""
         try:
-            if not self.connection.is_enable():
-                enable_command = command_dict.pop("Enable Device", None)
-                if enable_command:
-                    self.connection.enable_device(enable_command, self.enable_password)
+            if self.connection.is_enable() is False:
+                if "Enable Device" in command_dict:
+                    self.connection.enable_device(
+                        enable_command=command_dict["Enable Device"],
+                        password=self.enable_password,
+                    )
+
                 else:
                     raise Error.LoginError("Program can't enable device")
+            if "Enable Device" in command_dict:
+                command_dict.pop("Enable Device")
         except (
             Error.ErrorCommand,
             Error.ConnectionLossConnect,
