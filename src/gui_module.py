@@ -863,7 +863,6 @@ class VariableConfigurePage:
 
         self.button_grid.addWidget(self.apply_button, 0, 0)
         self.button_grid.addWidget(self.cancel_button, 0, 1)
-        # Connect buttons
         self.apply_button.clicked.connect(self.accept)
         self.cancel_button.clicked.connect(self.reject)
 
@@ -936,7 +935,6 @@ class DataCollectorThread(QtCore.QThread):
             while True:
                 sleep(0.1)
                 if self.result_page != None:
-                    print(self.result_page._result)
                     self.result_page.generate_all_image()
                     self.image_generated.emit()
                     break
@@ -957,24 +955,71 @@ class ResultPage:
         self._result = result
         self.text_to_picture = text_to_pic()  # Instance of text_to_pic
         self.temp_image_paths = []  # To store paths of temp images
+        self.main_grid = QtWidgets.QGridLayout()
+        self.set_configure_grid()
 
     def set_result(self, result: dict):
         self._result = result
 
+    def set_configure_grid(self):
+        result_configure_widget = GUI_Factory.create_widget(
+            self._widget_parent, "result_configure_widget"
+        )
+        result_configure_grid = QtWidgets.QGridLayout(result_configure_widget)
+        configure_button = GUI_Factory.create_button(
+            "Result Image Configure", "popup_dialog_button"
+        )
+        configure_button.clicked.connect(self.show_image_configure_page)
+        result_configure_grid.addWidget(configure_button, 0, 0)
+        self.main_grid.addWidget(result_configure_widget, 0, 0)
+
+    def show_image_configure_page(self):
+        dialog = ResultImageConfigurePage(
+            self._widget_parent, self.text_to_picture.get_cur_config()
+        )
+
+        if dialog.exec_() == QtWidgets.QDialog.Accepted:
+            user_input = dialog.get_input()
+
+            # Set new parameters for image generation
+            self.text_to_picture.set_parameters(user_input)
+
+            # Clean up old temporary images before generating new ones
+            self.cleanup_temp_images()
+
+            # Clear the list of temp image paths after deleting old images
+            self.temp_image_paths.clear()
+
+            # Generate new images based on the updated configuration
+            self.generate_all_image()
+
+            # Rebuild the result grid with the updated temp image paths
+            self.reset_result_grid()
+
+    def reset_result_grid(self):
+        """Clears the result grid and sets it up again with updated image paths."""
+        # Remove the current widgets in the grid
+        for i in reversed(range(self.main_grid.count())):
+            widget = self.main_grid.itemAt(i).widget()
+            if widget is not None:
+                widget.deleteLater()  # Ensure the widget is properly deleted
+
+        # Recreate the result grid layout with updated temp image paths
+        self.set_configure_grid()
+        self.set_result_grid()
+
     def set_result_grid(self):
         # Create the main grid layout
-        main_grid = QtWidgets.QGridLayout()
-
         # Create a widget to hold the results
+        self.scroll_area = QtWidgets.QScrollArea()
         result_widget = GUI_Factory.create_widget(
             self._widget_parent, "main_window", GUI.main_style
         )
         results_layout = QtWidgets.QGridLayout(result_widget)
 
         # Create a scroll area
-        scroll_area = QtWidgets.QScrollArea()
-        scroll_area.setWidgetResizable(True)
-        scroll_area.setWidget(
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_area.setWidget(
             result_widget
         )  # Set the result widget as the scroll area content
 
@@ -1058,10 +1103,11 @@ class ResultPage:
             i += 1
 
         # Add the scroll area to the main grid layout
-        main_grid.addWidget(scroll_area, 0, 0)
+
+        self.main_grid.addWidget(self.scroll_area, 1, 0)
 
         # Set the main layout to the dialog
-        self.result_page_dialog.setLayout(main_grid)
+        self.result_page_dialog.setLayout(self.main_grid)
 
     def save_text(self, text, title):
         """Open a file dialog to save the text."""
@@ -1168,6 +1214,236 @@ class ResultPage:
         result = self.result_page_dialog.exec_()
         self.cleanup_temp_images()  # Clean up temp images when dialog is closed
         return result
+
+
+class ResultImageConfigurePage:
+
+    def __init__(self, widget_parent: QtWidgets.QMainWindow, curr_conf: dict) -> None:
+        self._widget_parrent = widget_parent
+        self.result_image_configure_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.result_image_configure_page_grid_layout = QtWidgets.QGridLayout(
+            self.result_image_configure_page_dialog
+        )
+        self.result_image_configure_page_dialog.setWindowTitle("Image Configure")
+
+        # Initialize properties from curr_conf
+        self.bg_color = curr_conf.get(
+            "bg_color", (0, 0, 0)
+        )  # Default to black if not set
+        self.text_color = curr_conf.get(
+            "text_color", (255, 255, 255)
+        )  # Default to white if not set
+
+        self.font = curr_conf.get("font", "FONT_HERSHEY_SIMPLEX")
+        self.font_scale = curr_conf.get("font_scale", 1)
+        self.thickness = curr_conf.get("thickness", 2)
+        self.line_spacing = curr_conf.get("line_spacing", 8)
+        self.padding = curr_conf.get("padding", 20)
+
+        self.__set_image_variable_grid()
+        self._set_button_grid()
+
+    def __set_image_variable_grid(self):
+        self.input_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget", GUI.main_style, 220, 500, 400
+        )
+
+        self.image_variable_grid = QtWidgets.QGridLayout(self.input_widget)
+
+        # Background color label
+        self.bg_color_label = GUI_Factory.create_label(
+            f"BG color: {self.bg_color}",
+            "",
+            f"border: 2px solid black;  border-radius: 10px;  background-color: rgb{self.bg_color}; color: rgb{self.invert_color(self.bg_color)};font: 16px;",
+        )
+        self.bg_color_button = GUI_Factory.create_button(
+            "Pick Background Color",
+            "popup_dialog_button",
+        )
+        self.bg_color_button.clicked.connect(lambda: self.open_color_picker("bg"))
+
+        # Text color label
+        self.text_color_label = GUI_Factory.create_label(
+            f"Text color: {self.text_color}",
+            "",
+            f"border: 2px solid black;  border-radius: 10px;  background-color: rgb{self.text_color}; color: rgb{self.invert_color(self.text_color)};font: 16px;",
+        )
+        self.text_color_button = GUI_Factory.create_button(
+            "Pick Text Color",
+            "popup_dialog_button",
+        )
+        self.text_color_button.clicked.connect(lambda: self.open_color_picker("text"))
+
+        font_label = GUI_Factory.create_label(
+            f"Font: {self.font}", "input_label_configure_dialog"
+        )
+        self.font_dropdown = ComboBoxWithDynamicArrow(self._widget_parrent, fontsize=16)
+        self.font_dropdown.addItems(
+            [
+                "FONT_HERSHEY_SIMPLEX",
+                "FONT_HERSHEY_PLAIN",
+                "FONT_HERSHEY_DUPLEX",
+                "FONT_HERSHEY_COMPLEX",
+                "FONT_HERSHEY_TRIPLEX",
+                "FONT_HERSHEY_COMPLEX_SMALL",
+                "FONT_HERSHEY_SCRIPT_SIMPLEX",
+                "FONT_HERSHEY_SCRIPT_COMPLEX",
+                "FONT_ITALIC",
+            ]
+        )
+        if self.font in [
+            self.font_dropdown.itemText(i) for i in range(self.font_dropdown.count())
+        ]:
+            self.font_dropdown.setCurrentText(self.font)
+        else:
+            self.font_dropdown.setCurrentIndex(0)
+        self.font_dropdown
+        font_scale_label = GUI_Factory.create_label(
+            f"Font Scale: {self.font_scale}", "input_label_configure_dialog"
+        )
+        self.font_scale_lineedit = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f"Default {self.font_scale}",
+        )
+        thickness_label = GUI_Factory.create_label(
+            f"Font Thickness: {self.thickness}", "input_label_configure_dialog"
+        )
+        self.thickness_lineedit = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f"Default {self.thickness}",
+        )
+        line_spacing_label = GUI_Factory.create_label(
+            f"Line Spacing: {self.line_spacing}", "input_label_configure_dialog"
+        )
+        self.line_spacing_lineedit = GUI_Factory.create_lineedit(
+            obj_name="input_lineedit_configure_dialog",
+            placeholder_text=f"Default {self.line_spacing}",
+        )
+        padding_label = GUI_Factory.create_label(
+            f"Padding: {self.padding}", "input_label_configure_dialog"
+        )
+        self.padding_lineedit = GUI_Factory.create_lineedit(
+            "input_lineedit_configure_dialog",
+            placeholder_text=f"Default {self.padding}",
+        )
+        # Adding widgets to the layout
+        self.image_variable_grid.addWidget(self.bg_color_label, 0, 0)
+        self.image_variable_grid.addWidget(self.bg_color_button, 0, 1)
+        self.image_variable_grid.addWidget(self.text_color_label, 1, 0)
+        self.image_variable_grid.addWidget(self.text_color_button, 1, 1)
+        self.image_variable_grid.addWidget(font_label, 2, 0)
+        self.image_variable_grid.addWidget(self.font_dropdown, 2, 1)
+        self.image_variable_grid.addWidget(font_scale_label, 3, 0)
+        self.image_variable_grid.addWidget(self.font_scale_lineedit, 3, 1)
+        self.image_variable_grid.addWidget(thickness_label, 4, 0)
+        self.image_variable_grid.addWidget(self.thickness_lineedit, 4, 1)
+        self.image_variable_grid.addWidget(line_spacing_label, 5, 0)
+        self.image_variable_grid.addWidget(self.line_spacing_lineedit, 5, 1)
+        self.image_variable_grid.addWidget(padding_label, 6, 0)
+        self.image_variable_grid.addWidget(self.padding_lineedit, 6, 1)
+
+        self.result_image_configure_page_grid_layout.addWidget(
+            self.input_widget,
+            0,
+            0,
+        )
+
+    def _set_button_grid(self):
+        self.button_widget = GUI_Factory.create_widget(
+            self._widget_parrent, "input_widget", GUI.main_style, 40, 500, 100
+        )
+
+        self.button_grid = QtWidgets.QGridLayout(self.button_widget)
+
+        self.apply_button = GUI_Factory.create_button(
+            "Apply", "acceptButton", GUI.main_style
+        )
+        self.cancel_button = GUI_Factory.create_button(
+            "Cancel", "cancelButton", GUI.main_style
+        )
+
+        self.button_grid.addWidget(self.apply_button, 0, 0)
+        self.button_grid.addWidget(self.cancel_button, 0, 1)
+        self.apply_button.clicked.connect(self.accept)
+        self.cancel_button.clicked.connect(self.reject)
+
+        self.result_image_configure_page_grid_layout.addWidget(self.button_widget, 2, 0)
+
+    def open_color_picker(self, color_type):
+        # Open the color picker dialog
+        color = QtWidgets.QColorDialog.getColor()
+
+        # Check if a valid color was selected
+        if color.isValid():
+            # Get the RGB values as a tuple of integers
+            rgb_tuple = (color.red(), color.green(), color.blue())
+
+            # Assign the selected color to the appropriate variable and update label
+            if color_type == "bg":
+                self.bg_color = rgb_tuple
+                self.bg_color_label.setText(
+                    f"BG color: {self.bg_color}"
+                )  # Update label text
+                self.bg_color_label.setStyleSheet(
+                    f"border: 2px solid black;  border-radius: 10px;  background-color: rgb{rgb_tuple}; color: rgb{self.invert_color(rgb_tuple)}; font: 16px;"
+                )
+                print(f"Selected Background Color (RGB): {self.bg_color}")
+            elif color_type == "text":
+                self.text_color = rgb_tuple
+                self.text_color_label.setText(
+                    f"Text color: {self.text_color}"
+                )  # Update label text
+                self.text_color_label.setStyleSheet(
+                    f"border: 2px solid black;  border-radius: 10px;background-color: rgb{rgb_tuple};color: rgb{self.invert_color(rgb_tuple)}; font: 16px;"
+                )
+
+                print(f"Selected Text Color (RGB): {self.text_color}")
+
+    def invert_color(self, rgb: tuple[int, int, int]) -> tuple[int, int, int]:
+        """Invert the RGB color."""
+        return (255 - rgb[0], 255 - rgb[1], 255 - rgb[2])  # Invert the color
+
+    def exec_(self):
+        return self.result_image_configure_page_dialog.exec_()
+
+    def accept(self):
+        self.result = QtWidgets.QDialog.Accepted
+        self.result_image_configure_page_dialog.accept()
+
+    def reject(self):
+        self.result = QtWidgets.QDialog.Rejected
+        self.result_image_configure_page_dialog.reject()
+
+    def get_input(self):
+        # Fetch input values from the form elements, falling back to default values if not filled
+        return {
+            "bg_color": self.bg_color,
+            "text_color": self.text_color,
+            "font": self.font_dropdown.currentText(),
+            "font_scale": (
+                float(self.font_scale_lineedit.text())
+                if self.font_scale_lineedit.text()
+                else self.font_scale
+            ),
+            "thickness": (
+                int(self.thickness_lineedit.text())
+                if self.thickness_lineedit.text()
+                else self.thickness
+            ),
+            "line_spacing": (
+                int(self.line_spacing_lineedit.text())
+                if self.line_spacing_lineedit.text()
+                else self.line_spacing
+            ),
+            "padding": (
+                int(self.padding_lineedit.text())
+                if self.padding_lineedit.text()
+                else self.padding
+            ),
+        }
+
+    def result(self):
+        return self.result
 
 
 class GUI_Factory:
@@ -1359,19 +1635,19 @@ class GUI_Factory:
 
 
 class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, fontsize=18):
         super(ComboBoxWithDynamicArrow, self).__init__(parent)
-        self.combobox_style = """ 
-        QComboBox {
+        self.combobox_style = f""" 
+        QComboBox {{
             background-color: #696969; /* Dark background color */
             border: 1px solid #2F2F2F;
             border-radius: 5px;
             padding: 5px;
             color: white; 
-            font-size: 18px;
-        }
+            font-size: {fontsize}px;
+        }}
 
-        QComboBox::drop-down {
+        QComboBox::drop-down {{
             subcontrol-origin: padding;
             subcontrol-position: top right;
             width: 25px;
@@ -1381,21 +1657,21 @@ class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
             border-top-right-radius: 3px;
             background: #3A3A3A; /* Darker drop-down background */
             
-        }
+        }}
 
-        QComboBox QAbstractItemView {
+        QComboBox QAbstractItemView {{
             border: 1px solid #2F2F2F;
             background-color: #2F2F2F; /* Darker background for the drop-down list */
             selection-background-color: #3A3A3A; /* Selection background color */
             selection-color: white; /* Selection text color */
             color: white;
             min-height: 15px;
-        }    
-        QComboBox::down-arrow {
+        }}
+        QComboBox::down-arrow {{
                 image: url(./src/Assets/arrow_down.png); 
                 width: 15px;
                 height: 15px;
-            }"""
+            }}"""
         # Set the default arrow (down)
         self.setStyleSheet(self.combobox_style)
 
