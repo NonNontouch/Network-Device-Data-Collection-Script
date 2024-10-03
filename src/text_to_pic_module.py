@@ -4,8 +4,7 @@ import src.error as Error
 
 
 class text_to_pic:
-    width: int
-    height: int
+
     bg_color: tuple[int, int, int] = (0, 0, 0)
     text_color: tuple[int, int, int] = (255, 255, 255)
     font: int = cv2.FONT_HERSHEY_SIMPLEX
@@ -13,19 +12,44 @@ class text_to_pic:
     thickness: int = 2
     line_spacing: int = 8
     padding: int = 20
+    font_map = {
+        "FONT_HERSHEY_SIMPLEX": cv2.FONT_HERSHEY_SIMPLEX,
+        "FONT_HERSHEY_PLAIN": cv2.FONT_HERSHEY_PLAIN,
+        "FONT_HERSHEY_DUPLEX": cv2.FONT_HERSHEY_DUPLEX,
+        "FONT_HERSHEY_COMPLEX": cv2.FONT_HERSHEY_COMPLEX,
+        "FONT_HERSHEY_TRIPLEX": cv2.FONT_HERSHEY_TRIPLEX,
+        "FONT_HERSHEY_COMPLEX_SMALL": cv2.FONT_HERSHEY_COMPLEX_SMALL,
+        "FONT_HERSHEY_SCRIPT_SIMPLEX": cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
+        "FONT_HERSHEY_SCRIPT_COMPLEX": cv2.FONT_HERSHEY_SCRIPT_COMPLEX,
+        "FONT_ITALIC": cv2.FONT_ITALIC,
+    }
 
     def __init__(self) -> None:
         self.set_font_scale(1)
 
-    def set_width(self, width: int):
-        if width <= 0:
-            return
-        self.width = width
+    def set_parameters(self, config: dict):
+        """Set the configuration based on the provided dictionary."""
+        # Map dictionary keys to instance variables
+        for key, value in config.items():
+            if hasattr(self, key):
+                if key == "font":
+                    value = self.font_map[value]
 
-    def set_height(self, height: int):
-        if height <= 0:
-            return
-        self.height = height
+                setattr(self, key, value)
+
+    def get_cur_config(self):
+        return {
+            "bg_color": self.bg_color,
+            "text_color": self.text_color,
+            "font": next(
+                (key for key, value in self.font_map.items() if value == self.font),
+                None,
+            ),
+            "font_scale": self.font_scale,
+            "thickness": self.thickness,
+            "line_spacing": self.line_spacing,
+            "padding": self.padding,
+        }
 
     def set_bg_color(self, bg_color: tuple[int, int, int]):
         self.bg_color = bg_color
@@ -55,20 +79,10 @@ class text_to_pic:
 
     def change_font(self, font_name: str):
         # Map font names to OpenCV font constants
-        font_map = {
-            "FONT_HERSHEY_SIMPLEX": cv2.FONT_HERSHEY_SIMPLEX,
-            "FONT_HERSHEY_PLAIN": cv2.FONT_HERSHEY_PLAIN,
-            "FONT_HERSHEY_DUPLEX": cv2.FONT_HERSHEY_DUPLEX,
-            "FONT_HERSHEY_COMPLEX": cv2.FONT_HERSHEY_COMPLEX,
-            "FONT_HERSHEY_TRIPLEX": cv2.FONT_HERSHEY_TRIPLEX,
-            "FONT_HERSHEY_COMPLEX_SMALL": cv2.FONT_HERSHEY_COMPLEX_SMALL,
-            "FONT_HERSHEY_SCRIPT_SIMPLEX": cv2.FONT_HERSHEY_SCRIPT_SIMPLEX,
-            "FONT_HERSHEY_SCRIPT_COMPLEX": cv2.FONT_HERSHEY_SCRIPT_COMPLEX,
-        }
 
         # Set the font if it exists in the map
-        if font_name in font_map:
-            self.font = font_map[font_name]
+        if font_name in self.font_map:
+            self.font = self.font_map[font_name]
         else:
             print(f"Font '{font_name}' not found. Using default font.")
 
@@ -91,11 +105,11 @@ class text_to_pic:
             total_height += line_height + self.line_spacing  # Include line spacing
 
         # Set the width and height including padding
-        self.width = max_width + 2 * self.padding
-        self.height = total_height + 2 * self.padding
+        width = max_width + 2 * self.padding
+        height = total_height + 2 * self.padding
 
         # Create the image with the calculated size
-        image = np.full((self.height, self.width, 3), self.bg_color, dtype=np.uint8)
+        image = np.full((height, width, 3), self.bg_color, dtype=np.uint8)
 
         # Calculate the starting position for the first line
         y = (
