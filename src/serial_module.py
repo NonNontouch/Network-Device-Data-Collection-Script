@@ -221,7 +221,7 @@ class serial_connection:
         ports = serial.tools.list_ports.comports()
 
         if ports:
-            available_ports = [port.device for port in ports]
+            available_ports = [f"{port.name}({port.device})" for port in ports]
             return available_ports
         else:
             raise Error.NoSerialPortError
