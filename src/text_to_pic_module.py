@@ -90,6 +90,8 @@ class text_to_pic:
         self.thickness = thickness
 
     def create_text_image(self, text: str):
+        bg_color_bgr = (self.bg_color[2], self.bg_color[1], self.bg_color[0])
+        text_color_bgr = (self.text_color[2], self.text_color[1], self.text_color[0])
         # Split the text into lines
         lines = text.splitlines()
 
@@ -109,7 +111,7 @@ class text_to_pic:
         height = total_height + 2 * self.padding
 
         # Create the image with the calculated size
-        image = np.full((height, width, 3), self.bg_color, dtype=np.uint8)
+        image = np.full((height, width, 3), bg_color_bgr, dtype=np.uint8)
 
         # Calculate the starting position for the first line
         y = (
@@ -127,7 +129,7 @@ class text_to_pic:
                 (self.padding, y),
                 self.font,
                 self.font_scale,
-                self.text_color,
+                text_color_bgr,
                 self.thickness,
             )
             y += line_height + self.line_spacing
