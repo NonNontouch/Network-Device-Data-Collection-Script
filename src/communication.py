@@ -82,6 +82,29 @@ class connection_manager:
                 else:
                     setattr(self, key, value)
 
+    def get_curr_conf(self):
+        """Get all connection parameters as a dictionary.
+
+        Returns:
+            dict: A dictionary containing all connection parameters.
+        """
+        return {
+            "hostname": self.hostname,
+            "port": self.port,
+            "username": self.username,
+            "password": self.password,
+            "enable_password": self.enable_password,
+            "timeout": self.timeout,
+            "login_wait_time": self.login_wait_time,
+            "command_retriesdelay": self.command_retriesdelay,
+            "banner_timeout": self.banner_timeout,
+            "command_maxretries": self.command_maxretries,
+            "baudrate": self.baudrate,
+            "bytesize": self.bytesize,
+            "parity": self.parity,
+            "stopbits": self.stopbits,
+        }
+
     def set_hostname(self, hostname: str):
         """Set the device hostname, which can be an IP address or a resolvable hostname.
 
