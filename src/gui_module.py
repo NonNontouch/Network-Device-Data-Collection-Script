@@ -351,27 +351,20 @@ class MainPage:
             label_text="Serial Port",
             obj_name="connection_grid_label",
         )
-        serial_port_label.setMinimumWidth(150)
+
         self.serial_port_combo_box = GUI_Factory.create_serial_combobox(
             self.connection_manager
         )
-        connection_botton_grid.addWidget(self.serial_port_combo_box, 0, 1)
-        self.serial_port_combo_box.setMinimumWidth(450)
 
         baudrate_label = GUI_Factory.create_label(
             label_text="Baudrate",
             obj_name="connection_grid_label",
         )
-        baudrate_label.setMinimumWidth(150)
-        connection_botton_grid.addWidget(
-            baudrate_label,
-            0,
-            2,
-        )
+
         self.baudrate_combo_box = GUI_Factory.create_combobox(
             self.main_widget, font_size=22
         )
-        self.baudrate_combo_box.setMinimumWidth(250)
+        self.baudrate_combo_box.setMinimumWidth(150)
 
         self.baudrate_combo_box.addItems(
             [
@@ -400,7 +393,7 @@ class MainPage:
                 "921600",
             ]
         )
-        connection_botton_grid.addWidget(self.baudrate_combo_box, 0, 3)
+
         connection_top_grid.addWidget(ssh_button, 0, 0)
         connection_top_grid.addWidget(telnet_button, 0, 1)
         connection_top_grid.addWidget(serial_button, 0, 2)
@@ -410,6 +403,13 @@ class MainPage:
             0,
             0,
         )
+        connection_botton_grid.addWidget(self.serial_port_combo_box, 0, 1)
+        connection_botton_grid.addWidget(
+            baudrate_label,
+            0,
+            2,
+        )
+        connection_botton_grid.addWidget(self.baudrate_combo_box, 0, 3)
         connection_grid.addWidget(connection_top_widget, 0, 0)
         connection_grid.addWidget(connection_botton_widget, 1, 0)
         self.main_grid.addWidget(
@@ -1767,49 +1767,53 @@ class GUI_Factory:
         return temp_button
 
     @staticmethod
-    def create_radio_button(text, image_path, botton_group):
+    def create_radio_button(text, image_path, button_group):
         # Create a QRadioButton
         radio_button = QtWidgets.QRadioButton(text)
-
         # Load and set the image for the radio button
         icon = QtGui.QIcon(image_path)
         radio_button.setIcon(icon)
         radio_button.setIconSize(QtCore.QSize(24, 24))  # Set the size of the icon
+
+        # Set the style for the radio button
         radio_button.setStyleSheet(
             """
             QRadioButton {
                 background-color: #696969; 
                 border-radius: 10px;
-                padding: 5px;
+                padding: 10px;  /* Add padding to increase clickable area */
                 border: none;
                 color: white;
             }
-            QRadioButton::checked{
+            QRadioButton:hover {
+                background-color: #45a049; 
+                border-radius: 10px;
+                padding: 10px;  /* Add padding to increase clickable area */
+                border: none;
+                color: white;
+            }
+            
+            QRadioButton::checked {
                 background-color: green; 
                 border-radius: 10px;
-                padding: 5px;
+                padding: 10px; 
                 border: none;
                 color: white;
             }
             QRadioButton::indicator {
-                width: 16px;
-                height: 16px;
-                border: 2px solid black;
-                background-color: white;  
-            } 
-            QRadioButton::indicator:checked {
-                background-color: white; 
-                border: 2px solid black;
-                background-image: url(./src/Assets/checkmark.png); 
-                background-repeat: no-repeat;
-                background-position: center;
+                width: 0; /* Hide the default indicator */
+                height: 0; /* Hide the default indicator */
+                border: none; /* No border */
             }
-        """
+            """
         )
+
+        # Set the cursor for the radio button
         radio_button.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
 
         # Add the radio button to the button group
-        botton_group.addButton(radio_button)
+        button_group.addButton(radio_button)
+
         return radio_button
 
     @staticmethod
