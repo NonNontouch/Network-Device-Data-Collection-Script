@@ -354,7 +354,7 @@ class MainPage:
         )
 
         self.serial_port_combo_box = GUI_Factory.create_serial_combobox(
-            self.connection_manager
+            self.connection_manager, width=300
         )
 
         baudrate_label = GUI_Factory.create_label(
@@ -927,7 +927,6 @@ class OSTemplateConfigurePage:
         cur_json_selected: str = "",
         cur_os_selected: str = "",
     ) -> None:
-        self.__is_just_init = True
         self._widget_parent = widget_parent
         self.json_handler = json_file()  # Accepting the json_handler object
         self.OS_template_configure_page_dialog = QtWidgets.QDialog(widget_parent)
@@ -935,6 +934,8 @@ class OSTemplateConfigurePage:
         self.OS_template_configure_page_dialog.setWindowTitle(
             "OS Template Configuration"
         )
+        self.OS_template_configure_page_dialog.setMinimumWidth(700)
+        self.OS_template_configure_page_dialog.setMinimumHeight(550)
         self.cur_json_selected = cur_json_selected
         self.cur_os_selected = cur_os_selected
         self.layout = QtWidgets.QGridLayout(self.OS_template_configure_page_dialog)
@@ -977,6 +978,7 @@ class OSTemplateConfigurePage:
         )
         self.os_version_dropdown.setObjectName("os_version_dropdown")
         self.layout.addWidget(self.os_version_dropdown, 1, 1)
+        self.os_version_dropdown.currentTextChanged.connect(self.update_command_list)
 
     def __setup_scroll_area(self):
         # Create a scroll area for commands
@@ -1031,16 +1033,17 @@ class OSTemplateConfigurePage:
 
     def update_command_list(self):
         """Update the list of commands based on the selected OS version."""
-        # Clear previous command widgets by creating a new command container
         self.clear_command_container()  # Remove the old container
 
         # Create a new command container
         self.command_container = QtWidgets.QWidget()
-        self.scroll_area_layout = QtWidgets.QVBoxLayout(self.command_container)
+        self.scroll_area_layout = QtWidgets.QGridLayout(self.command_container)
         self.scroll_area.setWidget(self.command_container)
 
         # Retrieve selected OS version
         selected_os = self.os_version_dropdown.currentText()
+        if selected_os == "":
+            return
 
         # Load commands based on selection
         try:
@@ -1049,14 +1052,14 @@ class OSTemplateConfigurePage:
             )  # Get commands from JSON
 
             if commands:  # Check if commands are not empty
-                for command_title, command_data in commands.items():
-                    self.__create_command_entry(command_title, command_data)
+                for index, (command_title, command_data) in enumerate(commands.items()):
+                    self.__create_command_entry(command_title, command_data, index)
             else:
                 # Optionally, you could display a message if there are no commands for the selected OS
                 no_command_label = GUI_Factory.create_label(
                     "No commands available for this OS version.", "input_label"
                 )
-                self.scroll_area_layout.addWidget(no_command_label)
+                self.scroll_area_layout.addWidget(no_command_label, 0, 0)
 
         except Error.JsonOSTemplateError:
             QtWidgets.QMessageBox.critical(
@@ -1069,31 +1072,72 @@ class OSTemplateConfigurePage:
         self.scroll_area.setWidget(None)  # Detach the old widget
         self.command_container.deleteLater()  # Delete the old container
 
-    def __create_command_entry(self, command_title: str, command_data: dict):
-        """Create a row for a command entry."""
-        command_layout = QtWidgets.QHBoxLayout()
-
-        # Command title label
+    def __create_command_entry(
+        self, command_title: str, command_data: dict, index: int
+    ):
+        """Create a row for a command entry using a grid layout."""
+        # Assuming self.scroll_area_layout is already a QGridLayout
         command_label = GUI_Factory.create_label(command_title, "input_label")
-        command_layout.addWidget(command_label)
-
-        # QTextEdit for actual command
         command_text_edit = GUI_Factory.create_lineedit("input_lineedit")
         command_text_edit.setText(command_data["command"])  # Set initial command
-        command_layout.addWidget(command_text_edit)
 
         # Checkbox for activation
         active_checkbox = QtWidgets.QCheckBox("Activate")
         active_checkbox.setChecked(command_data["active"])
-        command_layout.addWidget(active_checkbox)
 
-        # Add this command entry layout to the scroll area layout
-        self.scroll_area_layout.addLayout(command_layout)
+        # Add the widgets to the grid layout in the specified row
+        self.scroll_area_layout.addWidget(
+            command_label, index, 0
+        )  # Column 0 for labels
+        self.scroll_area_layout.addWidget(
+            command_text_edit, index, 1
+        )  # Column 1 for line edits
+        self.scroll_area_layout.addWidget(
+            active_checkbox, index, 2
+        )  # Column 2 for checkboxes
 
     def save_changes(self):
         """Save changes to the JSON file (implement your saving logic here)."""
-        # Here you would gather all command entries and save to the appropriate JSON file
-        # Implement your saving logic using self.json_file_dropdown.currentText() and self.os_version_dropdown.currentText()
+        os_key = (
+            self.os_version_dropdown.currentText()
+        )  # Get the currently selected OS version
+        commands = {}  # Dictionary to hold command entries
+
+        # Iterate through each command entry in the scroll area
+        for i in range(
+            self.scroll_area_layout.rowCount()
+        ):  # Use rowCount to iterate through rows
+            command_label_widget = self.scroll_area_layout.itemAtPosition(
+                i, 0
+            ).widget()  # Get command label
+            command_text_edit = self.scroll_area_layout.itemAtPosition(
+                i, 1
+            ).widget()  # Get command line edit
+            active_checkbox = self.scroll_area_layout.itemAtPosition(
+                i, 2
+            ).widget()  # Get the active checkbox
+
+            if command_label_widget and command_text_edit and active_checkbox:
+                command_title = (
+                    command_label_widget.text()
+                )  # Get command title from the label
+                command_value = command_text_edit.text()  # Get command from line edit
+                active_state = active_checkbox.isChecked()  # Get active state
+
+                # Add command data to the commands dictionary
+                commands[command_title] = {
+                    "command": command_value,
+                    "active": active_state,
+                }
+
+        # Update the os_template in the json_handler
+        self.json_handler.os_template[os_key] = (
+            commands  # Map the collected commands to the JSON structure
+        )
+
+        # Write the updated template back to the JSON file
+        self.json_handler.write_json_file(self.json_file_dropdown.currentText())
+
         QtWidgets.QMessageBox.information(
             self._widget_parent, "Save", "Changes saved successfully."
         )
@@ -1849,10 +1893,13 @@ class GUI_Factory:
         return temp_combobox
 
     def create_serial_combobox(
-        connection_manager: connection_manager, parent=None, font_size: int = 18
+        connection_manager: connection_manager,
+        parent=None,
+        font_size: int = 18,
+        width=200,
     ):
         temp_combobox = GUI_Factory.SerialPortComboBox(
-            connection_manager, parent, font_size
+            connection_manager, parent, font_size, width
         )
         return temp_combobox
 
@@ -1942,13 +1989,13 @@ class GUI_Factory:
             self.setStyleSheet(self.combobox_style)
 
     class SerialPortComboBox(ComboBoxWithDynamicArrow):
-        def __init__(self, connection_manager, parent=None, fontsize=18):
+        def __init__(self, connection_manager, parent=None, fontsize=18, width=200):
             # Call the parent constructor (ComboBoxWithDynamicArrow)
             super().__init__(parent=parent, fontsize=fontsize)
 
             # Store the connection manager reference
             self.connection_manager = connection_manager
-
+            self.setMinimumWidth(width)
             # Populate the combo box with serial ports on startup
             self.populate_serial_ports()
 

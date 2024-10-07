@@ -316,6 +316,11 @@ class connection_manager:
         """
         # Create a copy of the command dictionary to avoid modifying the original
         temp_command_dict_json = command_dict_json.copy()
+        temp_command_dict = {}
+        for command_name, command_info in temp_command_dict_json.items():
+            # Access the command and active status
+            if command_info["active"] == True:
+                temp_command_dict[command_name] = command_info["command"]
         result = {}
 
         # Check connection status
@@ -323,14 +328,14 @@ class connection_manager:
             raise Error.ConnectionError("No connection established.")
 
         # Attempt to enable the device if necessary
-        self._enable_device_if_needed(temp_command_dict_json)
+        self._enable_device_if_needed(temp_command_dict)
 
         # Check for VLT number command and update command list if present
-        self._update_vlt_status(temp_command_dict_json)
+        self._update_vlt_status(temp_command_dict)
 
         # Prepare the command list
-        command_list_json = list(temp_command_dict_json.keys())
-        command_list = list(temp_command_dict_json.values())
+        command_list_json = list(temp_command_dict.keys())
+        command_list = list(temp_command_dict.values())
 
         # Send commands to the device
         for command_key, command in zip(command_list_json, command_list):

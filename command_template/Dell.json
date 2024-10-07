@@ -9,7 +9,7 @@
             "active": true
         },
         "show running-configuration": {
-            "command": "show running-config",
+            "command": "show rdf",
             "active": true
         },
         "show interface status": {
@@ -18,7 +18,7 @@
         },
         "show cpu usage": {
             "command": "show process cpu",
-            "active": false
+            "active": true
         },
         "show memory usage": {
             "command": "show memory cpu",
@@ -30,11 +30,11 @@
         },
         "show power status": {
             "command": "show system power",
-            "active": true
+            "active": false
         },
         "show temperature": {
             "command": "show system temperature",
-            "active": true
+            "active": false
         }
     },
     "os-10": {
@@ -52,11 +52,11 @@
         },
         "show interface status": {
             "command": "show interface status",
-            "active": true
+            "active": false
         },
         "show cpu usage": {
             "command": "show processes cpu summary",
-            "active": true
+            "active": false
         },
         "show memory": {
             "command": "show processes memory",
@@ -72,6 +72,10 @@
         },
         "show vlt status": {
             "command": "show vlt <vlt domain>",
+            "active": true
+        },
+        "show tech-support": {
+            "command": "show tech-support",
             "active": false
         }
     }
