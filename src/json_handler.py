@@ -17,11 +17,13 @@ class json_file:
         try:
             # List files in the command_template directory
             self.file_list = os.listdir(folder_path)
+            return self.file_list
         except FileNotFoundError:
             print(f"Error: Folder '{folder_path}' not found.")
             raise Error.JsonFileNotFound(folder_path)
 
     def read_json_file(self, file_name: str):
+        self.__focused_file = file_name
         # Get the absolute path of the current file's directory
         current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -42,6 +44,7 @@ class json_file:
 
     def get_command_json(self, OS: str):
         try:
+            self.read_json_file(self.__focused_file)
             return self.os_template[OS]
         except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error getting command list for OS {OS}: {e}")

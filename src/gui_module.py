@@ -219,6 +219,7 @@ class MainPage:
         self._window_parent = window_parent
         self.connection_manager = connection_manager
         self.json_handler = json_file()
+        self.json_handler.get_list_of_file()
         self.__setup_input_grid()
         self.__setup_connection_grid()
         self.__setup_json_grid()
@@ -430,47 +431,47 @@ class MainPage:
             "Select Device Configuration File:", "input_label"
         )
         json_label.setMinimumWidth(350)
-        json_grid.addWidget(json_label, 0, 0)  # Row 0, Column 0
 
         # Create a dropdown using ComboBoxWithDynamicArrow for JSON files
-        self.json_dropdown = GUI_Factory.create_combobox(self.main_widget, font_size=22)
-        self.json_dropdown.setObjectName("json_dropdown")
+        self.json_file_dropdown = GUI_Factory.create_combobox(
+            self.main_widget, font_size=22
+        )
+        self.json_file_dropdown.setObjectName("json_dropdown")
 
         # Create an instance of the json_file class and get the list of files
 
-        self.json_handler.get_list_of_file()
-
-        # Populate the JSON dropdown with the list of files, set default value to Dell.json
-        self.json_dropdown.addItems(
-            sorted(self.json_handler.file_list)
-        )  # Sort the file list
-        if "Dell.json" in self.json_handler.file_list:
-            self.json_dropdown.setCurrentText("Dell.json")
-
-        json_grid.addWidget(self.json_dropdown, 0, 1)  # Row 0, Column 1
-
-        # Create a label to show the OS version
-        os_label = GUI_Factory.create_label("Select OS Version:", "input_label")
-        json_grid.addWidget(os_label, 1, 0)  # Row 1, Column 0
-
-        # Create a dropdown for OS versions using ComboBoxWithDynamicArrow
         self.os_version_dropdown = GUI_Factory.create_combobox(
             self.main_widget, font_size=22
         )
+
+        # Populate the JSON dropdown with the list of files, set default value to Dell.json
+        self.json_file_dropdown.addItems(
+            sorted(self.json_handler.file_list)
+        )  # Sort the file list
+        if "Dell.json" in self.json_handler.file_list:
+            self.json_file_dropdown.setCurrentText("Dell.json")
+            self.__load_os_versions("Dell.json")
+
+        # Create a label to show the OS version
+        os_label = GUI_Factory.create_label("Select OS Version:", "input_label")
+
+        # Create a dropdown for OS versions using ComboBoxWithDynamicArrow
         self.os_version_dropdown.setObjectName("os_version_dropdown")
-        json_grid.addWidget(self.os_version_dropdown, 1, 1)  # Row 1, Column 1
 
         # Load the default JSON and populate the OS versions
-        self.__load_os_versions("Dell.json")
 
         # Connect the JSON dropdown's change event to update the OS version dropdown
-        self.json_dropdown.currentTextChanged.connect(self.update_os_versions)
+        self.json_file_dropdown.currentTextChanged.connect(self.update_os_versions)
 
-        json_edit_button = GUI_Factory.create_button(
+        os_edit_button = GUI_Factory.create_button(
             "Edit OS Template", "popup_dialog_button", GUI.main_style
         )
-        json_grid.addWidget(json_edit_button, 2, 0, 1, 2)
-
+        os_edit_button.clicked.connect(self.__show_os_template_edit_dialog)
+        json_grid.addWidget(json_label, 0, 0)  # Row 0, Column 0
+        json_grid.addWidget(self.json_file_dropdown, 0, 1)  # Row 0, Column 1
+        json_grid.addWidget(os_label, 1, 0)  # Row 1, Column 0
+        json_grid.addWidget(self.os_version_dropdown, 1, 1)  # Row 1, Column 1
+        json_grid.addWidget(os_edit_button, 2, 0, 1, 2)
         # Add the json_widget (with the grid layout) to the main grid
         self.main_grid.addWidget(
             json_widget, 2, 0
@@ -485,7 +486,7 @@ class MainPage:
             self.os_version_dropdown.addItems(os_keys)  # Add new OS keys
 
             # Set the default selection to "os-10"
-            if "os-10" in os_keys:
+            if "os-10" in os_keys and json_file == "Dell.json":
                 self.os_version_dropdown.setCurrentText("os-10")
         except Error.JsonFileNotFound as e:
             QtWidgets.QMessageBox.critical(
@@ -511,7 +512,7 @@ class MainPage:
 
     def update_os_versions(self):
         """Update the OS version dropdown based on the selected JSON file."""
-        selected_file = self.json_dropdown.currentText()
+        selected_file = self.json_file_dropdown.currentText()
         self.__load_os_versions(selected_file)  # Load OS versions for the selected file
 
     def __show_input_dialog(self):
@@ -523,6 +524,14 @@ class MainPage:
             user_input = dialog.get_input()
             self.connection_manager.set_parameters(user_input)
 
+    def __show_os_template_edit_dialog(self):
+        dialog = OSTemplateConfigurePage(
+            self.main_widget,
+            self.json_file_dropdown.currentText(),
+            self.os_version_dropdown.currentText(),
+        )
+        dialog.exec_()
+
     def __update_port_lineedit(self, port):
         self.port_input.setText(str(port))  # Set the port input
 
@@ -531,7 +540,6 @@ class MainPage:
         # First, check for required fields
         if not self.__check_required_fields():
             return  # Alert will be shown in the __check_required_fields method
-
         selected_os_version = self.__get_selected_os_version()
         if selected_os_version is None:
             return  # User was alerted
@@ -913,210 +921,185 @@ class VariableConfigurePage:
 
 class OSTemplateConfigurePage:
 
-    def __init__(self, widget_parent: QtWidgets.QMainWindow) -> None:
-        # Create a QDialog instance
-        self._widget_parrent = widget_parent
-        self.varialbe_configure_page_dialog = QtWidgets.QDialog(widget_parent)
-        self.verialbe_configure_page_grid_layout = QtWidgets.QGridLayout(
-            self.varialbe_configure_page_dialog
+    def __init__(
+        self,
+        widget_parent: QtWidgets.QMainWindow,
+        cur_json_selected: str = "",
+        cur_os_selected: str = "",
+    ) -> None:
+        self.__is_just_init = True
+        self._widget_parent = widget_parent
+        self.json_handler = json_file()  # Accepting the json_handler object
+        self.OS_template_configure_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.OS_template_configure_page_dialog.setStyleSheet(GUI.main_style)
+        self.OS_template_configure_page_dialog.setWindowTitle(
+            "OS Template Configuration"
         )
-        self.varialbe_configure_page_dialog.setWindowTitle("Input Dialog")
-        self.__set_ip_input_variable_grid()
-        self.__set_serial_input_grid()
-        self._set_button_grid()
+        self.cur_json_selected = cur_json_selected
+        self.cur_os_selected = cur_os_selected
+        self.layout = QtWidgets.QGridLayout(self.OS_template_configure_page_dialog)
 
-    def __set_ip_input_variable_grid(self):
-        self.input_widget = GUI_Factory.create_widget(
-            self._widget_parrent, "input_widget", GUI.main_style, 220, 500, 400
-        )
+        self.__setup_comboboxes()  # Setting up the combo boxes
+        self.__setup_scroll_area()  # Setting up the scroll area for command templates
+        self.__setup_buttons()  # Setting up the action buttons
 
-        self.ip_variable_grid = QtWidgets.QGridLayout(self.input_widget)
-        self.ip_variable_grid.setAlignment(QtCore.Qt.AlignmentFlag.AlignTop)
+        # Create a container for command entries
+        self.command_container = QtWidgets.QWidget()
+        self.scroll_area_layout = QtWidgets.QVBoxLayout(self.command_container)
+        self.scroll_area.setWidget(self.command_container)
 
-        banner_label = GUI_Factory.create_label(
-            "IP Timer Configuration",
-            "label_banner",
-            alignment=QtCore.Qt.AlignCenter,
-            HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
-            VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
+    def __setup_comboboxes(self):
+        # Label for JSON files
+        json_label = GUI_Factory.create_label(
+            "Select Device Configuration File:", "input_label"
         )
+        json_label.setMinimumWidth(350)
+        self.layout.addWidget(json_label, 0, 0)
 
-        login_wait_label = GUI_Factory.create_label(
-            label_text="Login Wait Time",
-            obj_name="input_label_configure_dialog",
+        # ComboBox for JSON files
+        self.json_file_dropdown = GUI_Factory.create_combobox(
+            self._widget_parent, font_size=22
         )
-        self.login_wait_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit_configure_dialog",
-            placeholder_text=f'Default {self.curr_conf["login_wait_time"]}',
-        )
-        self.login_wait_input.setValidator(QtGui.QDoubleValidator(self.input_widget))
+        self.json_file_dropdown.setObjectName("json_dropdown")
+        self.json_file_dropdown.addItems(self.json_handler.get_list_of_file())
+        self.json_file_dropdown.setCurrentIndex(-1)
+        self.json_file_dropdown.currentTextChanged.connect(self.on_select_new_json)
+        self.layout.addWidget(self.json_file_dropdown, 0, 1)
 
-        banner_timeout_label = GUI_Factory.create_label(
-            label_text="Banner Timeout",
-            obj_name="input_label_configure_dialog",
-        )
-        self.banner_timeout_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit_configure_dialog",
-            placeholder_text=f'Default {self.curr_conf["banner_timeout"]}',
-        )
-        self.banner_timeout_input.setValidator(
-            QtGui.QDoubleValidator(self.input_widget)
-        )
+        # Label for OS version
+        os_version_label = GUI_Factory.create_label("Select OS Version:", "input_label")
+        os_version_label.setMinimumWidth(350)
+        self.layout.addWidget(os_version_label, 1, 0)
 
-        command_retriesdelay_label = GUI_Factory.create_label(
-            label_text="Command Retries Delay",
-            obj_name="input_label_configure_dialog",
+        # ComboBox for OS versions
+        self.os_version_dropdown = GUI_Factory.create_combobox(
+            self._widget_parent, font_size=22
         )
-        self.command_retriesdelay_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit_configure_dialog",
-            placeholder_text=f'Default {self.curr_conf["command_retriesdelay"]}',
-        )
-        self.command_retriesdelay_input.setValidator(
-            QtGui.QDoubleValidator(self.input_widget)
-        )
+        self.os_version_dropdown.setObjectName("os_version_dropdown")
+        self.layout.addWidget(self.os_version_dropdown, 1, 1)
 
-        command_maxretries_label = GUI_Factory.create_label(
-            label_text="Command Max Retries",
-            obj_name="input_label_configure_dialog",
-        )
-        self.command_maxretries_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit_configure_dialog",
-            placeholder_text=f'Default {self.curr_conf["command_maxretries"]}',
-        )
-        self.command_maxretries_input.setValidator(
-            QtGui.QDoubleValidator(self.input_widget)
-        )
+    def __setup_scroll_area(self):
+        # Create a scroll area for commands
+        self.scroll_area = QtWidgets.QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
 
-        # Add New Widgets to Grid
-        self.ip_variable_grid.addWidget(banner_label, 0, 0, 1, 2)
+        # Create a container for command entries
+        self.command_container = QtWidgets.QWidget()
+        self.scroll_area_layout = QtWidgets.QVBoxLayout(self.command_container)
+        self.scroll_area.setWidget(self.command_container)
 
-        self.ip_variable_grid.addWidget(login_wait_label, 1, 0)
-        self.ip_variable_grid.addWidget(self.login_wait_input, 1, 1)
-        self.ip_variable_grid.addWidget(banner_timeout_label, 2, 0)
-        self.ip_variable_grid.addWidget(self.banner_timeout_input, 2, 1)
-        self.ip_variable_grid.addWidget(command_retriesdelay_label, 3, 0)
-        self.ip_variable_grid.addWidget(self.command_retriesdelay_input, 3, 1)
-        self.ip_variable_grid.addWidget(command_maxretries_label, 4, 0)
-        self.ip_variable_grid.addWidget(self.command_maxretries_input, 4, 1)
-        self.verialbe_configure_page_grid_layout.addWidget(
-            self.input_widget,
-            0,
-            0,
-        )
+        # Add the scroll area to the layout
+        self.layout.addWidget(self.scroll_area, 2, 0, 1, 2)  # Span across two columns
 
-    def __set_serial_input_grid(self):
-        self.serial_widget = GUI_Factory.create_widget(
-            self._widget_parrent, "input_widget", GUI.main_style, 180, 500, 400
-        )
+        # Initialize command list based on selected OS
 
-        self.serial_variable_grid = QtWidgets.QGridLayout(self.serial_widget)
-        banner_label = GUI_Factory.create_label(
-            "Serial Configuration",
-            "label_banner",
-            alignment=QtCore.Qt.AlignCenter,
-            HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
-            VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
-        )
-        bytesize_label = GUI_Factory.create_label(
-            label_text="Bytesize",
-            obj_name="input_label_configure_dialog",
-        )
-        self.bytesize_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit_configure_dialog",
-            placeholder_text=f'Default {self.curr_conf["bytesize"]}',
-        )
-        self.bytesize_input.setValidator(QtGui.QIntValidator(self.serial_widget))
+    def __setup_buttons(self):
+        # Button layout
+        button_layout = QtWidgets.QHBoxLayout()
 
-        parity_label = GUI_Factory.create_label(
-            label_text="Parity",
-            obj_name="input_label_configure_dialog",
+        # Save button
+        self.save_button = GUI_Factory.create_button(
+            "Save", "acceptButton", GUI.main_style
         )
-        self.parity_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit_configure_dialog",
-            placeholder_text=f'Default {self.curr_conf["parity"]}',
-        )
-        parity_info = GUI_Factory.create_info_icon(
-            icon_path="./src/Assets/info.png",
-            tooltip_text=(
-                "Select a parity option:\n"
-                "E: Even parity (serial.PARITY_EVEN)\n"
-                "N: No parity (serial.PARITY_NONE)\n"
-                "M: Mark parity (serial.PARITY_MARK)\n"
-                "O: Odd parity (serial.PARITY_ODD)\n"
-                "S: Space parity (serial.PARITY_SPACE)"
-            ),
-            obj_name="info_icon",
-        )
+        self.save_button.clicked.connect(self.save_changes)
+        button_layout.addWidget(self.save_button)
 
-        stopbits_label = GUI_Factory.create_label(
-            label_text="Stopbits",
-            obj_name="input_label_configure_dialog",
-        )
-        self.stopbits_input = GUI_Factory.create_lineedit(
-            obj_name="input_lineedit_configure_dialog",
-            placeholder_text=f'Default {self.curr_conf["stopbits"]}',
-        )
-        self.stopbits_input.setValidator(QtGui.QDoubleValidator(self.serial_widget))
-
-        self.serial_variable_grid.addWidget(banner_label, 0, 0, 1, 3)
-        self.serial_variable_grid.addWidget(bytesize_label, 1, 0)
-        self.serial_variable_grid.addWidget(self.bytesize_input, 1, 1, 1, 2)
-        self.serial_variable_grid.addWidget(parity_label, 2, 0)
-        self.serial_variable_grid.addWidget(self.parity_input, 2, 1)
-        self.serial_variable_grid.addWidget(parity_info, 2, 2)
-        self.serial_variable_grid.addWidget(stopbits_label, 3, 0)
-        self.serial_variable_grid.addWidget(self.stopbits_input, 3, 1, 1, 2)
-        self.verialbe_configure_page_grid_layout.addWidget(
-            self.serial_widget,
-            1,
-            0,
-        )
-
-    def _set_button_grid(self):
-        self.button_widget = GUI_Factory.create_widget(
-            self._widget_parrent, "input_widget", GUI.main_style, 40, 500, 100
-        )
-
-        self.button_grid = QtWidgets.QGridLayout(self.button_widget)
-
-        self.apply_button = GUI_Factory.create_button(
-            "Apply", "acceptButton", GUI.main_style
-        )
+        # Cancel button
         self.cancel_button = GUI_Factory.create_button(
-            "Cancle", "cancelButton", GUI.main_style
+            "Cancel", "cancelButton", GUI.main_style
         )
+        self.cancel_button.clicked.connect(
+            self.OS_template_configure_page_dialog.reject
+        )
+        button_layout.addWidget(self.cancel_button)
 
-        self.button_grid.addWidget(self.apply_button, 0, 0)
-        self.button_grid.addWidget(self.cancel_button, 0, 1)
-        self.apply_button.clicked.connect(self.accept)
-        self.cancel_button.clicked.connect(self.reject)
+        self.layout.addLayout(
+            button_layout, 3, 0, 1, 2
+        )  # Add buttons below the scroll area
 
-        self.verialbe_configure_page_grid_layout.addWidget(self.button_widget, 2, 0)
+    def on_select_new_json(self):
+        try:
+            self.json_handler.read_json_file(self.json_file_dropdown.currentText())
+            self.os_version_dropdown.clear()
+            self.os_version_dropdown.addItems(self.json_handler.get_os_keys())
+            self.update_command_list()
+        except Exception:
+            self.os_version_dropdown.clear()
+            QtWidgets.QMessageBox.critical(
+                self._widget_parent, "Error", "Error loading commands."
+            )
+
+    def update_command_list(self):
+        """Update the list of commands based on the selected OS version."""
+        # Clear previous command widgets by creating a new command container
+        self.clear_command_container()  # Remove the old container
+
+        # Create a new command container
+        self.command_container = QtWidgets.QWidget()
+        self.scroll_area_layout = QtWidgets.QVBoxLayout(self.command_container)
+        self.scroll_area.setWidget(self.command_container)
+
+        # Retrieve selected OS version
+        selected_os = self.os_version_dropdown.currentText()
+
+        # Load commands based on selection
+        try:
+            commands = self.json_handler.get_command_json(
+                selected_os
+            )  # Get commands from JSON
+
+            if commands:  # Check if commands are not empty
+                for command_title, command_data in commands.items():
+                    self.__create_command_entry(command_title, command_data)
+            else:
+                # Optionally, you could display a message if there are no commands for the selected OS
+                no_command_label = GUI_Factory.create_label(
+                    "No commands available for this OS version.", "input_label"
+                )
+                self.scroll_area_layout.addWidget(no_command_label)
+
+        except Error.JsonOSTemplateError:
+            QtWidgets.QMessageBox.critical(
+                self._widget_parent, "Error", "Error loading commands."
+            )
+
+    def clear_command_container(self):
+        """Clear the old command container from the scroll area."""
+        # Instead of deleting widgets, we just remove the old container and create a new one.
+        self.scroll_area.setWidget(None)  # Detach the old widget
+        self.command_container.deleteLater()  # Delete the old container
+
+    def __create_command_entry(self, command_title: str, command_data: dict):
+        """Create a row for a command entry."""
+        command_layout = QtWidgets.QHBoxLayout()
+
+        # Command title label
+        command_label = GUI_Factory.create_label(command_title, "input_label")
+        command_layout.addWidget(command_label)
+
+        # QTextEdit for actual command
+        command_text_edit = GUI_Factory.create_lineedit("input_lineedit")
+        command_text_edit.setText(command_data["command"])  # Set initial command
+        command_layout.addWidget(command_text_edit)
+
+        # Checkbox for activation
+        active_checkbox = QtWidgets.QCheckBox("Activate")
+        active_checkbox.setChecked(command_data["active"])
+        command_layout.addWidget(active_checkbox)
+
+        # Add this command entry layout to the scroll area layout
+        self.scroll_area_layout.addLayout(command_layout)
+
+    def save_changes(self):
+        """Save changes to the JSON file (implement your saving logic here)."""
+        # Here you would gather all command entries and save to the appropriate JSON file
+        # Implement your saving logic using self.json_file_dropdown.currentText() and self.os_version_dropdown.currentText()
+        QtWidgets.QMessageBox.information(
+            self._widget_parent, "Save", "Changes saved successfully."
+        )
 
     def exec_(self):
-        return self.varialbe_configure_page_dialog.exec_()
-
-    def accept(self):
-        self.result = QtWidgets.QDialog.Accepted
-        self.varialbe_configure_page_dialog.accept()
-
-    def reject(self):
-        self.result = QtWidgets.QDialog.Rejected
-        self.varialbe_configure_page_dialog.reject()
-
-    def get_input(self):
-        return {
-            "login_wait_time": self.login_wait_input.text(),
-            "banner_timeout": self.banner_timeout_input.text(),
-            "command_retriesdelay": self.command_retriesdelay_input.text(),
-            "command_max_retries": self.command_maxretries_input.text(),
-            "bytesize": self.bytesize_input.text(),
-            "parity": self.parity_input.text(),
-            "stopbits": self.stopbits_input.text(),
-        }
-
-    def result(self):
-        return self.result
+        return self.OS_template_configure_page_dialog.exec_()
 
 
 class DataCollectorThread(QtCore.QThread):
@@ -1504,9 +1487,7 @@ class ResultImageConfigurePage:
         )
         self.text_color_button.clicked.connect(lambda: self.open_color_picker("text"))
 
-        font_label = GUI_Factory.create_label(
-            f"Font: {self.font}", "input_label_configure_dialog"
-        )
+        font_label = GUI_Factory.create_label(f"Font", "input_label_configure_dialog")
         self.font_dropdown = GUI_Factory.create_combobox(
             self._widget_parrent, font_size=18
         )
@@ -1531,28 +1512,28 @@ class ResultImageConfigurePage:
             self.font_dropdown.setCurrentIndex(0)
         self.font_dropdown
         font_scale_label = GUI_Factory.create_label(
-            f"Font Scale: {self.font_scale}", "input_label_configure_dialog"
+            "Font Scale", "input_label_configure_dialog"
         )
         self.font_scale_lineedit = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
             placeholder_text=f"Default {self.font_scale}",
         )
         thickness_label = GUI_Factory.create_label(
-            f"Font Thickness: {self.thickness}", "input_label_configure_dialog"
+            "Font Thickness", "input_label_configure_dialog"
         )
         self.thickness_lineedit = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
             placeholder_text=f"Default {self.thickness}",
         )
         line_spacing_label = GUI_Factory.create_label(
-            f"Line Spacing: {self.line_spacing}", "input_label_configure_dialog"
+            "Line Spacing", "input_label_configure_dialog"
         )
         self.line_spacing_lineedit = GUI_Factory.create_lineedit(
             obj_name="input_lineedit_configure_dialog",
             placeholder_text=f"Default {self.line_spacing}",
         )
         padding_label = GUI_Factory.create_label(
-            f"Padding: {self.padding}", "input_label_configure_dialog"
+            "Padding", "input_label_configure_dialog"
         )
         self.padding_lineedit = GUI_Factory.create_lineedit(
             "input_lineedit_configure_dialog",
