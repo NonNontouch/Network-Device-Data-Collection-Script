@@ -49,7 +49,7 @@ class telnet_connection:
         Returns:
             bool: _True if logged in, False if not._
         """
-        #self.connect.write(b"\n")
+        # self.connect.write(b"\n")
         sleep(self._login_wait_time)
         try:
             console_name = (
@@ -182,7 +182,9 @@ class telnet_connection:
         self.connect.write(self.to_bytes(enable_command))
         sleep(0.3)
 
-        _output = self.connect.read_until(b":").decode("utf-8")
+        _output = self.connect.read_eager().decode("utf-8")
+        if _output[-1] == "#":
+            return
         for text in ["Password:", "password:"]:
             if text in _output:
                 _output = self.send_command(password)
