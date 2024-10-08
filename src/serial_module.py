@@ -78,13 +78,13 @@ class serial_connection:
         retries = 0
         cmd_output = ""
 
+        print(command)
         try:
             self.connect.write(self.to_bytes(command))
         except serialutil.SerialTimeoutException:
             raise Error.ConnectionLossConnect(command)
 
         sleep(0.3)
-
         while True:
             try:
                 _output = data_handling.remove_control_char(self.get_output())
@@ -102,7 +102,7 @@ class serial_connection:
             if "More" in _output or "more" in _output:
                 self.connect.write(" ")
                 _output = data_handling.remove_more_keyword(_output)
-
+            print(_output)
             cmd_output += _output
             retries = 0  # Reset retries on valid output
 
@@ -205,7 +205,10 @@ class serial_connection:
             bool: _True if logged in, False if not._
         """
         self.connect.write(b"\n")
+
+        sleep(0.3)
         console_name = self.connect.read_all().decode("utf-8").splitlines()[-1].strip()
+        print(console_name)
         return True if data_handling.find_prompt(console_name) else False
 
     def list_serial_ports(self):
@@ -235,6 +238,18 @@ class serial_connection:
         except (EOFError, ConnectionResetError, ConnectionAbortedError, OSError):
             # If any of these exceptions are raised, the connection is not alive
             return False
+
+    def close_connection(self):
+        retry = 0
+        while True:
+            __output = self.send_command("exit")
+            if data_handling.is_ready_input_username(__output):
+                break
+            retry += 1
+            if retry >= 5 and self.is_enable() == False:
+                break
+        self.connect.close()
+        self.connect = None
 
     @staticmethod
     def to_bytes(line: str):
