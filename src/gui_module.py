@@ -540,6 +540,27 @@ class MainPage:
         # First, check for required fields
         if not self.__check_required_fields():
             return  # Alert will be shown in the __check_required_fields method
+
+        # Gather connection parameters based on connection type
+        connection_type = self.connection_type_button_group.checkedButton().text()
+
+        connection_params = {
+            "hostname": self.hostname_input.text().strip(),
+            "port": self.port_input.text().strip(),
+            "username": self.username_input.text().strip(),
+            "password": self.password_input.text().strip(),
+            "enable_password": self.enable_password_input.text().strip(),
+            "connection_type": connection_type,
+        }
+
+        # If the connection type is Serial, add serial port and baud rate to parameters
+        if connection_type == "Serial":
+            selected_serial_port = self.serial_port_combo_box.currentText()
+            selected_baudrate = self.baudrate_combo_box.currentText()
+
+            connection_params["serial_port"] = selected_serial_port
+            connection_params["baudrate"] = selected_baudrate
+
         selected_os_version = self.__get_selected_os_version()
         if selected_os_version is None:
             return  # User was alerted
@@ -550,18 +571,7 @@ class MainPage:
 
         # Create the loading window but do not block interaction
         self._loading_window = GUI_Factory.create_loading_window(self._window_parent)
-
         self._loading_window.show()  # Show the loading window
-
-        # Gather values from all QLineEdit inputs for the new thread
-        connection_params = {
-            "hostname": self.hostname_input.text().strip(),
-            "port": self.port_input.text().strip(),
-            "username": self.username_input.text().strip(),
-            "password": self.password_input.text().strip(),
-            "enable_password": self.enable_password_input.text().strip(),
-            "connection_type": self.connection_type_button_group.checkedButton().text(),
-        }
 
         # Create and start the new connection thread
         self.connection_thread = DataCollectorThread(
@@ -608,6 +618,7 @@ class MainPage:
 
     def __check_required_fields(self):
         """Check if all required fields are filled."""
+        # Gather connection parameters
         connection_params = {
             "hostname": self.hostname_input.text().strip(),
             "port": self.port_input.text().strip(),
@@ -615,6 +626,15 @@ class MainPage:
             "password": self.password_input.text().strip(),
         }
 
+        # If the selected connection type is Serial, ensure that the serial port and baudrate are checked too
+        if self.connection_type_button_group.checkedButton().text() == "Serial":
+            serial_port = self.serial_port_combo_box.currentText()
+            baudrate = self.baudrate_combo_box.currentText()
+
+            connection_params["serial_port"] = serial_port
+            connection_params["baudrate"] = baudrate
+
+        # Check for any missing required fields
         missing_fields = [key for key, value in connection_params.items() if not value]
 
         if missing_fields:
