@@ -287,8 +287,8 @@ class connection_manager:
         self.connection = serial(self)
         try:
             self.connection.set_serial_object()
-            print(self.get_serial_port())
-            self.connection.connect_to_device(self.serial_port_list[2])
+            print(self.serial_port, self.baudrate)
+            self.connection.connect_to_device(self.serial_port)
             self.connection.login()
         except Exception as e:
             print(f"Error connecting to Serial: {e}")
@@ -339,6 +339,7 @@ class connection_manager:
 
         # Send commands to the device
         for command_key, command in zip(command_list_json, command_list):
+            print("Sending", command)
             result[command_key] = self._send_command(command_key, command)
             print("Sending", command, "Done")
         # Log results and close connection
