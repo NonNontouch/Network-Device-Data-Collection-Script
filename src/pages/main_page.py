@@ -9,6 +9,7 @@ from src.pages.result_page import ResultPage
 from src.threads.data_collector_thread import DataCollectorThread
 from src.style import main_style
 import src.error as Error
+from queue import Queue
 
 
 class MainPage:
@@ -23,6 +24,7 @@ class MainPage:
         self._window_parent = window_parent
         self.connection_manager = connection_manager
         self.json_handler = json_file()
+        self.device_queue = Queue()
         self.json_handler.get_list_of_file()
         self.__setup_input_grid()
         self.__setup_connection_grid()
@@ -199,6 +201,14 @@ class MainPage:
             ]
         )
 
+        if self.connection_manager.baudrate in [
+            int(self.baudrate_combo_box.itemText(i))
+            for i in range(self.baudrate_combo_box.count())
+        ]:
+            self.baudrate_combo_box.setCurrentText(
+                str(self.connection_manager.baudrate)
+            )
+
         connection_top_grid.addWidget(ssh_button, 0, 0)
         connection_top_grid.addWidget(telnet_button, 0, 1)
         connection_top_grid.addWidget(serial_button, 0, 2)
@@ -222,6 +232,50 @@ class MainPage:
             1,
             0,
         )
+
+    def parse_hostnames(self, input_str):
+        import re
+
+        """Parse the input string for hostnames and handle IP ranges."""
+        hostnames = []
+
+        # Split by commas first
+        parts = input_str.split(",")
+
+        for part in parts:
+            part = part.strip()
+
+            # Check if the input is an IP-like structure
+            if re.match(r"^\d+(\.\d+)*(-\d+)?(\.\d+)*$", part):
+                # Handle IP ranges across multiple octets
+                ranges = [r.split("-") for r in part.split(".")]
+                octet_combinations = [[]]
+
+                for r in ranges:
+                    if len(r) == 2:
+                        # If there's a range, expand it
+                        start, end = int(r[0]), int(r[1])
+                        new_combinations = []
+                        for base in octet_combinations:
+                            for i in range(start, end + 1):
+                                new_combinations.append(base + [str(i)])
+                        octet_combinations = new_combinations
+                    else:
+                        # Otherwise, just append the single value
+                        new_combinations = []
+                        for base in octet_combinations:
+                            new_combinations.append(base + [r[0]])
+                        octet_combinations = new_combinations
+
+                # Construct the IP addresses from the octet combinations
+                for combo in octet_combinations:
+                    hostnames.append(".".join(combo))
+
+            else:
+                # If it's not an IP, treat it as a hostname
+                hostnames.append(part)
+
+        return hostnames
 
     def __setup_json_grid(self):
         # Create a new widget for the JSON grid layout
@@ -342,7 +396,7 @@ class MainPage:
         self.update_json_file_dropdown()  # Update the JSON dropdown
 
         # Check if the dropdown is not empty before loading OS versions
-        if self.json_file_dropdown.currentText() != "˝":
+        if self.json_file_dropdown.currentText() != "":
             self.update_os_versions()  # Refresh the OS versions based on the selected JSON file
 
     def update_json_file_dropdown(self):
@@ -357,44 +411,64 @@ class MainPage:
 
     def __create_connection(self):
         """Main function to create a connection to the device."""
-        # First, check for required fields
+        # Check for required fields
         if not self.__check_required_fields():
-            return  # Alert will be shown in the __check_required_fields method
+            return
+        # Split the hostnames input into a list
+        hostnames_input = self.hostname_input.text().strip()
+        hostnames = self.parse_hostnames(hostnames_input)
+        if hostnames == []:
+            QtWidgets.QMessageBox.critical(
+                self._window_parent,
+                "Error",
+                "Please check your hostname",
+            )
+            return
 
-        # Gather connection parameters based on connection type
-        connection_type = self.connection_type_button_group.checkedButton().text()
+        for hostname in hostnames:
+            self.device_queue.put(hostname.strip())  # Add each hostname to the queue
 
+        self.process_next_device()
+
+    def process_next_device(self):
+        """Process the next device in the queue."""
+        if self.device_queue.empty():
+            QtWidgets.QMessageBox.information(
+                self._window_parent, "Done", "All devices processed."
+            )
+            return
+
+        hostname = self.device_queue.get()  # Get the next hostname from the queue
+        self.connected_hostname = hostname
         connection_params = {
-            "hostname": self.hostname_input.text().strip(),
+            "hostname": hostname,
             "port": self.port_input.text().strip(),
             "username": self.username_input.text().strip(),
             "password": self.password_input.text().strip(),
             "enable_password": self.enable_password_input.text().strip(),
-            "connection_type": connection_type,
+            "connection_type": self.connection_type_button_group.checkedButton().text(),
         }
 
-        # If the connection type is Serial, add serial port and baud rate to parameters
-        if connection_type == "Serial":
+        # Check if the connection type is Serial
+        if connection_params["connection_type"] == "Serial":
             selected_serial_port = self.serial_port_combo_box.currentText()
             selected_baudrate = self.baudrate_combo_box.currentText()
-
             connection_params["serial_port"] = selected_serial_port
             connection_params["baudrate"] = selected_baudrate
 
         selected_os_version = self.__get_selected_os_version()
-        if selected_os_version is None:
-            return  # User was alerted
-
         command_dict_json = self.__get_command_dict(selected_os_version).copy()
-        if command_dict_json is None:
-            return  # User was alerted
-        regex = self.json_handler.get_regex(selected_os_version)
-        print(regex)
-        if regex is None:
-            regex = r"^\s*([\w-]+)(>|#)\s*$"
-        # Create the loading window but do not block interaction
-        self._loading_window = GUI_Factory.create_loading_window(self._window_parent)
-        self._loading_window.show()  # Show the loading window
+        regex = (
+            self.json_handler.get_regex(selected_os_version) or r"^\s*([\w-]+)(>|#)\s*$"
+        )
+
+        # Create the loading window
+        self._loading_window = GUI_Factory.create_loading_window(
+            self._window_parent,
+            message=f"Connecting to {self.connected_hostname}, Please wait",
+            width=600,
+        )
+        self._loading_window.show()
 
         # Create and start the new connection thread
         self.connection_thread = DataCollectorThread(
@@ -404,21 +478,31 @@ class MainPage:
             regex=regex,
             is_done_create_img=False,
         )
+
+        # Connect signals
         self.connection_thread.connection_successful.connect(
             self.on_connection_successful
         )
         self.connection_thread.error_occurred.connect(self.on_error_occurred)
         self.connection_thread.data_collected.connect(self.on_data_collected)
         self.connection_thread.image_generated.connect(self.on_image_generated)
-        self.connection_thread.finished.connect(self._loading_window.accept)
+        self.connection_thread.finished.connect(self.on_device_process_finished)
 
         self.connection_thread.start()  # Start the thread
+
+    def on_device_process_finished(self):
+        """Handle completion of the current device's data collection."""
+        # Hide the loading window after the data collection is done
+        self._loading_window.accept()  # Close loading window
+        # This method won't be called now; instead, the logic is in on_data_collected
 
     def on_connection_successful(self, params):
         """Handle successful connection."""
         print("Connection established successfully with parameters:", params)
 
-        self._loading_window.update_label("Connected, Collecting data...")
+        self._loading_window.update_label(
+            f"Connected to {self.connected_hostname} , Collecting data..."
+        )
 
     def on_data_collected(self, result):
         """Handle the collected data and show the result page."""
@@ -434,11 +518,19 @@ class MainPage:
         QtWidgets.QMessageBox.critical(
             self._window_parent, "Connection Error", error_message
         )
-        self._loading_window.accept()
+        # Do not close the loading window, just update the status
+        self._loading_window.update_label(
+            "Error occurred. Moving to the next device..."
+        )
+        self._loading_window.setEnabled(True)  # Allow interaction after error
+
+        # Continue to process the next device
+        self.process_next_device()
 
     def on_image_generated(self):
         self._result_page.set_result_grid()
         self._result_page.exec_()  # Show the result page
+        self.process_next_device()
 
     def __check_required_fields(self):
         """Check if all required fields are filled."""

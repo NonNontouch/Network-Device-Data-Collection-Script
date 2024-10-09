@@ -10,7 +10,7 @@ class telnet_connection:
 
     session = None
 
-    def __init__(self, connection):
+    def __init__(self, connection, data_handling: data_handling = None):
         """_init the serial connection module with connection variable._
 
         Args:
@@ -27,8 +27,9 @@ class telnet_connection:
         self._banner_timeout: float = connection.banner_timeout
         self._RETRY_DELAY: float = connection.command_retriesdelay
         self._MAX_RETRIES: int = connection.command_maxretries
+        self.data_handling = data_handling
 
-    def connect_to_device(self):
+    def connect_to_device(self, regex):
         """_This function will try connect into device via Telnet._
 
         Raises:
@@ -37,7 +38,7 @@ class telnet_connection:
         """
         try:
             self.connect = Telnet(host=self._hostname, port=self._port, timeout=4)
-
+            self.regex = regex
         except OSError as e:
             raise e
         except Exception as e:
@@ -55,7 +56,7 @@ class telnet_connection:
             console_name = (
                 self.connect.read_eager().decode("utf-8").splitlines()[-1].strip()
             )
-            return True if data_handling.find_prompt(console_name) else False
+            return True if self.data_handling.find_prompt(console_name) else False
         except Exception:
             raise Error.LoginError("Program can't find the username form in login form")
 
@@ -68,7 +69,7 @@ class telnet_connection:
                 b":", timeout=self._login_wait_time
             ).decode("utf-8")
             print(first_message, end="")
-            if data_handling.is_ready_input_username(first_message):
+            if self.data_handling.is_ready_input_username(first_message):
                 sleep(self._login_wait_time)
                 self.connect.write(buffer=self.to_bytes(self._username))
                 sleep(self._login_wait_time)
@@ -80,14 +81,14 @@ class telnet_connection:
                     raise Error.LoginError(
                         "Program couldn't send data via Telnet, Could be blocked by firewall"
                     )
-                if data_handling.is_ready_input_password(password_prompt):
+                if self.data_handling.is_ready_input_password(password_prompt):
                     sleep(self._login_wait_time)
                     self.connect.write(self.to_bytes(self._password))
                     count = 0
                     while True:
                         sleep(0.5)
                         login_result = self.connect.read_eager().decode("utf-8")
-                        if data_handling.find_prompt(login_result, self.regex):
+                        if self.data_handling.find_prompt(login_result, self.regex):
                             break
                         if count >= self._banner_timeout:
                             raise Error.LoginError("Username or Password is wrong.")
@@ -100,7 +101,7 @@ class telnet_connection:
             # If connection is closed while reading or writing
             raise Error.ConnectionLossConnect("Login")
 
-    def send_command(self, command: str, regex: str):
+    def send_command(self, command: str):
         """_Send command to a host via Telnet._
 
         Args:
@@ -112,8 +113,6 @@ class telnet_connection:
         Returns:
             string: _A result from given command._
         """
-        if regex != None:
-            self.regex = regex
         retries = 0
         cmd_output = ""
 
@@ -127,7 +126,7 @@ class telnet_connection:
 
         while True:
             try:
-                _output = data_handling.remove_control_char(self.get_output())
+                _output = self.data_handling.remove_control_char(self.get_output())
             except EOFError as e:
                 print(e)
                 raise Error.ConnectionLossConnect(command)
@@ -142,16 +141,16 @@ class telnet_connection:
             # Handle "More" prompt
             if "More" in _output or "more" in _output:
                 self.connect.write(b" ")
-                _output = data_handling.remove_more_keyword(_output)
+                _output = self.data_handling.remove_more_keyword(_output)
 
             cmd_output += _output
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if data_handling.find_prompt(_output, self.regex):
+            if self.data_handling.find_prompt(_output, self.regex):
                 break
 
-        if data_handling.check_error(cmd_output):
+        if self.data_handling.check_error(cmd_output):
             raise Error.ErrorCommand(command, cmd_output)
 
         return cmd_output
@@ -159,13 +158,12 @@ class telnet_connection:
     def get_output(self):
         return self.connect.read_eager().decode("utf-8")
 
-    def is_enable(self, regex: str):
+    def is_enable(self):
         """_Check if device is enable._
 
         Returns:
             bool: _True if enabled, False if not._
         """
-        self.regex = regex
         console_name = self.send_command("").splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
 

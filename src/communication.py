@@ -1,8 +1,8 @@
 from .ssh_module import ssh_connection as ssh
 from .telnet_module import telnet_connection as telnet
 from .serial_module import serial_connection as serial
-from .regular_expression_handler import data_handling as data_handling
 import src.error as Error
+from .regular_expression_handler import data_handling
 from .config_handler import ConfigHandler
 import re as re
 import paramiko as para
@@ -67,7 +67,7 @@ class connection_manager:
         self.config = ConfigHandler("config.json")
         self.config.load_config()
 
-        # Hard-coded values
+        self.data_handling = data_handling("config.json")
 
         # Load other configurable values
         self.timeout: float = (
@@ -304,9 +304,9 @@ class connection_manager:
             SSHException: If authentication fail
             Exception: If unknown exception is founded
         """
-        self.connection = ssh(self)
+        self.connection = ssh(self, self.data_handling)
         try:
-            self.connection.connect_to_device()
+            self.connection.connect_to_device(self.regex)
         except (OSError, para.SSHException) as e:
             print(e)
             self.connection = None
@@ -318,11 +318,9 @@ class connection_manager:
 
     def set_telnet_connection(self):
         """Set connection as telnet and try connect and login to it"""
-        if self.port == None:
-            self.port = 23
-        self.connection = telnet(self)
+        self.connection = telnet(self, self.data_handling)
         try:
-            self.connection.connect_to_device()
+            self.connection.connect_to_device(self.regex)
             self.connection.login()
         except Exception as e:
             print(f"Error connecting to Telnet: {e}")
@@ -333,9 +331,9 @@ class connection_manager:
         """
         Set connection as serial and try connect and login to it
         """
-        self.connection = serial(self)
+        self.connection = serial(self, self.data_handling)
         try:
-            self.connection.set_serial_object()
+            self.connection.set_serial_object(self.regex)
             print(self.serial_port, self.baudrate)
             self.connection.connect_to_device(self.serial_port)
             self.connection.login()
@@ -399,7 +397,7 @@ class connection_manager:
     def _enable_device_if_needed(self, command_dict: dict, regex: str):
         """Enable the device if it's not already enabled."""
         try:
-            if self.connection.is_enable(regex) is False:
+            if self.connection.is_enable() is False:
                 if "Enable Device" in command_dict:
                     self.connection.enable_device(
                         enable_command=command_dict["Enable Device"],
@@ -425,14 +423,20 @@ class connection_manager:
         if "show vlt number" in command_dict:
             try:
                 vlt_domain = self.get_vlt_number(command_dict)
+                print("Vlt domain:", vlt_domain)
+                if vlt_domain is None:
+                    print("command is poped")
+                    command_dict.pop("show vlt status")
+
                 command_dict["show vlt status"] = f"show vlt {vlt_domain}"
-            except Exception:
+            except Exception as e:
+                print(e)
                 raise Error.ErrorGetVLTNumber()
 
     def _send_command(self, command_key, command):
         """Send a single command and handle errors."""
         try:
-            return self.connection.send_command(command, self.regex)
+            return self.connection.send_command(command)
         except Error.ErrorCommand as e:
             print(e)
             return str(e)

@@ -22,5 +22,11 @@
     "font_scale": 1,
     "thickness": 2,
     "line_spacing": 8,
-    "padding": 20
+    "padding": 20,
+    "find_prompt": "^\\s*([\\w-]+)(>|#)\\s*$",
+    "check_error": "Invalid input|command not found|Unrecognized|Unknown command|Incomplete command|Illegal command|Error: Value out of range|Illegal parameter",
+    "remove_control_char": "[^\\x20-\\x7E\\r\\n]",
+    "is_ready_input_username": "(?:login|username|user)(?!.*password:pass|Password)",
+    "is_ready_input_password": "(?:password:pass|Password)(?!.*login|username|user)",
+    "remove_more_keyword": "--[Mm]ore--"
 }

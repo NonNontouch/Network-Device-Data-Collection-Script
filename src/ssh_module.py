@@ -26,7 +26,7 @@ class ssh_connection:
     policy = para.AutoAddPolicy()
     session = None
 
-    def __init__(self, connection):
+    def __init__(self, connection, data_handling: data_handling = None):
         # pass connection object into ssh_module
         self._hostname: str = connection.hostname
         self._username: str = connection.username
@@ -36,8 +36,9 @@ class ssh_connection:
         self._banner_timeout: float = connection.banner_timeout
         self._RETRY_DELAY: float = connection.command_retriesdelay
         self._MAX_RETRIES: int = connection.command_maxretries
+        self._data_handling = data_handling
 
-    def connect_to_device(self):
+    def connect_to_device(self, regex):
         try:
             self.connect.set_missing_host_key_policy(self.policy)
             self.connect.connect(
@@ -50,7 +51,7 @@ class ssh_connection:
             )
             self.session = self.connect.invoke_shell()
             self.session.settimeout(self._RETRY_DELAY)
-
+            self.regex = regex
         except OSError as e:
             raise OSError(e)
         except para.SSHException as e:
@@ -58,9 +59,7 @@ class ssh_connection:
         except Exception as e:
             raise Exception(e)
 
-    def send_command(self, command: str, regex: str):
-        if regex != None:
-            self.regex = regex
+    def send_command(self, command: str):
         if not self.is_connection_alive():
             raise Error.ConnectionLossConnect(command)
 
@@ -76,7 +75,7 @@ class ssh_connection:
         sleep(0.3)
 
         while True:
-            _output = data_handling.remove_control_char(self.get_output())
+            _output = self._data_handling.remove_control_char(self.get_output())
 
             if not _output:  # Check for empty output
                 retries += 1
@@ -88,18 +87,18 @@ class ssh_connection:
             # Handle "More" prompt
             if "More" in _output or "more" in _output:
                 self.session.send(" ")
-                _output = data_handling.remove_more_keyword(_output)
+                _output = self._data_handling.remove_more_keyword(_output)
 
             # Append output to cmd_output
             cmd_output += _output
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if data_handling.find_prompt(_output, regex):
+            if self._data_handling.find_prompt(_output, self.regex):
                 break
 
         # Check for errors in the command output
-        if data_handling.check_error(cmd_output):
+        if self._data_handling.check_error(cmd_output):
             raise Error.ErrorCommand(command, cmd_output)
 
         return cmd_output
@@ -111,7 +110,7 @@ class ssh_connection:
             _output = self.get_output()
             for text in ["Password:", "password:"]:
                 if text in _output:
-                    _output = self.send_command(password, self.regex)
+                    _output = self.send_command(password)
                     break
             if _output[-1] == "#":
                 break
@@ -119,9 +118,8 @@ class ssh_connection:
                 raise Error.ErrorEnable_Password(password)
         return
 
-    def is_enable(self, regex: str):
-        self.regex = regex
-        console_name = self.send_command("", self.regex).splitlines()[-1].strip()
+    def is_enable(self):
+        console_name = self.send_command("").splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
 
     def get_output(self):
