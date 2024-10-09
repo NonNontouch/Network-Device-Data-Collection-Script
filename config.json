@@ -1,0 +1,26 @@
+{
+    "timeout": 4,
+    "login_wait_time": 3.0,
+    "banner_timeout": 15,
+    "command_retriesdelay": 4,
+    "command_maxretries": 4,
+    "baudrate": 115200,
+    "bytesize": 8,
+    "parity": "N",
+    "stopbits": 1,
+    "bg_color": [
+        0,
+        0,
+        0
+    ],
+    "text_color": [
+        255,
+        255,
+        255
+    ],
+    "font": "FONT_HERSHEY_SIMPLEX",
+    "font_scale": 1,
+    "thickness": 2,
+    "line_spacing": 8,
+    "padding": 20
+}
