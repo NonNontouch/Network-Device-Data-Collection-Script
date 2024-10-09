@@ -58,7 +58,9 @@ class ssh_connection:
         except Exception as e:
             raise Exception(e)
 
-    def send_command(self, command: str):
+    def send_command(self, command: str, regex: str):
+        if regex != None:
+            self.regex = regex
         if not self.is_connection_alive():
             raise Error.ConnectionLossConnect(command)
 
@@ -93,7 +95,7 @@ class ssh_connection:
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if data_handling.find_prompt(_output):
+            if data_handling.find_prompt(_output, regex):
                 break
 
         # Check for errors in the command output
@@ -109,7 +111,7 @@ class ssh_connection:
             _output = self.get_output()
             for text in ["Password:", "password:"]:
                 if text in _output:
-                    _output = self.send_command(password)
+                    _output = self.send_command(password, self.regex)
                     break
             if _output[-1] == "#":
                 break
@@ -117,8 +119,9 @@ class ssh_connection:
                 raise Error.ErrorEnable_Password(password)
         return
 
-    def is_enable(self):
-        console_name = self.send_command("").splitlines()[-1].strip()
+    def is_enable(self, regex: str):
+        self.regex = regex
+        console_name = self.send_command("", self.regex).splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
 
     def get_output(self):

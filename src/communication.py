@@ -59,6 +59,7 @@ class connection_manager:
         576000,
         921600,
     ]
+    regex: str = r"^\s*([\w-]+)(>|#)\s*$"
     connection = None
 
     def __init__(self):
@@ -376,7 +377,7 @@ class connection_manager:
             raise Error.ConnectionError("No connection established.")
 
         # Attempt to enable the device if necessary
-        self._enable_device_if_needed(temp_command_dict)
+        self._enable_device_if_needed(temp_command_dict, self.regex)
 
         # Check for VLT number command and update command list if present
         self._update_vlt_status(temp_command_dict)
@@ -395,10 +396,10 @@ class connection_manager:
 
         return result
 
-    def _enable_device_if_needed(self, command_dict: dict):
+    def _enable_device_if_needed(self, command_dict: dict, regex: str):
         """Enable the device if it's not already enabled."""
         try:
-            if self.connection.is_enable() is False:
+            if self.connection.is_enable(regex) is False:
                 if "Enable Device" in command_dict:
                     self.connection.enable_device(
                         enable_command=command_dict["Enable Device"],
@@ -431,7 +432,7 @@ class connection_manager:
     def _send_command(self, command_key, command):
         """Send a single command and handle errors."""
         try:
-            return self.connection.send_command(command)
+            return self.connection.send_command(command, self.regex)
         except Error.ErrorCommand as e:
             print(e)
             return str(e)
@@ -445,7 +446,10 @@ class connection_manager:
             raise Error.ConnectionLossConnect(command)
 
     def get_vlt_number(self, command_dict_json: dict):
-        raw_vlt_num = self.connection.send_command(command_dict_json["show vlt number"])
+        raw_vlt_num = self._send_command(
+            command_key=["show vlt number"],
+            command=command_dict_json["show vlt number"],
+        )
         match = re.search(r"vlt-domain (\d+)", raw_vlt_num)
         if match:
             return int(match.group(1))

@@ -388,7 +388,10 @@ class MainPage:
         command_dict_json = self.__get_command_dict(selected_os_version).copy()
         if command_dict_json is None:
             return  # User was alerted
-
+        regex = self.json_handler.get_regex(selected_os_version)
+        print(regex)
+        if regex is None:
+            regex = r"^\s*([\w-]+)(>|#)\s*$"
         # Create the loading window but do not block interaction
         self._loading_window = GUI_Factory.create_loading_window(self._window_parent)
         self._loading_window.show()  # Show the loading window
@@ -398,6 +401,7 @@ class MainPage:
             params=connection_params,
             connection_manager=self.connection_manager,
             command_dict_json=command_dict_json,
+            regex=regex,
             is_done_create_img=False,
         )
         self.connection_thread.connection_successful.connect(

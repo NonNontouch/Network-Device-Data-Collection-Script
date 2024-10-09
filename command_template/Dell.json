@@ -1,5 +1,6 @@
 {
     "os-6": {
+        
         "Enable Device": {
             "command": "enable",
             "active": true
@@ -38,6 +39,7 @@
         }
     },
     "os-10": {
+        "regex": "^\\s*([\\w-]+)(>|#)\\s*$",
         "Enable Device": {
             "command": "enable",
             "active": true

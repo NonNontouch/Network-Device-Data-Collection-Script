@@ -14,12 +14,14 @@ class DataCollectorThread(QtCore.QThread):
         params: dict,
         connection_manager: connection_manager,
         command_dict_json: dict,
+        regex: str,
         is_done_create_img: bool,
     ):
         super().__init__()
         self.connection_manager = connection_manager
         self.command_dict_json = command_dict_json
         self.params = params
+        self.regex = regex
         self.is_done_create_img = is_done_create_img
         self.result_page = None
 

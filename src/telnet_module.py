@@ -87,7 +87,7 @@ class telnet_connection:
                     while True:
                         sleep(0.5)
                         login_result = self.connect.read_eager().decode("utf-8")
-                        if data_handling.find_prompt(login_result):
+                        if data_handling.find_prompt(login_result, self.regex):
                             break
                         if count >= self._banner_timeout:
                             raise Error.LoginError("Username or Password is wrong.")
@@ -100,10 +100,7 @@ class telnet_connection:
             # If connection is closed while reading or writing
             raise Error.ConnectionLossConnect("Login")
 
-    def send_command(
-        self,
-        command: str,
-    ):
+    def send_command(self, command: str, regex: str):
         """_Send command to a host via Telnet._
 
         Args:
@@ -115,6 +112,8 @@ class telnet_connection:
         Returns:
             string: _A result from given command._
         """
+        if regex != None:
+            self.regex = regex
         retries = 0
         cmd_output = ""
 
@@ -149,7 +148,7 @@ class telnet_connection:
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if data_handling.find_prompt(_output):
+            if data_handling.find_prompt(_output, self.regex):
                 break
 
         if data_handling.check_error(cmd_output):
@@ -160,12 +159,13 @@ class telnet_connection:
     def get_output(self):
         return self.connect.read_eager().decode("utf-8")
 
-    def is_enable(self):
+    def is_enable(self, regex: str):
         """_Check if device is enable._
 
         Returns:
             bool: _True if enabled, False if not._
         """
+        self.regex = regex
         console_name = self.send_command("").splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
 

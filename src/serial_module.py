@@ -60,10 +60,7 @@ class serial_connection:
             self.connect.port = None
             raise Error.SerialConnectError(serial_port)
 
-    def send_command(
-        self,
-        command: str,
-    ):
+    def send_command(self, command: str, regex: str):
         """_Send command to a host via Serial._
 
         Args:
@@ -75,6 +72,8 @@ class serial_connection:
         Returns:
             string: _A result from given command._
         """
+        if regex != None:
+            self.regex = regex
         retries = 0
         cmd_output = ""
 
@@ -107,7 +106,7 @@ class serial_connection:
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if data_handling.find_prompt(_output):
+            if data_handling.find_prompt(_output, regex):
                 break
 
         if data_handling.check_error(cmd_output):
@@ -189,13 +188,14 @@ class serial_connection:
         else:
             raise Error.ErrorEnable_Password(self._enable_password)
 
-    def is_enable(self):
+    def is_enable(self, regex: str):
         """_Check if device is enable._
 
         Returns:
             bool: _True if enabled, False if not._
         """
-        console_name = self.send_command("").splitlines()[-1].strip()
+        self.regex = regex
+        console_name = self.send_command("", regex).splitlines()[-1].strip()
         return True if console_name[-1] == "#" else False
 
     def is_login(self):
