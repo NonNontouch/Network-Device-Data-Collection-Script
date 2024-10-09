@@ -161,7 +161,7 @@ class OSTemplateConfigurePage:
             self.add_command
         )  # Connect to the add_command function
         input_group_layout.addWidget(
-            self.create_command_button, 2, 2
+            self.create_command_button, 2, 0, 1, 3
         )  # Place it in Row 2, Column 2
 
         return input_group_widget
@@ -339,7 +339,9 @@ class OSTemplateConfigurePage:
 
         # Checkbox for activation
         active_checkbox = QtWidgets.QCheckBox("Activate")
-        active_checkbox.setObjectName("activeCheckbox")
+        active_checkbox.setObjectName(
+            f"activeCheckbox_{index}"
+        )  # Unique name for each checkbox
         active_checkbox.setChecked(command_data["active"])
 
         # Create a delete button
@@ -484,9 +486,7 @@ class OSTemplateConfigurePage:
 
     def save_changes(self):
         """Save changes to the JSON file."""
-        os_key = (
-            self.os_version_dropdown.currentText()
-        )  # Get the currently selected OS version
+        os_key = self.os_version_dropdown.currentText()
         if os_key == "":
             QtWidgets.QMessageBox.warning(
                 self._widget_parent, "Warning", "Please select an OS version first."
@@ -497,46 +497,31 @@ class OSTemplateConfigurePage:
 
         # Iterate through each command entry in the scroll area
         for i in range(
-            self.scroll_area_layout.count()
-        ):  # Use count() to iterate through widgets
-            item = self.scroll_area_layout.itemAt(
-                i
-            )  # Get the item at the current index
-            if item is None:
-                continue  # Skip if the item is None
-
-            command_label_widget = item.widget()  # Get the widget
-            if command_label_widget is None:
-                continue  # Skip if the widget is None
-
-            # Get the next widget (text edit)
-            text_edit_item = self.scroll_area_layout.itemAt(i + 1)
-            if text_edit_item is None:
-                continue  # Skip if the item is None
-            command_text_edit = text_edit_item.widget()  # Get the text edit widget
-            if command_text_edit is None:
-                continue  # Skip if the widget is None
-
-            # Get the next widget (checkbox)
-            checkbox_item = self.scroll_area_layout.itemAt(i + 2)
-            if checkbox_item is None:
-                continue  # Skip if the item is None
-            active_checkbox = checkbox_item.widget()  # Get the checkbox widget
-            if active_checkbox is None:
-                continue  # Skip if the widget is None
+            self.scroll_area_layout.count() // 4
+        ):  # Each entry has 4 widgets
+            command_label_widget = self.scroll_area_layout.itemAt(
+                i * 4
+            ).widget()  # Label
+            command_text_edit = self.scroll_area_layout.itemAt(
+                i * 4 + 1
+            ).widget()  # Text edit
+            active_checkbox = self.scroll_area_layout.itemAt(
+                i * 4 + 2
+            ).widget()  # Checkbox
 
             # Now we can safely access the widgets' values
-            command_title = (
-                command_label_widget.text()
-            )  # Get command title from the label
-            command_value = command_text_edit.text()  # Get command from line edit
-            active_state = active_checkbox.isChecked()  # Get active state
+            if command_label_widget and command_text_edit and active_checkbox:
+                command_title = (
+                    command_label_widget.text()
+                )  # Get command title from the label
+                command_value = command_text_edit.text()  # Get command from line edit
+                active_state = active_checkbox.isChecked()  # Get active state
 
-            # Add command data to the commands dictionary
-            commands[command_title] = {
-                "command": command_value,
-                "active": active_state,
-            }
+                # Add command data to the commands dictionary
+                commands[command_title] = {
+                    "command": command_value,
+                    "active": active_state,
+                }
 
         # Update the os_template in the json_handler
         self.json_handler.os_template[os_key] = (

@@ -3,7 +3,7 @@ import re
 
 class data_handling:
 
-    def find_prompt(output: str):
+    def find_prompt(output: str, regex: str):
         if output:
             last_line = output.splitlines()[-1].strip()
             if re.match(r"^\s*([\w-]+)(>|#)\s*$", last_line):

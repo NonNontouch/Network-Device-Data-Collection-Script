@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+from .config_handler import ConfigHandler
 import src.error as Error
 
 
@@ -25,7 +26,35 @@ class text_to_pic:
     }
 
     def __init__(self) -> None:
-        self.set_font_scale(1)
+        self.config = ConfigHandler("config.json")
+        self.config.load_config()
+
+        self.bg_color = (
+            self.config.get("bg_color", self.bg_color) if self.config else self.bg_color
+        )
+        self.text_color = (
+            self.config.get("text_color", self.text_color) if self.config else self.text_color
+        )
+        font_name = (
+            self.config.get("font", "FONT_HERSHEY_SIMPLEX")
+            if self.config
+            else "FONT_HERSHEY_SIMPLEX"
+        )
+        self.font = self.font_map.get(
+            font_name, self.font
+        )  # Default font if not found in map
+        self.font_scale = (
+            self.config.get("font_scale", self.font_scale) if self.config else self.font_scale
+        )
+        self.thickness = (
+            self.config.get("thickness", self.thickness) if self.config else self.thickness
+        )
+        self.line_spacing = (
+            self.config.get("line_spacing", self.line_spacing)
+            if self.config
+            else self.line_spacing
+        )
+        self.padding = self.config.get("padding", self.padding) if self.config else self.padding
 
     def set_parameters(self, config: dict):
         """Set the configuration based on the provided dictionary."""
@@ -36,6 +65,7 @@ class text_to_pic:
                     value = self.font_map[value]
 
                 setattr(self, key, value)
+        self.save_config("config.json")
 
     def get_cur_config(self):
         return {
@@ -135,3 +165,23 @@ class text_to_pic:
             y += line_height + self.line_spacing
 
         return image
+
+    def save_config(self, file_path: str):
+        """Save the current configuration to a JSON file, merging with existing settings."""
+
+        # Prepare new configuration
+        new_config = {
+            "bg_color": self.bg_color,
+            "text_color": self.text_color,
+            "font": next(
+                (key for key, value in self.font_map.items() if value == self.font),
+                None,
+            ),
+            "font_scale": self.font_scale,
+            "thickness": self.thickness,
+            "line_spacing": self.line_spacing,
+            "padding": self.padding,
+        }
+
+        # Update existing config with new config values
+        self.config.save_config(new_config)

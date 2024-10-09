@@ -61,7 +61,22 @@ main_style = """
     background-color: #388E3C;
     /* Even darker green on press */
 }
+#createCommandButton {
+    background-color: #4CAF50; /* Green background */
+    color: white; /* White text */
+    border: 2px solid #4CAF50; /* Green border */
+    border-radius: 10px; /* Rounded corners */
+    padding: 10px 20px; /* Padding inside the button */
+    font-size: 16px; /* Font size */
+}
 
+#createCommandButton:hover {
+    background-color: #45a049; /* Darker green on hover */
+}
+
+#createCommandButton:active {
+    background-color: #388E3C; /* Even darker green on press */
+}
 #input_widget {
     background-color: #252525;
     border: 2px solid black;

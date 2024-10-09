@@ -13,11 +13,11 @@ class ResultImageConfigurePage:
         self.result_image_configure_page_dialog.setWindowTitle("Image Configure")
 
         # Initialize properties from curr_conf
-        self.bg_color = curr_conf.get(
-            "bg_color", (0, 0, 0)
+        self.bg_color = tuple(
+            curr_conf.get("bg_color", (0, 0, 0))
         )  # Default to black if not set
-        self.text_color = curr_conf.get(
-            "text_color", (255, 255, 255)
+        self.text_color = tuple(
+            curr_conf.get("text_color", (255, 255, 255))
         )  # Default to white if not set
 
         self.font = curr_conf.get("font", "FONT_HERSHEY_SIMPLEX")

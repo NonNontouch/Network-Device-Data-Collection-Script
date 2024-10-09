@@ -43,4 +43,4 @@ class GUI:
 
         self.Window.show()
         GUI_Factory.center_window(self.Window)
-        sys.exit(self.App.exec_())
+        self.App.exec_()

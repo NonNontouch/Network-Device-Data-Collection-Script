@@ -72,19 +72,19 @@ class NoFontError(Exception):
 
 class InvalidJsonFile(Exception):
     def __init__(self, file: str = ""):
-        self.message = f"\nProgram can read your {file}. Please check the file."
+        self.message = f"\nProgram can't read your {file}. Please check the file."
         super().__init__(self.message)
 
 
 class WriteProbJonFile(Exception):
     def __init__(self, file: str = ""):
-        self.message = f"\nProgram can write to your {file}. Please check the file."
+        self.message = f"\nProgram can't write to your {file}. Please check the file."
         super().__init__(self.message)
 
 
 class JsonFileNotFound(Exception):
     def __init__(self, file: str = ""):
-        self.message = f"\nProgram can find your {file}. Please if the file is present."
+        self.message = f"\nProgram can't find your {file}. Please if the file is present."
         super().__init__(self.message)
 
 

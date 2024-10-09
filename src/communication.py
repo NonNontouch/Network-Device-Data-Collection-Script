@@ -3,7 +3,7 @@ from .telnet_module import telnet_connection as telnet
 from .serial_module import serial_connection as serial
 from .regular_expression_handler import data_handling as data_handling
 import src.error as Error
-
+from .config_handler import ConfigHandler
 import re as re
 import paramiko as para
 
@@ -61,6 +61,53 @@ class connection_manager:
     ]
     connection = None
 
+    def __init__(self):
+        # Load configuration when initializing the class
+        self.config = ConfigHandler("config.json")
+        self.config.load_config()
+
+        # Hard-coded values
+
+        # Load other configurable values
+        self.timeout: float = (
+            self.config.get("timeout", self.timeout) if self.config else self.timeout
+        )
+        self.login_wait_time: float = (
+            self.config.get("login_wait_time", self.login_wait_time)
+            if self.config
+            else self.login_wait_time
+        )
+        self.banner_timeout: float = (
+            self.config.get("banner_timeout", self.banner_timeout)
+            if self.config
+            else self.banner_timeout
+        )
+        self.command_retriesdelay: float = (
+            self.config.get("command_retriesdelay", self.command_retriesdelay)
+            if self.config
+            else self.command_retriesdelay
+        )
+        self.command_maxretries: int = (
+            self.config.get("command_maxretries", self.command_maxretries)
+            if self.config
+            else self.command_maxretries
+        )
+        self.port: int = (
+            self.config.get("port", self.port) if self.config else self.port
+        )
+        self.baudrate: int = (
+            self.config.get("baudrate", self.baudrate) if self.config else self.baudrate
+        )
+        self.bytesize: int = (
+            self.config.get("bytesize", self.bytesize) if self.config else self.bytesize
+        )
+        self.parity: str = (
+            self.config.get("parity", self.parity) if self.config else self.parity
+        )
+        self.stopbits: float = (
+            self.config.get("stopbits", self.stopbits) if self.config else self.stopbits
+        )
+
     def set_parameters(self, params: dict):
         """Set multiple connection parameters from a dictionary."""
         for key, value in params.items():
@@ -81,6 +128,7 @@ class connection_manager:
                     setattr(self, key, int(value))
                 else:
                     setattr(self, key, value)
+        self.save_config("config.json")
 
     def get_curr_conf(self):
         """Get all connection parameters as a dictionary.
@@ -403,3 +451,22 @@ class connection_manager:
             return int(match.group(1))
         else:
             return None
+
+    def save_config(self, file_path: str):
+        """Save the current connection parameters to a JSON file, merging with existing settings."""
+
+        # Prepare new configuration
+        new_config = {
+            "timeout": self.timeout,
+            "login_wait_time": self.login_wait_time,
+            "banner_timeout": self.banner_timeout,
+            "command_retriesdelay": self.command_retriesdelay,
+            "command_maxretries": self.command_maxretries,
+            "baudrate": self.baudrate,
+            "bytesize": self.bytesize,
+            "parity": self.parity,
+            "stopbits": self.stopbits,
+        }
+        self.config.save_config(new_config)
+
+        # Update existing config with new config values
