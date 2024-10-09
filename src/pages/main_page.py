@@ -317,6 +317,8 @@ class MainPage:
     def update_os_versions(self):
         """Update the OS version dropdown based on the selected JSON file."""
         selected_file = self.json_file_dropdown.currentText()
+        if selected_file == "":
+            return
         self.__load_os_versions(selected_file)  # Load OS versions for the selected file
 
     def __show_input_dialog(self):
@@ -329,12 +331,26 @@ class MainPage:
             self.connection_manager.set_parameters(user_input)
 
     def __show_os_template_edit_dialog(self):
-        dialog = OSTemplateConfigurePage(
-            self.main_widget,
-            self.json_file_dropdown.currentText(),
-            self.os_version_dropdown.currentText(),
-        )
+        """Show the OS Template Edit Dialog and reload the JSON and OS version dropdowns upon closing."""
+        dialog = OSTemplateConfigurePage(self.main_widget)
+
+        # Execute the dialog and wait for it to close
         dialog.exec_()
+
+        # Reload the JSON files and update the dropdowns
+        self.json_handler.get_list_of_file()  # Refresh the file list
+        self.update_json_file_dropdown()  # Update the JSON dropdown
+
+        # Check if the dropdown is not empty before loading OS versions
+        if self.json_file_dropdown.currentText() != "˝":
+            self.update_os_versions()  # Refresh the OS versions based on the selected JSON file
+
+    def update_json_file_dropdown(self):
+        """Update the JSON file dropdown with the latest file list."""
+        self.json_file_dropdown.clear()  # Clear existing items
+        self.json_file_dropdown.addItems(
+            sorted(self.json_handler.get_list_of_file())
+        )  # Add sorted new file list
 
     def __update_port_lineedit(self, port):
         self.port_input.setText(str(port))  # Set the port input

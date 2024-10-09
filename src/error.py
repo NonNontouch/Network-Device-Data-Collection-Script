@@ -8,20 +8,22 @@ class ErrorCommand(Exception):
             command (str): _Command that is used._
             command_output (str): _Output of given command._
         """
-        self.message = f"An error occurred while executing the '{command}', \nIt gives output '{command_output}'"
+        self.message = f"\nAn error occurred while executing the '{command}',\nIt gives output \n'{command_output}'"
         super().__init__(self.message)
 
 
 class ErrorEnable_Password(Exception):
     def __init__(self, wrong_password: str):
-        self.message = f"An error occurred while using given {wrong_password} password"
+        self.message = (
+            f"\nAn error occurred while using given {wrong_password} password"
+        )
 
         super().__init__(self.message)
 
 
 class ErrorGetVLTNumber(Exception):
     def __init__(self):
-        self.message = f"An error occurred while trying to get VLT number"
+        self.message = f"\nAn error occurred while trying to get VLT number"
 
         super().__init__(self.message)
 
@@ -34,13 +36,13 @@ class ConnectionError(Exception):
 
 class CommandTimeoutError(Exception):
     def __init__(self, command: str):
-        self.message = f"An error occurred while executing the '{command}', The command is timeout, The device don't return with any thing"
+        self.message = f"\nAn error occurred while executing the '{command}', The command is timeout, The device don't return with any thing"
         super().__init__(self.message)
 
 
 class ConnectionLossConnect(Exception):
     def __init__(self, command: str):
-        self.message = f"Connection was loss while executing the '{command}'"
+        self.message = f"\nConnection was loss while executing the '{command}'"
         super().__init__(self.message)
 
 
@@ -58,34 +60,37 @@ class LoginError(Exception):
 
 class SerialConnectError(Exception):
     def __init__(self, serial_port: str = ""):
-        self.message = f"Program can't connect to {serial_port}"
+        self.message = f"\nProgram can't connect to {serial_port}"
         super().__init__(self.message)
 
 
 class NoFontError(Exception):
     def __init__(self, font: str = ""):
-        self.message = f"Program can't get {font} from your computer."
+        self.message = f"\nProgram can't get {font} from your computer."
         super().__init__(self.message)
 
 
 class InvalidJsonFile(Exception):
     def __init__(self, file: str = ""):
-        self.message = f"Program can read your {file}. Please check the file."
+        self.message = f"\nProgram can read your {file}. Please check the file."
         super().__init__(self.message)
+
 
 class WriteProbJonFile(Exception):
     def __init__(self, file: str = ""):
-        self.message = f"Program can write to your {file}. Please check the file."
+        self.message = f"\nProgram can write to your {file}. Please check the file."
         super().__init__(self.message)
+
+
 class JsonFileNotFound(Exception):
     def __init__(self, file: str = ""):
-        self.message = f"Program can find your {file}. Please if the file is present."
+        self.message = f"\nProgram can find your {file}. Please if the file is present."
         super().__init__(self.message)
 
 
 class JsonOSTemplateError(Exception):
     def __init__(self, OS: str = ""):
         self.message = (
-            f"The program can't Procress the json template for {OS} you selected."
+            f"\nThe program can't Procress the json template for {OS} you selected."
         )
         super().__init__(self.message)

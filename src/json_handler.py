@@ -88,10 +88,13 @@ class json_file:
         # Update the existing data with the new os_template
         existing_data.update(self.os_template)
 
-        # Write the modified data back to the same file
+        # **Sort the existing data by OS keys before writing it back**
+        sorted_data = dict(sorted(existing_data.items()))  # <--- New sorting logic
+
+        # Write the sorted data back to the same file
         try:
             with open(file_path, "w") as f:
-                json.dump(existing_data, f, indent=4)
+                json.dump(sorted_data, f, indent=4)  # Use sorted data here
                 print(f"Successfully modified {file_path}")
         except Exception as e:
             print(f"Error writing to file '{file_path}': {e}")
