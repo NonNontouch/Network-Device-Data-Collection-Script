@@ -12,6 +12,7 @@ class ResultPage:
     def __init__(self, widget_parent, result: dict) -> None:
         self._widget_parent = widget_parent
         self.result_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.result_page_dialog.setObjectName("main_bg_color")
         self.result_page_dialog.setWindowTitle("Result Viewer")
         self._result = result
         self.text_to_picture = text_to_pic()  # Instance of text_to_pic

@@ -19,7 +19,7 @@ class GUI:
             default_text_font = QtGui.QFont(font_families[0], 18)
             self.App.setFont(default_text_font)
             self.Window = QtWidgets.QMainWindow()
-            self.Window.setObjectName("main_window")
+            self.Window.setObjectName("main_bg_color")
             self.Window.setStyleSheet(main_style)
             self.Window.setWindowTitle("Network Device Data Collection Script")
 

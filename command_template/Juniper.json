@@ -1,0 +1,74 @@
+{
+    "os-15": {
+        "Enable Device": {
+            "command": "cli",
+            "active": true
+        },
+        "Terminal Length 0": {
+            "command": "set cli screen-length 0",
+            "active": true
+        },
+        "Show Running Configuration": {
+            "command": "show configuration",
+            "active": true
+        },
+        "Show Interface Status": {
+            "command": "show interfaces terse",
+            "active": true
+        },
+        "Show CPU Usage": {
+            "command": "show system processes extensive",
+            "active": true
+        },
+        "Show Memory Usage": {
+            "command": "show system memory",
+            "active": true
+        },
+        "Show Temperature": {
+            "command": "show chassis temperature",
+            "active": true
+        },
+        "Show Power Status": {
+            "command": "show chassis power",
+            "active": true
+        },
+        "Show FPC Status": {
+            "command": "show chassis fpc",
+            "active": true
+        }
+    },
+    "os-18": {
+        "Enable Device": {
+            "command": "cli",
+            "active": true
+        },
+        "Terminal Length 0": {
+            "command": "set cli screen-length 0",
+            "active": true
+        },
+        "Show Running Configuration": {
+            "command": "show configuration",
+            "active": true
+        },
+        "Show Interface Status": {
+            "command": "show interfaces terse",
+            "active": true
+        },
+        "Show CPU Usage": {
+            "command": "show system processes extensive",
+            "active": true
+        },
+        "Show Memory Usage": {
+            "command": "show system memory",
+            "active": true
+        },
+        "Show Chassis Status": {
+            "command": "show chassis alarms",
+            "active": true
+        },
+        "Show Software Version": {
+            "command": "show version",
+            "active": true
+        }
+    }
+}

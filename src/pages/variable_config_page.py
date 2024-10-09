@@ -9,6 +9,7 @@ class VariableConfigurePage:
         self._widget_parrent = widget_parent
         self.curr_conf = curr_conf
         self.varialbe_configure_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.varialbe_configure_page_dialog.setObjectName("main_bg_color")
         self.verialbe_configure_page_grid_layout = QtWidgets.QGridLayout(
             self.varialbe_configure_page_dialog
         )
