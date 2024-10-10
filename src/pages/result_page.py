@@ -25,7 +25,7 @@ class ResultPage:
 
     def set_configure_grid(self):
         result_configure_widget = GUI_Factory.create_widget(
-            self._widget_parent, "result_configure_widget", "", 50, 600
+            self._widget_parent, "result_configure_widget", "", 80, 600
         )
         result_configure_grid = QtWidgets.QGridLayout(result_configure_widget)
         configure_button = GUI_Factory.create_button(
@@ -74,8 +74,9 @@ class ResultPage:
         # Create the main grid layout
         # Create a widget to hold the results
         self.scroll_area = QtWidgets.QScrollArea()
+
         result_widget = GUI_Factory.create_widget(
-            self._widget_parent, "main_window", ""
+            self._widget_parent, "input_widget", ""
         )
         results_layout = QtWidgets.QGridLayout(result_widget)
 
