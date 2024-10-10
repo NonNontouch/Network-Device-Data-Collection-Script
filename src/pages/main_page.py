@@ -467,6 +467,7 @@ class MainPage:
             self._window_parent,
             message=f"Connecting to {self.connected_hostname}, Please wait",
             width=600,
+            terminate_callback=self.terminate_connections,
         )
         self._loading_window.show()
 
@@ -598,3 +599,17 @@ class MainPage:
                 f"Error processing commands for OS version: {str(e)}",
             )
             return None  # Indicate an error occurred
+
+    def terminate_connections(self):
+        """Terminate all connections and clear the queue."""
+        # Implement logic to clear the device queue and stop running threads
+        while not self.device_queue.empty():
+            self.device_queue.get_nowait()  # Clear the queue
+
+        # Optionally, if your DataCollectorThread has a way to stop, implement it here
+        if self.connection_thread.isRunning():
+            self.connection_thread.terminate()  # Assuming there's a terminate method
+
+        QtWidgets.QMessageBox.information(
+            self._window_parent, "Terminated", "All connections have been terminated."
+        )

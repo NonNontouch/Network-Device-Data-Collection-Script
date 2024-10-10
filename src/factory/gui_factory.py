@@ -180,9 +180,12 @@ class GUI_Factory:
         height: int = 150,
         message="Connecting to device, Please wait....",
         WindowModality=QtCore.Qt.WindowModality.NonModal,
+        terminate_callback = None,
     ):
         """Create and return an instance of the LoadingWindow class."""
-        loading_window = GUI_Factory.LoadingWindow(parent, width, height, message)
+        loading_window = GUI_Factory.LoadingWindow(
+            parent, width, height, message, terminate_callback
+        )
         loading_window.setWindowModality(WindowModality)
         return loading_window
 
@@ -203,13 +206,7 @@ class GUI_Factory:
         return temp_combobox
 
     class LoadingWindow(QtWidgets.QDialog):
-        def __init__(
-            self,
-            parent,
-            width,
-            height,
-            message,
-        ):
+        def __init__(self, parent, width, height, message, terminate_callback):
             super().__init__(parent)
             self.setWindowTitle("Loading")
             self.setModal(True)
@@ -222,10 +219,28 @@ class GUI_Factory:
 
             self.layout.addWidget(self.label)
             self.layout.addWidget(self.progress)
+            self.terminate_callback = terminate_callback  #
 
         def update_label(self, new_message: str):
             """Update the label text of the loading window."""
             self.label.setText(new_message)
+
+        def closeEvent(self, event):
+            """Override close event to prompt for confirmation before closing."""
+            reply = QtWidgets.QMessageBox.question(
+                self,
+                "Confirm",
+                "Do you want to terminate all connections?",
+                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                QtWidgets.QMessageBox.No,
+            )
+
+            if reply == QtWidgets.QMessageBox.Yes:
+                if self.terminate_callback:
+                    self.terminate_callback()  # Call the termination method
+                event.accept()  # Allow the window to close
+            else:
+                event.ignore()  # Prevent closing the window
 
     class ComboBoxWithDynamicArrow(QtWidgets.QComboBox):
         def __init__(self, parent=None, fontsize=18):
