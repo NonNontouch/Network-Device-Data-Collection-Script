@@ -9,8 +9,7 @@ class json_file:
     os_template: dict
 
     def get_list_of_file(self):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        folder_path = os.path.join(current_dir, "..", "command_template")
+        folder_path = os.path.abspath(os.path.join("command_template"))
 
         try:
             self.file_list = os.listdir(folder_path)
@@ -21,8 +20,7 @@ class json_file:
 
     def read_json_file(self, file_name: str):
         self.__focused_file = file_name
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        file_path = os.path.join(current_dir, "..", "command_template", file_name)
+        file_path = os.path.abspath(os.path.join("command_template", file_name))
 
         try:
             with open(file_path, "r") as f:
@@ -56,8 +54,8 @@ class json_file:
         self.os_template = os_template
 
     def write_json_file(self, file_name: str):
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        folder_path = os.path.join(current_dir, "..", "command_template")
+
+        folder_path = os.path.abspath(os.path.join("command_template"))
 
         if not os.path.exists(folder_path):
             print(f"Creating directory: {folder_path}")
