@@ -7,6 +7,7 @@ class ResultImageConfigurePage:
     def __init__(self, widget_parent: QtWidgets.QMainWindow, curr_conf: dict) -> None:
         self._widget_parrent = widget_parent
         self.result_image_configure_page_dialog = QtWidgets.QDialog(widget_parent)
+        self.result_image_configure_page_dialog.setObjectName("main_bg_color")
         self.result_image_configure_page_grid_layout = QtWidgets.QGridLayout(
             self.result_image_configure_page_dialog
         )

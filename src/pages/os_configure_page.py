@@ -33,7 +33,7 @@ class OSTemplateConfigurePage:
         self.__setup_buttons()  # Setting up the action buttons
 
         # Create a container for command entries
-        self.command_container = QtWidgets.QWidget()
+        self.command_container = GUI_Factory.create_widget(None, "input_widget")
         self.scroll_area_layout = QtWidgets.QVBoxLayout(self.command_container)
         self.scroll_area.setWidget(self.command_container)
 
@@ -172,7 +172,7 @@ class OSTemplateConfigurePage:
         self.scroll_area.setWidgetResizable(True)
 
         # Create a container for command entries
-        self.command_container = QtWidgets.QWidget()
+        self.command_container = GUI_Factory.create_widget(None, "input_widget")
         self.scroll_area_layout = QtWidgets.QVBoxLayout(self.command_container)
         self.scroll_area.setWidget(self.command_container)
 
@@ -207,8 +207,7 @@ class OSTemplateConfigurePage:
         except Exception as e:
             self.os_version_dropdown.clear()
             print(e)
-            GUI_Factory.create_critical_message_box
-            QtWidgets.QMessageBox.critical(
+            GUI_Factory.create_critical_message_box(
                 self._widget_parent, "Error", "Error loading commands."
             )
 
@@ -218,16 +217,15 @@ class OSTemplateConfigurePage:
 
         # Check if the new OS version is provided
         if not new_os_version:
-            QtWidgets.QMessageBox.warning(
-                self._widget_parent,
-                "Warning",
-                "Please enter a new OS version.",
+            GUI_Factory.create_warning_message_box(
+                self._widget_parent, "Warning", "Please enter a new OS version."
             )
+
             return
 
         # Check if the OS version already exists
         if new_os_version in self.json_handler.os_template:
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._widget_parent,
                 "Warning",
                 f"OS version '{new_os_version}' already exists.",
@@ -243,8 +241,7 @@ class OSTemplateConfigurePage:
         # Write the updated template back to the JSON file
         self.json_handler.write_json_file(self.json_file_dropdown.currentText())
 
-        # Notify the user
-        QtWidgets.QMessageBox.information(
+        GUI_Factory.create_info_message_box(
             self._widget_parent,
             "Success",
             f"OS version '{new_os_version}' created successfully.",
@@ -280,7 +277,8 @@ class OSTemplateConfigurePage:
         self.clear_command_container()  # Remove the old container
 
         # Create a new command container
-        self.command_container = QtWidgets.QWidget()
+        self.command_container = GUI_Factory.create_widget(None, "input_widget")
+
         self.scroll_area_layout = QtWidgets.QGridLayout(self.command_container)
         self.scroll_area.setWidget(self.command_container)
 
@@ -308,7 +306,7 @@ class OSTemplateConfigurePage:
 
         except Error.JsonOSTemplateError as e:
             print(e)
-            QtWidgets.QMessageBox.critical(
+            GUI_Factory.create_critical_message_box(
                 self._widget_parent, "Error", "Error loading commands."
             )
 
@@ -320,7 +318,7 @@ class OSTemplateConfigurePage:
             self.command_container.deleteLater()  # Delete the old container
 
         # Reinitialize the command container and layout
-        self.command_container = QtWidgets.QWidget()
+        self.command_container = GUI_Factory.create_widget(None, "input_widget")
         self.scroll_area_layout = QtWidgets.QGridLayout(self.command_container)
         self.scroll_area.setWidget(
             self.command_container
@@ -340,9 +338,7 @@ class OSTemplateConfigurePage:
 
         # Checkbox for activation
         active_checkbox = QtWidgets.QCheckBox("Activate")
-        active_checkbox.setObjectName(
-            f"activeCheckbox_{index}"
-        )  # Unique name for each checkbox
+        active_checkbox.setObjectName("activeCheckbox")  # Unique name for each checkbox
         active_checkbox.setChecked(command_data["active"])
 
         # Create a delete button

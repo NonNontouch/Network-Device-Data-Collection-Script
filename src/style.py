@@ -248,6 +248,7 @@ main_style = """
 
 #activeCheckbox {
     spacing: 5px;
+    color:white;
     /* Space between the checkbox and the label */
 }
 
@@ -353,5 +354,60 @@ QToolTip {
     border: 2px solid black;
     border-radius: 10px;
     color: white;
+}
+QScrollArea {
+    background-color: #252525;  /* Dark background */
+    border: 2px solid #4D4D4D;  /* Border to match input widgets */
+    border-radius: 10px;        /* Rounded corners */
+}
+
+QScrollBar:vertical {
+    border: 2px solid #4D4D4D;  /* Vertical scrollbar border */
+    background: #4D4D4D;        /* Background for the scrollbar */
+    width: 15px;                /* Width of the scrollbar */
+    margin: 22px 0 22px 0;     /* Space around the scrollbar */
+}
+
+QScrollBar::handle:vertical {
+    background: #888888;        /* Handle color */
+    min-height: 20px;          /* Minimum height for the handle */
+    border-radius: 7px;        /* Rounded corners for the handle */
+}
+
+QScrollBar::handle:vertical:hover {
+    background: #555555;       /* Darker color on hover */
+}
+
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical {
+    background: none;          /* Remove background for line buttons */
+}
+
+QScrollBar::add-page:vertical, QScrollBar::sub-page:vertical {
+    background: none;          /* Remove background for page buttons */
+}
+
+QScrollBar:horizontal {
+    border: 2px solid #4D4D4D;  /* Horizontal scrollbar border */
+    background: #4D4D4D;        /* Background for the scrollbar */
+    height: 15px;               /* Height of the scrollbar */
+    margin: 0 22px 0 22px;     /* Space around the scrollbar */
+}
+
+QScrollBar::handle:horizontal {
+    background: #888888;        /* Handle color */
+    min-width: 20px;            /* Minimum width for the handle */
+    border-radius: 7px;        /* Rounded corners for the handle */
+}
+
+QScrollBar::handle:horizontal:hover {
+    background: #555555;       /* Darker color on hover */
+}
+
+QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
+    background: none;          /* Remove background for line buttons */
+}
+
+QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
+    background: none;          /* Remove background for page buttons */
 }
     """
