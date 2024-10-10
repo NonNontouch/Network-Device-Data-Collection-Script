@@ -207,6 +207,7 @@ class OSTemplateConfigurePage:
         except Exception as e:
             self.os_version_dropdown.clear()
             print(e)
+            GUI_Factory.create_critical_message_box
             QtWidgets.QMessageBox.critical(
                 self._widget_parent, "Error", "Error loading commands."
             )
@@ -373,7 +374,7 @@ class OSTemplateConfigurePage:
                 sorted(self.json_handler.file_list)
             )  # Sort and add new items
         else:
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._widget_parent,
                 "Warning",
                 "No JSON files available in the directory.",
@@ -385,7 +386,7 @@ class OSTemplateConfigurePage:
         os_version = self.new_os_version_lineedit.text().strip()
 
         if not brand_name or not os_version:
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._widget_parent,
                 "Warning",
                 "Please enter both brand name and OS version.",
@@ -396,7 +397,7 @@ class OSTemplateConfigurePage:
         file_path = os.path.join("command_template", f"{brand_name}.json")
 
         if os.path.exists(file_path):
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._widget_parent, "Warning", "File already exists."
             )
             return
@@ -406,8 +407,7 @@ class OSTemplateConfigurePage:
 
         with open(file_path, "w") as json_file:
             json.dump(json_content, json_file, indent=4)
-
-        QtWidgets.QMessageBox.information(
+        GUI_Factory.create_info_message_box(
             self._widget_parent,
             "Success",
             f"JSON file '{brand_name}.json' created successfully.",
@@ -435,7 +435,7 @@ class OSTemplateConfigurePage:
         """Add a command to the current OS template based on the command title."""
         os_key = self.os_version_dropdown.currentText()
         if os_key == "":
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._widget_parent, "Warning", "Please select an OS version first."
             )
             return
@@ -462,8 +462,7 @@ class OSTemplateConfigurePage:
 
         # Simulate adding the command to the scroll area (ensure it goes in the first available position)
         self.__create_command_entry(command_title, command_data, row_count)
-
-        QtWidgets.QMessageBox.information(
+        GUI_Factory.create_info_message_box(
             self._widget_parent,
             "Success",
             f"Command '{command_title}' added successfully.",
@@ -488,7 +487,7 @@ class OSTemplateConfigurePage:
         """Save changes to the JSON file."""
         os_key = self.os_version_dropdown.currentText()
         if os_key == "":
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._widget_parent, "Warning", "Please select an OS version first."
             )
             return
@@ -530,8 +529,7 @@ class OSTemplateConfigurePage:
 
         # Write the updated template back to the JSON file
         self.json_handler.write_json_file(self.json_file_dropdown.currentText())
-
-        QtWidgets.QMessageBox.information(
+        GUI_Factory.create_info_message_box(
             self._widget_parent, "Save", "Changes saved successfully."
         )
 

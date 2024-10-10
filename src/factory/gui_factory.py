@@ -180,7 +180,7 @@ class GUI_Factory:
         height: int = 150,
         message="Connecting to device, Please wait....",
         WindowModality=QtCore.Qt.WindowModality.NonModal,
-        terminate_callback = None,
+        terminate_callback=None,
     ):
         """Create and return an instance of the LoadingWindow class."""
         loading_window = GUI_Factory.LoadingWindow(
@@ -204,6 +204,37 @@ class GUI_Factory:
             connection_manager, parent, font_size, width
         )
         return temp_combobox
+
+    @staticmethod
+    def create_info_message_box(parent, title, message):
+        """Create and show an information QMessageBox."""
+        return GUI_Factory.create_message_box(
+            parent, title, message, QtWidgets.QMessageBox.Information
+        )
+
+    @staticmethod
+    def create_critical_message_box(parent, title, message):
+        """Create and show a critical QMessageBox."""
+        return GUI_Factory.create_message_box(
+            parent, title, message, QtWidgets.QMessageBox.Critical
+        )
+
+    @staticmethod
+    def create_warning_message_box(parent, title, message):
+        """Create and show a warning QMessageBox."""
+        return GUI_Factory.create_message_box(
+            parent, title, message, QtWidgets.QMessageBox.Warning
+        )
+
+    @staticmethod
+    def create_message_box(parent, title, message, icon):
+        """Create and show a QMessageBox."""
+        msg_box = QtWidgets.QMessageBox(parent)
+        msg_box.setWindowTitle(title)
+        msg_box.setText(message)
+        msg_box.setIcon(icon)
+        msg_box.setStandardButtons(QtWidgets.QMessageBox.Ok)
+        return msg_box.exec_()
 
     class LoadingWindow(QtWidgets.QDialog):
         def __init__(self, parent, width, height, message, terminate_callback):

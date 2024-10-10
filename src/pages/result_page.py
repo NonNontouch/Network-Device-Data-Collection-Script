@@ -259,17 +259,19 @@ class ResultPage:
                 elif current_os == "Windows":
                     subprocess.Popen(["start", image_path], shell=True)  # For Windows
                 else:
-                    QtWidgets.QMessageBox.warning(
+                    GUI_Factory.create_warning_message_box(
                         self._widget_parent,
                         "Unsupported OS",
                         "This operating system is not supported for opening images.",
                     )
+
             except Exception as e:
-                QtWidgets.QMessageBox.warning(
+                GUI_Factory.create_warning_message_box(
                     self._widget_parent, "Error", f"Failed to open image: {str(e)}"
                 )
+
         else:
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._widget_parent,
                 "File Not Found",
                 f"The specified image file does not exist: {image_path}",

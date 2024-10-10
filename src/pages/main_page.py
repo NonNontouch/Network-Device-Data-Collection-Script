@@ -347,24 +347,20 @@ class MainPage:
             if "os-10" in os_keys and json_file == "Dell.json":
                 self.os_version_dropdown.setCurrentText("os-10")
         except Error.JsonFileNotFound as e:
-            QtWidgets.QMessageBox.critical(
+            GUI_Factory.create_critical_message_box(
                 self._window_parent,
                 "File Not Found",
                 f"The specified JSON file could not be found: {e}",
             )
             self.os_version_dropdown.clear()  # Clear choices on error
         except Error.InvalidJsonFile as e:
-            QtWidgets.QMessageBox.critical(
-                self._window_parent,
-                "Invalid JSON",
-                f"The JSON file is invalid: {e}",
+            GUI_Factory.create_critical_message_box(
+                self._window_parent, "Invalid JSON", f"The JSON file is invalid: {e}"
             )
             self.os_version_dropdown.clear()  # Clear choices on error
         except Exception as e:
-            QtWidgets.QMessageBox.critical(
-                self._window_parent,
-                "Error",
-                f"An unexpected error occurred: {e}",
+            GUI_Factory.create_critical_message_box(
+                self._window_parent, "Error", f"An unexpected error occurred: {e}"
             )
             self.os_version_dropdown.clear()  # Clear choices on error
 
@@ -418,10 +414,8 @@ class MainPage:
         hostnames_input = self.hostname_input.text().strip()
         hostnames = self.parse_hostnames(hostnames_input)
         if hostnames == []:
-            QtWidgets.QMessageBox.critical(
-                self._window_parent,
-                "Error",
-                "Please check your hostname",
+            GUI_Factory.create_critical_message_box(
+                self._window_parent, "Error", "Please check your hostname"
             )
             return
 
@@ -433,7 +427,7 @@ class MainPage:
     def process_next_device(self):
         """Process the next device in the queue."""
         if self.device_queue.empty():
-            QtWidgets.QMessageBox.information(
+            GUI_Factory.create_info_message_box(
                 self._window_parent, "Done", "All devices processed."
             )
             return
@@ -516,7 +510,7 @@ class MainPage:
 
     def on_error_occurred(self, error_message):
         """Handle errors and show a message box."""
-        QtWidgets.QMessageBox.critical(
+        GUI_Factory.create_critical_message_box(
             self._window_parent, "Connection Error", error_message
         )
         # Do not close the loading window, just update the status
@@ -557,11 +551,12 @@ class MainPage:
         if missing_fields:
             # Alert for missing fields
             missing_fields_str = ", ".join(missing_fields)
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._window_parent,
                 "Missing Input",
                 f"The following fields are required: {missing_fields_str}",
             )
+
             return False  # Indicate that not all required fields are filled
 
         return True  # All required fields are filled
@@ -571,7 +566,7 @@ class MainPage:
         selected_os_version = self.os_version_dropdown.currentText()
 
         if not selected_os_version:
-            QtWidgets.QMessageBox.warning(
+            GUI_Factory.create_warning_message_box(
                 self._window_parent,
                 "Missing OS Version",
                 "Please select an OS version before attempting to connect.",
@@ -585,7 +580,7 @@ class MainPage:
         try:
             command_dict_json = self.json_handler.get_command_json(os_version)
             if command_dict_json is None:
-                QtWidgets.QMessageBox.warning(
+                GUI_Factory.create_warning_message_box(
                     self._window_parent,
                     "Invalid OS Version",
                     f"No commands found for the selected OS version: {os_version}.",
@@ -593,7 +588,7 @@ class MainPage:
                 return None  # Indicate that no commands were found
             return command_dict_json
         except Error.JsonOSTemplateError as e:
-            QtWidgets.QMessageBox.critical(
+            GUI_Factory.create_critical_message_box(
                 self._window_parent,
                 "OS Template Error",
                 f"Error processing commands for OS version: {str(e)}",
@@ -609,7 +604,6 @@ class MainPage:
         # Optionally, if your DataCollectorThread has a way to stop, implement it here
         if self.connection_thread.isRunning():
             self.connection_thread.terminate()  # Assuming there's a terminate method
-
-        QtWidgets.QMessageBox.information(
+        GUI_Factory.create_info_message_box(
             self._window_parent, "Terminated", "All connections have been terminated."
         )
