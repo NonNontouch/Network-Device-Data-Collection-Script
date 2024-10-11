@@ -59,7 +59,10 @@ class connection_manager:
         576000,
         921600,
     ]
-    regex: str = r"^\s*([\w-]+)(>|#)\s*$"
+    command_regex: dict = {
+        "find_prompt": "^\\s*([\\w-]+)(>|#)\\s*$",
+        "enable_ending": "#",
+    }
     connection = None
 
     def __init__(self):
@@ -306,13 +309,16 @@ class connection_manager:
         """
         self.connection = ssh(self, self.data_handling)
         try:
-            self.connection.connect_to_device(self.regex)
+            print(self.command_regex)
+            self.connection.connect_to_device(self.command_regex)
         except (OSError, para.SSHException) as e:
             print(e)
+            self.connection.close_connection()
             self.connection = None
             raise e  # Re-raise the exception for further handling
         except Exception as e:
             print(f"Error connecting to SSH: {e}")
+            self.connection.close_connection()
             self.connection = None
             raise e
 
@@ -320,10 +326,11 @@ class connection_manager:
         """Set connection as telnet and try connect and login to it"""
         self.connection = telnet(self, self.data_handling)
         try:
-            self.connection.connect_to_device(self.regex)
+            self.connection.connect_to_device(self.command_regex)
             self.connection.login()
         except Exception as e:
             print(f"Error connecting to Telnet: {e}")
+            self.connection.close_connection()
             self.connection = None
             raise e
 
@@ -333,7 +340,7 @@ class connection_manager:
         """
         self.connection = serial(self, self.data_handling)
         try:
-            self.connection.set_serial_object(self.regex)
+            self.connection.set_serial_object(self.command_regex)
             print(self.serial_port, self.baudrate)
             self.connection.connect_to_device(self.serial_port)
             self.connection.login()
@@ -341,6 +348,11 @@ class connection_manager:
             print(f"Error connecting to Serial: {e}")
             self.connection = None
             raise e
+
+    def set_command_regex(self, command_regex: dict):
+        if command_regex == {}:
+            return
+        self.command_regex = command_regex
 
     def get_serial_port(self):
         """_Get list of all avaiable serial port in computer._"""
@@ -375,7 +387,7 @@ class connection_manager:
             raise Error.ConnectionError("No connection established.")
 
         # Attempt to enable the device if necessary
-        self._enable_device_if_needed(temp_command_dict, self.regex)
+        self._enable_device_if_needed(temp_command_dict)
 
         # Check for VLT number command and update command list if present
         self._update_vlt_status(temp_command_dict)
@@ -394,7 +406,7 @@ class connection_manager:
 
         return result
 
-    def _enable_device_if_needed(self, command_dict: dict, regex: str):
+    def _enable_device_if_needed(self, command_dict: dict):
         """Enable the device if it's not already enabled."""
         try:
             if self.connection.is_enable() is False:
