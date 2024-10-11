@@ -38,7 +38,7 @@ class ssh_connection:
         self._MAX_RETRIES: int = connection.command_maxretries
         self._data_handling = data_handling
 
-    def connect_to_device(self, regex):
+    def connect_to_device(self, command_regex):
         try:
             self.connect.set_missing_host_key_policy(self.policy)
             self.connect.connect(
@@ -51,7 +51,8 @@ class ssh_connection:
             )
             self.session = self.connect.invoke_shell()
             self.session.settimeout(self._RETRY_DELAY)
-            self.regex = regex
+            self.find_prompt_regex = command_regex["find_prompt"]
+            self.enable_ending = command_regex["enable_ending"]
         except OSError as e:
             raise OSError(e)
         except para.SSHException as e:
@@ -94,7 +95,7 @@ class ssh_connection:
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if self._data_handling.find_prompt(_output, self.regex):
+            if self._data_handling.find_prompt(_output, self.find_prompt_regex):
                 break
 
         # Check for errors in the command output
@@ -106,21 +107,18 @@ class ssh_connection:
     def enable_device(self, enable_command: str, password: str):
         self.session.send(f"{enable_command}" + "\n")
         sleep(0.3)
-        while True:
-            _output = self.get_output()
-            for text in ["Password:", "password:"]:
-                if text in _output:
-                    _output = self.send_command(password)
-                    break
-            if _output[-1] == "#":
-                break
-            else:
-                raise Error.ErrorEnable_Password(password)
-        return
+
+        _output = self.get_output()
+        if self._data_handling.is_ready_input_password(_output):
+            _output = self.send_command(password)
+        if _output[-1] == self.enable_ending:
+            return
+        else:
+            raise Error.ErrorEnable_Password(password)
 
     def is_enable(self):
         console_name = self.send_command("").splitlines()[-1].strip()
-        return True if console_name[-1] == "#" else False
+        return True if console_name[-1] == self.enable_ending else False
 
     def get_output(self):
         try:

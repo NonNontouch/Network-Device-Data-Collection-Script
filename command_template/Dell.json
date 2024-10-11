@@ -1,6 +1,52 @@
 {
+    "os-10": {
+        "regex": {
+            "find_prompt": "^\\s*([\\w-]+)(>|#)\\s*$",
+            "enable_ending": "#"
+        },
+        "Enable Device": {
+            "command": "enable",
+            "active": true
+        },
+        "Tetminal Length 0": {
+            "command": "terminal length 0",
+            "active": false
+        },
+        "show running-configuration": {
+            "command": "show running-config",
+            "active": true
+        },
+        "show interface status": {
+            "command": "show interface status",
+            "active": true
+        },
+        "show cpu usage": {
+            "command": "show processes cpu summary",
+            "active": true
+        },
+        "show memory": {
+            "command": "show processes memory",
+            "active": false
+        },
+        "show system status": {
+            "command": "show system brief",
+            "active": true
+        },
+        "show vlt number": {
+            "command": "show running-configuration vlt",
+            "active": true
+        },
+        "show vlt status": {
+            "command": "show vlt <vlt domain>",
+            "active": true
+        },
+        "show tech-support": {
+            "command": "show tech-support",
+            "active": false
+        }
+    },
     "os-6": {
-        
+     
         "Enable Device": {
             "command": "enable",
             "active": true
@@ -10,7 +56,7 @@
             "active": true
         },
         "show running-configuration": {
-            "command": "show rdf",
+            "command": "show run",
             "active": true
         },
         "show interface status": {
@@ -35,49 +81,6 @@
         },
         "show temperature": {
             "command": "show system temperature",
-            "active": false
-        }
-    },
-    "os-10": {
-        "regex": "^\\s*([\\w-]+)(>|#)\\s*$",
-        "Enable Device": {
-            "command": "enable",
-            "active": true
-        },
-        "Tetminal Length 0": {
-            "command": "terminal length 0",
-            "active": true
-        },
-        "show running-configuration": {
-            "command": "show running-config",
-            "active": true
-        },
-        "show interface status": {
-            "command": "show interface status",
-            "active": false
-        },
-        "show cpu usage": {
-            "command": "show processes cpu summary",
-            "active": false
-        },
-        "show memory": {
-            "command": "show processes memory",
-            "active": false
-        },
-        "show system status": {
-            "command": "show system brief",
-            "active": true
-        },
-        "show vlt number": {
-            "command": "show running-configuration vlt",
-            "active": true
-        },
-        "show vlt status": {
-            "command": "show vlt <vlt domain>",
-            "active": true
-        },
-        "show tech-support": {
-            "command": "show tech-support",
             "active": false
         }
     }

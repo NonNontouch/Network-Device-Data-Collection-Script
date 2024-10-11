@@ -29,12 +29,12 @@ class serial_connection:
         self._bytesize: int = connection.bytesize
         self._parity: str = connection.parity
         self._stopbits: float = connection.stopbits
-        self.data_handling = data_handling
+        self._data_handling = data_handling
 
     def get_parity_type(self):
         return serial.PARITY_NAMES
 
-    def set_serial_object(self, regex):
+    def set_serial_object(self, command_regex):
         """_This function will create Serial Module with given varialbe._
 
         Raises:
@@ -48,7 +48,8 @@ class serial_connection:
                 parity=self._parity,
                 stopbits=self._stopbits,
             )
-            self.regex = regex
+            self.find_prompt_regex = command_regex["find_prompt"]
+            self.enable_ending = command_regex["enable_ending"]
         except Exception as e:
             raise e
 
@@ -87,7 +88,7 @@ class serial_connection:
         sleep(0.3)
         while True:
             try:
-                _output = self.data_handling.remove_control_char(self.get_output())
+                _output = self._data_handling.remove_control_char(self.get_output())
             except OSError:
                 raise Error.ConnectionLossConnect(command)
 
@@ -101,16 +102,16 @@ class serial_connection:
             # Handle "More" prompt
             if "More" in _output or "more" in _output:
                 self.connect.write(" ")
-                _output = self.data_handling.remove_more_keyword(_output)
+                _output = self._data_handling.remove_more_keyword(_output)
             print(_output)
             cmd_output += _output
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if self.data_handling.find_prompt(_output):
+            if self._data_handling.find_prompt(_output, self.find_prompt_regex):
                 break
 
-        if self.data_handling.check_error(cmd_output):
+        if self._data_handling.check_error(cmd_output):
             raise Error.ErrorCommand(command, cmd_output)
 
         return cmd_output
@@ -128,12 +129,12 @@ class serial_connection:
             self.connect.write(self.to_bytes(""))
             first_message = self.connect.read_until(b":").decode("utf-8")
             print(first_message, end="")
-            if self.data_handling.is_ready_input_username(first_message):
+            if self._data_handling.is_ready_input_username(first_message):
                 self.connect.write(self.to_bytes(self._username))
                 sleep(0.5)
                 password_prompt = self.connect.read_until(b":").decode("utf-8")
                 print(password_prompt, end="")
-                if self.data_handling.is_ready_input_password(password_prompt):
+                if self._data_handling.is_ready_input_password(password_prompt):
                     self.connect.write(self.to_bytes(self._password))
                     login_result = self.send_command("")
                 print(login_result, end="")
@@ -145,7 +146,7 @@ class serial_connection:
                     return_prompt = self.connect.read_until(
                         b":",
                     ).decode("utf-8")
-                    if self.data_handling.is_ready_input_username(return_prompt):
+                    if self._data_handling.is_ready_input_username(return_prompt):
                         break
                     count += 1
                     if count == 5:
@@ -179,12 +180,10 @@ class serial_connection:
         self.connect.write(self.to_bytes(enable_command))
         sleep(0.3)
 
-        _output = self.connect.read_until(b":").decode("utf-8")
-        for text in ["Password:", "password:"]:
-            if text in _output:
-                _output = self.send_command(password)
-                break
-        if _output[-1] == "#":
+        _output = self.get_output()
+        if self._data_handling.is_ready_input_password(_output):
+            _output = self.send_command(password)
+        if _output[-1] == self.enable_ending:
             return
         else:
             raise Error.ErrorEnable_Password(self._enable_password)
@@ -196,7 +195,7 @@ class serial_connection:
             bool: _True if enabled, False if not._
         """
         console_name = self.send_command("").splitlines()[-1].strip()
-        return True if console_name[-1] == "#" else False
+        return True if console_name[-1] == self.enable_ending else False
 
     def is_login(self):
         """_Check if device is already logged in._
@@ -209,7 +208,11 @@ class serial_connection:
         sleep(0.3)
         console_name = self.connect.read_all().decode("utf-8").splitlines()[-1].strip()
         print(console_name)
-        return True if self.data_handling.find_prompt(console_name) else False
+        return (
+            True
+            if self._data_handling.find_prompt(console_name, self.find_prompt_regex)
+            else False
+        )
 
     def list_serial_ports(self):
         """
@@ -243,7 +246,7 @@ class serial_connection:
         retry = 0
         while True:
             __output = self.send_command("exit")
-            if self.data_handling.is_ready_input_username(__output):
+            if self._data_handling.is_ready_input_username(__output):
                 break
             retry += 1
             if retry >= 5 and self.is_enable() == False:

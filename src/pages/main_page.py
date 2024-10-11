@@ -452,10 +452,8 @@ class MainPage:
 
         selected_os_version = self.__get_selected_os_version()
         command_dict_json = self.__get_command_dict(selected_os_version).copy()
-        regex = (
-            self.json_handler.get_regex(selected_os_version) or r"^\s*([\w-]+)(>|#)\s*$"
-        )
-
+        defult_command_regex = self.json_handler.get_regex(selected_os_version)
+        self.connection_manager.set_command_regex(defult_command_regex)
         # Create the loading window
         self._loading_window = GUI_Factory.create_loading_window(
             self._window_parent,
@@ -470,7 +468,6 @@ class MainPage:
             params=connection_params,
             connection_manager=self.connection_manager,
             command_dict_json=command_dict_json,
-            regex=regex,
             is_done_create_img=False,
         )
 
