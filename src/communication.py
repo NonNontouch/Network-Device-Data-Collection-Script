@@ -99,7 +99,7 @@ class connection_manager:
         self.port: int = (
             self.config.get("port", self.port) if self.config else self.port
         )
-        self.baudrate: int = (
+        self.baudrate: int = int(
             self.config.get("baudrate", self.baudrate) if self.config else self.baudrate
         )
         self.bytesize: int = (
@@ -309,16 +309,14 @@ class connection_manager:
         """
         self.connection = ssh(self, self.data_handling)
         try:
-            print(self.command_regex)
             self.connection.connect_to_device(self.command_regex)
         except (OSError, para.SSHException) as e:
             print(e)
-            self.connection.close_connection()
+            print(self.connection)
             self.connection = None
             raise e  # Re-raise the exception for further handling
         except Exception as e:
             print(f"Error connecting to SSH: {e}")
-            self.connection.close_connection()
             self.connection = None
             raise e
 
@@ -330,7 +328,6 @@ class connection_manager:
             self.connection.login()
         except Exception as e:
             print(f"Error connecting to Telnet: {e}")
-            self.connection.close_connection()
             self.connection = None
             raise e
 

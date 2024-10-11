@@ -149,6 +149,7 @@ class MainPage:
         serial_button = GUI_Factory.create_radio_button(
             "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
         )
+        serial_button.clicked.connect(self.__on_serial_selected)
         self.connect_botton = GUI_Factory.create_button(
             "Connect", "popup_dialog_button", main_style
         )
@@ -201,12 +202,12 @@ class MainPage:
             ]
         )
 
-        if self.connection_manager.baudrate in [
+        if int(self.connection_manager.baudrate) in [
             int(self.baudrate_combo_box.itemText(i))
             for i in range(self.baudrate_combo_box.count())
         ]:
             self.baudrate_combo_box.setCurrentText(
-                str(self.connection_manager.baudrate)
+                str(int(self.connection_manager.baudrate))
             )
 
         connection_top_grid.addWidget(ssh_button, 0, 0)
@@ -405,6 +406,11 @@ class MainPage:
     def __update_port_lineedit(self, port):
         self.port_input.setText(str(port))  # Set the port input
 
+    def __on_serial_selected(self):
+        """Handle clearing hostname and port when Serial is selected."""
+        self.hostname_input.clear()  # Clear hostname field
+        self.port_input.clear()  # Clear port field
+
     def __create_connection(self):
         """Main function to create a connection to the device."""
         # Check for required fields
@@ -534,15 +540,25 @@ class MainPage:
             "password": self.password_input.text().strip(),
         }
 
-        # If the selected connection type is Serial, ensure that the serial port and baudrate are checked too
+        # If the selected connection type is Serial, ensure that the serial port and baudrate are checked instead
         if self.connection_type_button_group.checkedButton().text() == "Serial":
             serial_port = self.serial_port_combo_box.currentText()
             baudrate = self.baudrate_combo_box.currentText()
 
-            connection_params["serial_port"] = serial_port
-            connection_params["baudrate"] = baudrate
+            if not serial_port or not baudrate:
+                GUI_Factory.create_warning_message_box(
+                    self._window_parent,
+                    "Missing Input",
+                    "Please select a Serial Port and Baudrate.",
+                )
+                return (
+                    False  # Serial Port and Baudrate are required for Serial connection
+                )
 
-        # Check for any missing required fields
+            # Skip checking hostname and port for Serial
+            return True
+
+        # Otherwise, validate hostname, port, username, and password for SSH/Telnet
         missing_fields = [key for key, value in connection_params.items() if not value]
 
         if missing_fields:
@@ -553,7 +569,6 @@ class MainPage:
                 "Missing Input",
                 f"The following fields are required: {missing_fields_str}",
             )
-
             return False  # Indicate that not all required fields are filled
 
         return True  # All required fields are filled

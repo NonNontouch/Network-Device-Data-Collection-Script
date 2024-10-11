@@ -135,5 +135,6 @@ class ssh_connection:
         )
 
     def close_connection(self):
-        self.session.close()
-        self.connect = None
+        if self.is_connection_alive():
+            self.session.close()
+            self.connect = None

@@ -79,7 +79,6 @@ class serial_connection:
         retries = 0
         cmd_output = ""
 
-        print(command)
         try:
             self.connect.write(self.to_bytes(command))
         except serialutil.SerialTimeoutException:
@@ -101,9 +100,8 @@ class serial_connection:
 
             # Handle "More" prompt
             if "More" in _output or "more" in _output:
-                self.connect.write(" ")
+                self.connect.write(b" ")
                 _output = self._data_handling.remove_more_keyword(_output)
-            print(_output)
             cmd_output += _output
             retries = 0  # Reset retries on valid output
 
@@ -152,7 +150,7 @@ class serial_connection:
                     if count == 5:
                         raise Error.LoginError()
 
-                self.connect.write(self._username.encode("utf-8") + b"\n")
+                self.connect.write(self.to_bytes(self._username) + b"\n")
                 self.connect.write(self.to_bytes(self._password))
         except (serialutil.SerialTimeoutException, OSError):
             raise Error.ConnectionLossConnect("Login")
@@ -181,9 +179,11 @@ class serial_connection:
         sleep(0.3)
 
         _output = self.get_output()
+        if self._data_handling.ends_with(_output, self.enable_ending):
+            return
         if self._data_handling.is_ready_input_password(_output):
             _output = self.send_command(password)
-        if _output[-1] == self.enable_ending:
+        if self._data_handling.ends_with(_output, self.enable_ending):
             return
         else:
             raise Error.ErrorEnable_Password(self._enable_password)
@@ -204,10 +204,9 @@ class serial_connection:
             bool: _True if logged in, False if not._
         """
         self.connect.write(b"\n")
-
         sleep(0.3)
         console_name = self.connect.read_all().decode("utf-8").splitlines()[-1].strip()
-        print(console_name)
+        console_name = self._data_handling.remove_control_char(console_name)
         return (
             True
             if self._data_handling.find_prompt(console_name, self.find_prompt_regex)
@@ -244,12 +243,15 @@ class serial_connection:
 
     def close_connection(self):
         retry = 0
+        print("logging out")
         while True:
-            __output = self.send_command("exit")
+            self.connect.write(self.to_bytes("exit"))
+            sleep(0.3)
+            __output = self.connect.read_all().decode("utf-8")
             if self._data_handling.is_ready_input_username(__output):
                 break
             retry += 1
-            if retry >= 5 and self.is_enable() == False:
+            if retry >= 5:
                 break
         self.connect.close()
         self.connect = None

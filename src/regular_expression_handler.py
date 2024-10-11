@@ -51,7 +51,7 @@ class data_handling:
         )
         self.remove_more_keyword_regex = r"--[Mm]ore--"
 
-    def find_prompt(self,output: str, regex: str = r"^\s*([\w-]+)(>|#)\s*$"):
+    def find_prompt(self, output: str, regex: str = r"^\s*([\w-]+)(>|#)\s*$"):
         if output:
             last_line = output.splitlines()[-1].strip()
             if re.match(regex, last_line):
@@ -88,3 +88,11 @@ class data_handling:
 
     def remove_more_keyword(self, output: str):
         return re.sub(self.remove_more_keyword_regex, "", output)
+
+    def ends_with(self, output: str, ending: str) -> bool:
+        """Check if the output string ends with the specified ending character."""
+        # Construct the regex pattern
+        pattern = rf"\s*{re.escape(ending)}\s*$"
+
+        # Match the pattern against the output
+        return bool(re.search(pattern, output))

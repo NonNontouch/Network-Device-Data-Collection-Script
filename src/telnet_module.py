@@ -40,8 +40,6 @@ class telnet_connection:
             self.connect = Telnet(host=self._hostname, port=self._port, timeout=4)
             self.find_prompt_regex = command_regex["find_prompt"]
             self.enable_ending = command_regex["enable_ending"]
-        except OSError as e:
-            raise e
         except Exception as e:
             raise e
 
@@ -150,7 +148,7 @@ class telnet_connection:
             retries = 0  # Reset retries on valid output
 
             # Check for prompt to break the loop
-            if self._data_handling.find_prompt(_output, self.regex):
+            if self._data_handling.find_prompt(_output, self.find_prompt_regex):
                 break
 
         if self._data_handling.check_error(cmd_output):
@@ -182,10 +180,12 @@ class telnet_connection:
         """
         self.connect.write(self.to_bytes(enable_command))
         sleep(0.3)
-        _output = self.connect.read_eager().decode("utf-8")
+        _output = self.get_output()
+        if self._data_handling.ends_with(_output, self.enable_ending):
+            return
         if self._data_handling.is_ready_input_password(_output):
             _output = self.send_command(password)
-        if _output[-1] == self.enable_ending:
+        if self._data_handling.ends_with(_output, self.enable_ending):
             return
         else:
             raise Error.ErrorEnable_Password(password)
