@@ -1,9 +1,5 @@
 {
     "os-10": {
-        "regex": {
-            "find_prompt": "^\\s*([\\w-]+)(>|#)\\s*$",
-            "enable_ending": "#"
-        },
         "Enable Device": {
             "command": "enable",
             "active": true
@@ -46,7 +42,6 @@
         }
     },
     "os-6": {
-     
         "Enable Device": {
             "command": "enable",
             "active": true
