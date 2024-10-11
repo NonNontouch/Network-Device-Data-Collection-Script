@@ -410,4 +410,29 @@ QScrollBar::add-line:horizontal, QScrollBar::sub-line:horizontal {
 QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background: none;          /* Remove background for page buttons */
 }
+#debug_textedit{
+    background-color: #252525; /* Dark background for the text edit */
+    color: white; /* White text */
+    border: 2px solid #4D4D4D; /* Border to match input widgets */
+    border-radius: 10px; /* Rounded corners */
+    padding: 5px; /* Padding inside the text edit */
+}
+#debug_textedit:focus{
+    border: 2px solid #888888; /* Darker border on focus */
+}
+#loading_label{
+    color: white; /* White text for the label */
+    font-size: 16px; /* Font size for the label */
+    background-color: #4D4D4D; /* Match the main background */
+}
+#loading_progress{
+    background-color: #252525; /* Dark background for the progress bar */
+    border: 2px solid #4D4D4D; /* Border color */
+    border-radius: 10px; /* Rounded corners */
+    text-align: center; /* Center the text inside the progress bar */
+}
+#loading_progress:chunk {
+    background-color: #4CAF50; /* Color of the progress bar chunk */
+    border-radius: 10px; /* Rounded corners for the chunk */
+}
     """

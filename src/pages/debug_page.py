@@ -1,14 +1,18 @@
 import sys
 from PyQt5 import QtWidgets
+from src.style import main_style
+
 
 class DebugWindow(QtWidgets.QDialog):
     def __init__(self, parent):
         super().__init__(parent)
+        self.setObjectName("main_bg_color")
         self.setWindowTitle("Debug Output")
         self.setGeometry(100, 100, 600, 400)  # Set size and position
 
         # Create a QTextEdit to display debug output
         self.text_edit = QtWidgets.QTextEdit(self)
+        self.text_edit.setObjectName("debug_textedit")
         self.text_edit.setReadOnly(True)
 
         layout = QtWidgets.QVBoxLayout()

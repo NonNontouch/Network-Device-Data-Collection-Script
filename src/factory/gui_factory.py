@@ -239,15 +239,16 @@ class GUI_Factory:
     class LoadingWindow(QtWidgets.QDialog):
         def __init__(self, parent, width, height, message, terminate_callback):
             super().__init__(parent)
+            self.setObjectName("main_bg_color")
             self.setWindowTitle("Loading")
             self.setModal(True)
             self.setFixedSize(width, height)
 
             self.layout = QtWidgets.QVBoxLayout(self)
-            self.label = QtWidgets.QLabel(message)
+            self.label = GUI_Factory.create_label(message, "loading_label")
             self.progress = QtWidgets.QProgressBar()
             self.progress.setRange(0, 0)  # Indeterminate progress
-
+            self.progress.setObjectName("loading_progress")
             self.layout.addWidget(self.label)
             self.layout.addWidget(self.progress)
             self.terminate_callback = terminate_callback  #
