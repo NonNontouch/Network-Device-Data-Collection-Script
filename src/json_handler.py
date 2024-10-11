@@ -34,13 +34,15 @@ class json_file:
             raise Error.InvalidJsonFile(file_path)
 
     def get_command_json(self, OS: str):
+        """Return commands without altering regex data."""
         try:
             self.read_json_file(self.__focused_file)
             os_data = self.os_template[OS]
-            if "regex" in os_data:
-                # Remove the "regex" entry before returning the data
-                del os_data["regex"]
-            return os_data
+            # Return only the command data while preserving regex
+            command_data = {
+                key: value for key, value in os_data.items() if key != "regex"
+            }
+            return command_data
         except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error getting command list for OS {OS}: {e}")
             raise Error.JsonOSTemplateError(OS)
@@ -54,15 +56,12 @@ class json_file:
         self.os_template = os_template
 
     def write_json_file(self, file_name: str):
-
         folder_path = os.path.abspath(os.path.join("command_template"))
-
         if not os.path.exists(folder_path):
             print(f"Creating directory: {folder_path}")
             os.makedirs(folder_path)
 
         file_path = os.path.join(folder_path, file_name)
-
         try:
             if os.path.exists(file_path):
                 with open(file_path, "r") as f:
@@ -77,6 +76,7 @@ class json_file:
             print(f"Error: Invalid JSON in file '{file_path}'.")
             raise Error.InvalidJsonFile(file_path)
 
+        # Update existing data with the current os_template
         existing_data.update(self.os_template)
 
         # Sort the existing data by OS keys before writing it back
@@ -95,7 +95,7 @@ class json_file:
         try:
             self.read_json_file(self.__focused_file)
             os_data = self.os_template[OS]
-            return os_data.get("regex")  # Return the regex if exists
+            return os_data.get("regex", {})  # Return the regex object if exists
         except (KeyError, FileNotFoundError, json.JSONDecodeError) as e:
             print(f"Error getting regex for OS {OS}: {e}")
             raise Error.JsonOSTemplateError(OS)
