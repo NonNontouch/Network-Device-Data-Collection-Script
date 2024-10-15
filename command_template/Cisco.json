@@ -1,0 +1,40 @@
+{
+    "15": {
+        "regex": {
+            "find_prompt": "^\\s*([\\w-]+)(>|#)\\s*$",
+            "enable_ending": "#"
+        },
+        "Enable Device": {
+            "command": "enable",
+            "active": true
+        },
+        "Terminal Length 0": {
+            "command": "terminal length 0",
+            "active": false
+        },
+        "Show Running Configuration": {
+            "command": "show running-config",
+            "active": true
+        },
+        "Show Interface Status": {
+            "command": "show ip interface brief",
+            "active": true
+        },
+        "Show CPU Usage": {
+            "command": "show processes cpu",
+            "active": true
+        },
+        "Show Memory": {
+            "command": "show processes memory",
+            "active": false
+        },
+        "Show System Status": {
+            "command": "show version",
+            "active": true
+        },
+        "Show VLAN Information": {
+            "command": "show vlan brief",
+            "active": true
+        }
+    }
+}

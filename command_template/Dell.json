@@ -1,0 +1,82 @@
+{
+    "os-10": {
+        "Enable Device": {
+            "command": "enable",
+            "active": true
+        },
+        "Tetminal Length 0": {
+            "command": "terminal length 0",
+            "active": true
+        },
+        "show running-configuration": {
+            "command": "show running-config",
+            "active": true
+        },
+        "show interface status": {
+            "command": "show interface status",
+            "active": true
+        },
+        "show cpu usage": {
+            "command": "show processes cpu",
+            "active": true
+        },
+        "show memory usage": {
+            "command": "show processes memory",
+            "active": true
+        },
+        "show system status": {
+            "command": "show system brief",
+            "active": true
+        },
+        "show vlt number": {
+            "command": "show running-configuration vlt",
+            "active": true
+        },
+        "show vlt status": {
+            "command": "show vlt <vlt domain>",
+            "active": true
+        },
+        "show tech-support": {
+            "command": "show tech-support",
+            "active": false
+        }
+    },
+    "os-6": {
+        "Enable Device": {
+            "command": "enable",
+            "active": true
+        },
+        "Tetminal Length 0": {
+            "command": "terminal length 0",
+            "active": true
+        },
+        "show running-configuration": {
+            "command": "show run",
+            "active": true
+        },
+        "show interface status": {
+            "command": "show interface status",
+            "active": true
+        },
+        "show cpu usage": {
+            "command": "show process cpu",
+            "active": true
+        },
+        "show memory usage": {
+            "command": "show memory cpu",
+            "active": true
+        },
+        "show fan status": {
+            "command": "show system fan",
+            "active": false
+        },
+        "show power status": {
+            "command": "show system power",
+            "active": false
+        },
+        "show temperature": {
+            "command": "show system temperature",
+            "active": false
+        }
+    }
+}
