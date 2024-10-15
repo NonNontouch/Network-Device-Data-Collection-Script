@@ -1,24 +1,12 @@
 # Network-Device-Data-Collection-Script
+ เป็นโปรแกรมที่ใช้ Python ในการเก็บ running config หรือสถานะของอุปกรณ์ต่างๆ ผ่านการ SSH, Telnet, Serial โดยจะสามารถบันทึกผลลัพธ์เป็นรูปภาพ หรือ txt ก็ได้ 
 
-## แนะนำให้ใช้ Python Virtual Environment สำหรับการทำงานของโปรแกรม
-## รันคำสั่งนี้ใน Folder เดียวกับโปรแกรม
+โดยคำสั่งที่จะส่งไปบนอุปกรณ์สามารถเลือกได้ หรือสามารถแก้ไขได้ในโฟเดอร์ command_template 
+## บน Window สามารถรันไฟล์ exe ได้เลย
+บน window จะต้อง clone ทั้ง git นี้ไปไว้ในโฟเดอร์เดียวกัน แล้วจากนั้นรันไฟล์ `NetCollector.exe` ได้เลย
+## ถ้าหากต้องการ Debug หรือ Dev เพิ่มเติมแนะนำให้ใช้ Python Virtual Environment 
 
-## Mac ,Linux ที่ใช้ Python3
-
-### คำสั่งเพื่อสร้าง Virtual environment, ตืดตั้ง Library ที่จำเป็น และ Activate
-```
-python3 -m venv ./.venv
-source .venv/bin/activate
-python3 -m pip install -r requirement.txt  
-```
-### คำสั่ง deactivate
-```
-deactivate
-```
-
-## Windows 
-
-### คำสั่งเพื่อสร้าง Virtual environment, ตืดตั้ง Library ที่จำเป็น และ Activate
+### Windows 
 ```
 python -m venv .\.venv
 .venv\Scripts\activate
@@ -28,6 +16,15 @@ pip install -r requirement.txt
 ```
 deactivate
 ```
+
+### Mac, Linux ที่ใช้ Python3
+คำส่งเหล้านี้ต้องรันโดยการเปิด terminal โดยจะต้องเป็น path เดียวกับโปรแกรม
+```
+python3 -m venv ./.venv
+source .venv/bin/activate
+python3 -m pip install -r requirement.txt  
+```
+
 ## เริ่มการทำงานของโปรแกรมให้ใช้คำสั่ง 
 ## Windows 
 ```
