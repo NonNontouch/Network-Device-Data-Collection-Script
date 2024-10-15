@@ -6,7 +6,7 @@
         },
         "Tetminal Length 0": {
             "command": "terminal length 0",
-            "active": false
+            "active": true
         },
         "show running-configuration": {
             "command": "show running-config",
@@ -17,12 +17,12 @@
             "active": true
         },
         "show cpu usage": {
-            "command": "show processes cpu summary",
+            "command": "show processes cpu",
             "active": true
         },
-        "show memory": {
+        "show memory usage": {
             "command": "show processes memory",
-            "active": false
+            "active": true
         },
         "show system status": {
             "command": "show system brief",
