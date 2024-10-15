@@ -609,13 +609,10 @@ class MainPage:
 
     def terminate_connections(self):
         """Terminate all connections and clear the queue."""
-        # Implement logic to clear the device queue and stop running threads
+
         while not self.device_queue.empty():
             self.device_queue.get_nowait()  # Clear the queue
 
-        # Optionally, if your DataCollectorThread has a way to stop, implement it here
-        if self.connection_thread.isRunning():
-            self.connection_thread.terminate()  # Assuming there's a terminate method
         GUI_Factory.create_info_message_box(
             self._window_parent, "Terminated", "All connections have been terminated."
         )

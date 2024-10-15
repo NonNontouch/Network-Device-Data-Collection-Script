@@ -349,12 +349,6 @@ QToolTip {
     color: white;
 }
 
-#result_widget_error {
-    background-color: #DC143C;
-    border: 2px solid black;
-    border-radius: 10px;
-    color: white;
-}
 QScrollArea {
     background-color: #252525;  /* Dark background */
     border: 2px solid #4D4D4D;  /* Border to match input widgets */
@@ -435,4 +429,23 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background-color: #4CAF50; /* Color of the progress bar chunk */
     border-radius: 10px; /* Rounded corners for the chunk */
 }
+#warning_result_widget {
+    background-color: #FFA500;  /* Orange background for warning */
+    border: 2px solid black;     /* Border for the warning widget */
+    border-radius: 10px;         /* Rounded corners */
+    color: black;                 /* Text color for better contrast */
+}
+
+#danger_result_widget {
+    background-color: #FF4500;  /* Red-Orange background for danger */
+    border: 2px solid black;      /* Border for the danger widget */
+    border-radius: 10px;          /* Rounded corners */
+    color: white;                  /* White text for better visibility */
+}
+
+#result_widget_error {
+    background-color: #DC143C;   /* Crimson background for errors */
+    border: 2px solid black;      /* Border for error widget */
+    border-radius: 10px;         /* Rounded corners */
+   }
     """

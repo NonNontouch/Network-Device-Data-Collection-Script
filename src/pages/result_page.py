@@ -6,6 +6,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 from src.factory.gui_factory import GUI_Factory
 from src.text_to_pic_module import text_to_pic
 from src.pages.result_configure_page import ResultImageConfigurePage
+from src.regular_expression_handler import data_handling
 
 
 class ResultPage:
@@ -89,22 +90,47 @@ class ResultPage:
         # Populate the results content with buttons for each result
         i = 0
         for title, result in self._result.items():
+            # Initialize the object name variable
+            object_name = "single_result_widget"  # Default to normal status
+
+            # Check for CPU and Memory usage titles
+            if "show cpu usage" in title.lower():
+                cpu_status = data_handling.analyze_cpu_utilization(
+                    result
+                )  # Method to check CPU
+                if cpu_status == 1:
+                    object_name = "warning_result_widget"  # Warning
+                    title = title + " (quite high)"
+                elif cpu_status == 2:
+                    object_name = "danger_result_widget"  # Danger
+                    title = title + " (high)"
+                else:
+                    title = title + " (normal)"
+
+            elif "show memory usage" in title.lower():
+                memory_status = data_handling.analyze_memory_utilization(
+                    result
+                )  # Method to check Memory
+                if memory_status == 1:
+                    object_name = "warning_result_widget"  # Warning
+                    title = title + " (quite high)"
+                elif memory_status == 2:
+                    object_name = "danger_result_widget"  # Danger
+                    title = title + " (high)"
+                else:
+                    title = title + " (normal)"
             if "An error occurred while executing the" in result:
-                sub_widget = GUI_Factory.create_widget(
-                    self._widget_parent,
-                    "result_widget_error",
-                    "",
-                    170,
-                    350,
-                )
-            else:
-                sub_widget = GUI_Factory.create_widget(
-                    self._widget_parent,
-                    "single_result_widget",
-                    "",
-                    170,
-                    350,
-                )
+                object_name = "result_widget_error"
+                title = title.replace("(normal)", "(error)")
+            # Create the sub widget with the determined object name
+            sub_widget = GUI_Factory.create_widget(
+                self._widget_parent,
+                object_name,
+                "",
+                170,
+                350,
+            )
+
             sub_grid = QtWidgets.QGridLayout(sub_widget)
             command_banner = GUI_Factory.create_label(
                 f"{title}",
@@ -116,8 +142,6 @@ class ResultPage:
             sub_grid.addWidget(command_banner, 0, 0, 1, 2)
 
             if "show tech-support" in title.lower():
-                # If the title is "show tech-support", do not generate the image
-                # Only create the Save Text button
                 save_text_button = GUI_Factory.create_button(
                     f"Save {title} Text", "result_button_save_text"
                 )
@@ -130,8 +154,6 @@ class ResultPage:
                     save_text_button, 1, 0, 1, 2
                 )  # Span across both columns
             else:
-                # Create a temporary file to hold the generated image
-
                 # Create a button to preview the image
                 preview_button = GUI_Factory.create_button(
                     f"Preview {title} Image", "result_button_preview"
@@ -147,7 +169,6 @@ class ResultPage:
                 save_image_button = GUI_Factory.create_button(
                     f"Save Image", "result_button_save_image"
                 )
-
                 save_image_button.clicked.connect(
                     lambda checked, img_path=self.temp_image_paths[
                         i
@@ -170,7 +191,6 @@ class ResultPage:
             i += 1
 
         # Add the scroll area to the main grid layout
-
         self.main_grid.addWidget(self.scroll_area, 1, 0)
 
         # Set the main layout to the dialog

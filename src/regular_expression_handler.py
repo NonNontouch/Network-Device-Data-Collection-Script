@@ -96,10 +96,11 @@ class data_handling:
 
         # Match the pattern against the output
         return bool(re.search(pattern, output))
-    def analyze_cpu_utilization(self, cpu_output: str) -> int:
+
+    def analyze_cpu_utilization(cpu_output: str) -> int:
         """Analyze the CPU utilization from the provided output and return status code."""
         # Regex to extract CPU utilization values
-        pattern = r"UNIT1\s+([\d.]+)"
+        pattern = r"Overall\s+([\d.]+)"
         match = re.search(pattern, cpu_output)
 
         if match:
@@ -108,14 +109,14 @@ class data_handling:
             # Categorizing CPU utilization
             if cpu_5s < 70:
                 return 0  # Normal
-            elif cpu_5s < 80:
+            elif cpu_5s < 85:
                 return 1  # Warning
             else:
                 return 2  # Danger
         else:
             return -1  # Error: Unable to parse CPU utilization
 
-    def analyze_memory_utilization(self, memory_output: str) -> int:
+    def analyze_memory_utilization(memory_output: str) -> int:
         """Analyze the memory utilization from the provided output and return status code."""
         # Regex to extract total and current used memory
         pattern = r"Total:\s+(\d+),\s+CurrentUsed:(\d+)"
@@ -131,7 +132,7 @@ class data_handling:
             # Categorizing memory utilization
             if used_memory_percentage < 70:
                 return 0  # Normal
-            elif used_memory_percentage < 80:
+            elif used_memory_percentage < 85:
                 return 1  # Warning
             else:
                 return 2  # Danger
