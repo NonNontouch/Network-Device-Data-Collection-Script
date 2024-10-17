@@ -10,30 +10,44 @@ from src.regular_expression_handler import data_handling
 
 
 class ResultPage:
-    def __init__(self, widget_parent, result: dict) -> None:
+    def __init__(self, widget_parent, result: dict, connected_hostname: str) -> None:
         self._widget_parent = widget_parent
+        self.connected_hostname = connected_hostname
         self.result_page_dialog = QtWidgets.QDialog(widget_parent)
         self.result_page_dialog.setObjectName("main_bg_color")
-        self.result_page_dialog.setWindowTitle("Result Viewer")
+        self.result_page_dialog.setWindowTitle(f"Result Viewer of {connected_hostname}")
         self._result = result
         self.text_to_picture = text_to_pic()  # Instance of text_to_pic
         self.temp_image_paths = []  # To store paths of temp images
         self.main_grid = QtWidgets.QGridLayout()
         self.set_configure_grid()
+        self.set_save_all_button_grid()
 
     def set_result(self, result: dict):
         self._result = result
 
     def set_configure_grid(self):
         result_configure_widget = GUI_Factory.create_widget(
-            self._widget_parent, "result_configure_widget", "", 80, 600
+            self._widget_parent, "input_widget", "", 120, 600
         )
         result_configure_grid = QtWidgets.QGridLayout(result_configure_widget)
         configure_button = GUI_Factory.create_button(
-            "Result Image Configure", "popup_dialog_button"
+            "Edit Image", "popup_dialog_button"
         )
         configure_button.clicked.connect(self.show_image_configure_page)
-        result_configure_grid.addWidget(configure_button, 0, 0)
+        conplete_hostname_label = GUI_Factory.create_label(
+            self.connected_hostname,
+            "label_banner",
+            alignment=QtCore.Qt.AlignCenter,
+            HorSizePolicy=QtWidgets.QSizePolicy.Expanding,
+            VerSizePolicy=QtWidgets.QSizePolicy.Preferred,
+        )
+        result_configure_grid.addWidget(
+            conplete_hostname_label,
+            0,
+            0,
+        )
+        result_configure_grid.addWidget(configure_button, 1, 0)
         self.main_grid.addWidget(result_configure_widget, 0, 0)
 
     def show_image_configure_page(self):
@@ -98,27 +112,27 @@ class ResultPage:
                 cpu_status = data_handling.analyze_cpu_utilization(
                     result
                 )  # Method to check CPU
-                if cpu_status == 1:
+                if cpu_status == 0:
+                    title = title + " (normal)"
+                elif cpu_status == 1:
                     object_name = "warning_result_widget"  # Warning
                     title = title + " (quite high)"
                 elif cpu_status == 2:
                     object_name = "danger_result_widget"  # Danger
                     title = title + " (high)"
-                else:
-                    title = title + " (normal)"
 
             elif "show memory usage" in title.lower():
                 memory_status = data_handling.analyze_memory_utilization(
                     result
                 )  # Method to check Memory
-                if memory_status == 1:
+                if cpu_status == 0:
+                    title = title + " (normal)"
+                elif memory_status == 1:
                     object_name = "warning_result_widget"  # Warning
                     title = title + " (quite high)"
                 elif memory_status == 2:
                     object_name = "danger_result_widget"  # Danger
                     title = title + " (high)"
-                else:
-                    title = title + " (normal)"
             if "An error occurred while executing the" in result:
                 object_name = "result_widget_error"
                 title = title.replace("(normal)", "(error)")
@@ -196,13 +210,31 @@ class ResultPage:
         # Set the main layout to the dialog
         self.result_page_dialog.setLayout(self.main_grid)
 
+    def set_save_all_button_grid(self):
+        save_all_button_widget = GUI_Factory.create_widget(
+            self._widget_parent, "input_widget", "", 80, 600
+        )
+        save_all_button_grid = QtWidgets.QGridLayout(save_all_button_widget)
+        save_all_image_button = GUI_Factory.create_button(
+            "Save All Image", "save_all_image_button"
+        )
+        save_all_image_button.clicked.connect(self.save_all_image)
+        save_all_text_button = GUI_Factory.create_button(
+            "Save All Text", "save_all_text_button"
+        )
+        save_all_text_button.clicked.connect(self.save_all_text)
+
+        save_all_button_grid.addWidget(save_all_image_button, 0, 0)
+        save_all_button_grid.addWidget(save_all_text_button, 0, 1)
+        self.main_grid.addWidget(save_all_button_widget, 2, 0)
+
     def save_text(self, text, title):
         """Open a file dialog to save the text."""
         options = QtWidgets.QFileDialog.Options()
         # Get the current working directory
         default_path = os.getcwd()
         # Set default file name
-        default_file_name = f"{title}.txt"
+        default_file_name = f"{self.connected_hostname} {title}.txt"
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.result_page_dialog,
             f"Save {title} Text",
@@ -220,7 +252,7 @@ class ResultPage:
         # Get the current working directory
         default_path = os.getcwd()
         # Set default file name based on the title
-        default_file_name = f"{title}.png"  # Assuming you want to save it as a PNG
+        default_file_name = f"{self.connected_hostname} {title}.png"  # Assuming you want to save it as a PNG
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.result_page_dialog,
             f"Save {title} Image",
@@ -296,6 +328,67 @@ class ResultPage:
                 self._widget_parent,
                 "File Not Found",
                 f"The specified image file does not exist: {image_path}",
+            )
+
+    def save_all_image(self):
+        """Open a folder dialog and save all images to the selected folder."""
+        options = QtWidgets.QFileDialog.Options()
+        folder_path = QtWidgets.QFileDialog.getExistingDirectory(
+            self.result_page_dialog,
+            "Select Folder to Save All Images",
+            os.getcwd(),
+            options=options,
+        )
+
+        if folder_path:
+            # Loop through all image paths and save each image in the selected folder
+            for i, image_path in enumerate(self.temp_image_paths):
+                # Create a default filename for each image
+                title = list(self._result.keys())[i]  # Get the corresponding title
+                filename = f"{self.connected_hostname} {title}.png"
+                file_path = os.path.join(folder_path, filename)
+
+                try:
+                    # Copy the image file to the selected folder
+                    with open(image_path, "rb") as src_file:
+                        with open(file_path, "wb") as dst_file:
+                            dst_file.write(src_file.read())
+                except Exception as e:
+                    GUI_Factory.create_warning_message_box(
+                        self._widget_parent, "Error", f"Failed to save image: {str(e)}"
+                    )
+                    return
+            GUI_Factory.create_info_message_box(
+                self._widget_parent, "Done", "All image have been saved."
+            )
+
+    def save_all_text(self):
+        """Open a folder dialog and save all text results to the selected folder."""
+        options = QtWidgets.QFileDialog.Options()
+        folder_path = QtWidgets.QFileDialog.getExistingDirectory(
+            self.result_page_dialog,
+            "Select Folder to Save All Text",
+            os.getcwd(),
+            options=options,
+        )
+
+        if folder_path:
+            # Loop through all text results and save each one in the selected folder
+            for title, text in self._result.items():
+                # Create a default filename for each text file
+                filename = f"{self.connected_hostname} {title}.txt"
+                file_path = os.path.join(folder_path, filename)
+
+                try:
+                    # Write the text result to a file in the selected folder
+                    with open(file_path, "w") as file:
+                        file.write(text)
+                except Exception as e:
+                    GUI_Factory.create_warning_message_box(
+                        self._widget_parent, "Error", f"Failed to save text: {str(e)}"
+                    )
+            GUI_Factory.create_info_message_box(
+                self._widget_parent, "Done", "All text have been saved."
             )
 
     def exec_(self):

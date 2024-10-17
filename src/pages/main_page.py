@@ -509,7 +509,9 @@ class MainPage:
             self._loading_window.update_label(
                 "Collecting data Done, Generating image..."
             )
-            self._result_page = ResultPage(self._window_parent, result)
+            self._result_page = ResultPage(
+                self._window_parent, result, self.connected_hostname
+            )
             self.connection_thread.set_result_page(self._result_page)
 
     def on_error_occurred(self, error_message):
