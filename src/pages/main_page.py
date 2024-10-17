@@ -30,12 +30,6 @@ class MainPage:
         self.__setup_connection_grid()
         self.__setup_json_grid()
 
-        self.debug_button = GUI_Factory.create_button(
-            "Open Debug Window", "popup_dialog_button", main_style
-        )
-        self.debug_button.clicked.connect(self.open_debug_window)
-        self.main_grid.addWidget(self.debug_button, 3, 0)
-
     def get_widget(self):
         return self.main_widget
 
@@ -92,7 +86,7 @@ class MainPage:
         )
 
         self.connection_configure_button = GUI_Factory.create_button(
-            "Connection Configure", "popup_dialog_button", main_style
+            "Edit Connection Variable", "edit_connection_variable_button", main_style
         )
         self.connection_configure_button.clicked.connect(self.__show_input_dialog)
         self.input_grid.addWidget(hostname_label, 0, 0)
@@ -150,10 +144,6 @@ class MainPage:
             "Serial", "./src/Assets/RS232.png", self.connection_type_button_group
         )
         serial_button.clicked.connect(self.__on_serial_selected)
-        self.connect_botton = GUI_Factory.create_button(
-            "Connect", "popup_dialog_button", main_style
-        )
-        self.connect_botton.clicked.connect(self.__create_connection)
 
         serial_port_label = GUI_Factory.create_label(
             label_text="Serial Port",
@@ -213,7 +203,7 @@ class MainPage:
         connection_top_grid.addWidget(ssh_button, 0, 0)
         connection_top_grid.addWidget(telnet_button, 0, 1)
         connection_top_grid.addWidget(serial_button, 0, 2)
-        connection_top_grid.addWidget(self.connect_botton, 0, 3, 1, 3)
+        # connection_top_grid.addWidget(self.connect_botton, 0, 3, 1, 3)
         connection_botton_grid.addWidget(
             serial_port_label,
             0,
@@ -281,7 +271,7 @@ class MainPage:
     def __setup_json_grid(self):
         # Create a new widget for the JSON grid layout
         json_widget = GUI_Factory.create_widget(
-            self.main_widget, "input_widget", main_style, 160, 825, 230
+            self.main_widget, "input_widget", main_style, 220, 825, 250
         )
         json_grid = QtWidgets.QGridLayout(json_widget)
 
@@ -322,15 +312,26 @@ class MainPage:
         # Connect the JSON dropdown's change event to update the OS version dropdown
         self.json_file_dropdown.currentTextChanged.connect(self.update_os_versions)
 
-        os_edit_button = GUI_Factory.create_button(
-            "Edit OS Template", "popup_dialog_button", main_style
+        self.connect_botton = GUI_Factory.create_button(
+            "Connect", "popup_dialog_button", main_style
         )
+        os_edit_button = GUI_Factory.create_button(
+            "Edit OS Template", "edit_os_template_button", main_style
+        )
+        self.connect_botton.clicked.connect(self.__create_connection)
+        self.debug_button = GUI_Factory.create_button(
+            "Open Debug Window", "open_debug_window_button", main_style
+        )
+        self.debug_button.clicked.connect(self.open_debug_window)
         os_edit_button.clicked.connect(self.__show_os_template_edit_dialog)
-        json_grid.addWidget(json_label, 0, 0)  # Row 0, Column 0
-        json_grid.addWidget(self.json_file_dropdown, 0, 1)  # Row 0, Column 1
-        json_grid.addWidget(os_label, 1, 0)  # Row 1, Column 0
-        json_grid.addWidget(self.os_version_dropdown, 1, 1)  # Row 1, Column 1
-        json_grid.addWidget(os_edit_button, 2, 0, 1, 2)
+        json_grid.addWidget(json_label, 0, 0)
+        json_grid.addWidget(self.json_file_dropdown, 0, 1)
+        json_grid.addWidget(os_label, 1, 0)
+        json_grid.addWidget(self.os_version_dropdown, 1, 1)
+        json_grid.addWidget(self.connect_botton, 2, 0, 1, 2)
+        json_grid.addWidget(self.debug_button, 3, 0)
+        json_grid.addWidget(os_edit_button, 3, 1)
+
         # Add the json_widget (with the grid layout) to the main grid
         self.main_grid.addWidget(
             json_widget, 2, 0

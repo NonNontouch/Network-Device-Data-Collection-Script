@@ -448,4 +448,76 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     border: 2px solid black;      /* Border for error widget */
     border-radius: 10px;         /* Rounded corners */
    }
+#edit_connection_variable_button {
+    background-color: #FFA500;
+    /* Orange background */
+    color: white;
+    /* White text */
+    border: 2px solid #FFA500;
+    /* Orange border */
+    border-radius: 10px;
+    /* Rounded corners */
+    padding: 10px 20px;
+    /* Padding inside the button */
+    font-size: 16px;
+    /* Font size */
+}
+
+#edit_connection_variable_button:hover {
+    background-color: #FF8C00;
+    /* Darker orange on hover */
+}
+
+#edit_connection_variable_button:pressed {
+    background-color: #FF7F00;
+    /* Even darker orange on press */
+}
+#open_debug_window_button {
+    background-color: #ADD8E6;
+    /* Light blue background */
+    color: black;
+    /* Black text for better contrast */
+    border: 2px solid #ADD8E6;
+    /* Light blue border */
+    border-radius: 10px;
+    /* Rounded corners */
+    padding: 10px 20px;
+    /* Padding inside the button */
+    font-size: 16px;
+    /* Font size */
+}
+
+#open_debug_window_button:hover {
+    background-color: #87CEEB;
+    /* Slightly darker blue on hover */
+}
+
+#open_debug_window_button:pressed {
+    background-color: #00BFFF;
+    /* Even darker blue on press */
+}
+#edit_os_template_button {
+    background-color: #2196F3;
+    /* Sky blue background */
+    color: white;
+    /* White text */
+    border: 2px solid #2196F3;
+    /* Sky blue border */
+    border-radius: 10px;
+    /* Rounded corners */
+    padding: 10px 20px;
+    /* Padding inside the button */
+    font-size: 16px;
+    /* Font size */
+}
+
+#edit_os_template_button:hover {
+    background-color: #1976D2;
+    /* Darker blue on hover */
+}
+
+#edit_os_template_button:pressed {
+    background-color: #1565C0;
+    /* Even darker blue on press */
+}
     """
