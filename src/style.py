@@ -520,4 +520,21 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     background-color: #1565C0;
     /* Even darker blue on press */
 }
+#info_icon {
+    background-color: transparent;
+    /* No background for the icon itself */
+    color: #4CAF50;
+    /* Green color for the icon */
+    border: none;
+    /* No border for the icon */
+    font-size: 20px;
+    /* Set icon size */
+    cursor: pointer;
+    /* Change cursor to pointer */
+}
+
+#info_icon:hover .info_popup {
+    display: block;
+    /* Show the popup when hovering */
+}
     """

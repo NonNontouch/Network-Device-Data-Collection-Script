@@ -13,7 +13,7 @@ class VariableConfigurePage:
         self.verialbe_configure_page_grid_layout = QtWidgets.QGridLayout(
             self.varialbe_configure_page_dialog
         )
-        self.varialbe_configure_page_dialog.setWindowTitle("Input Dialog")
+        self.varialbe_configure_page_dialog.setWindowTitle("Edit Connection Variable")
         self.__set_ip_input_variable_grid()
         self.__set_serial_input_grid()
         self._set_button_grid()
@@ -173,7 +173,7 @@ class VariableConfigurePage:
         self.button_grid = QtWidgets.QGridLayout(self.button_widget)
 
         self.apply_button = GUI_Factory.create_button("Apply", "acceptButton", "")
-        self.cancel_button = GUI_Factory.create_button("Cancle", "cancelButton", "")
+        self.cancel_button = GUI_Factory.create_button("Cancel", "cancelButton", "")
 
         self.button_grid.addWidget(self.apply_button, 0, 0)
         self.button_grid.addWidget(self.cancel_button, 0, 1)
