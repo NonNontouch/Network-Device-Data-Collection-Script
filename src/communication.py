@@ -436,8 +436,8 @@ class connection_manager:
                 if vlt_domain is None:
                     print("command is poped")
                     command_dict.pop("show vlt status")
-
-                command_dict["show vlt status"] = f"show vlt {vlt_domain}"
+                else:
+                    command_dict["show vlt status"] = f"show vlt {vlt_domain}"
             except Exception as e:
                 print(e)
                 raise Error.ErrorGetVLTNumber()
