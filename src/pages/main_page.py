@@ -203,7 +203,6 @@ class MainPage:
         connection_top_grid.addWidget(ssh_button, 0, 0)
         connection_top_grid.addWidget(telnet_button, 0, 1)
         connection_top_grid.addWidget(serial_button, 0, 2)
-        # connection_top_grid.addWidget(self.connect_botton, 0, 3, 1, 3)
         connection_botton_grid.addWidget(
             serial_port_label,
             0,
@@ -230,21 +229,17 @@ class MainPage:
         """Parse the input string for hostnames and handle IP ranges."""
         hostnames = []
 
-        # Split by commas first
         parts = input_str.split(",")
 
         for part in parts:
             part = part.strip()
-
-            # Check if the input is an IP-like structure
             if re.match(r"^\d+(\.\d+)*(-\d+)?(\.\d+)*$", part):
-                # Handle IP ranges across multiple octets
                 ranges = [r.split("-") for r in part.split(".")]
                 octet_combinations = [[]]
 
                 for r in ranges:
                     if len(r) == 2:
-                        # If there's a range, expand it
+
                         start, end = int(r[0]), int(r[1])
                         new_combinations = []
                         for base in octet_combinations:
@@ -252,48 +247,39 @@ class MainPage:
                                 new_combinations.append(base + [str(i)])
                         octet_combinations = new_combinations
                     else:
-                        # Otherwise, just append the single value
                         new_combinations = []
                         for base in octet_combinations:
                             new_combinations.append(base + [r[0]])
                         octet_combinations = new_combinations
 
-                # Construct the IP addresses from the octet combinations
                 for combo in octet_combinations:
                     hostnames.append(".".join(combo))
 
             else:
-                # If it's not an IP, treat it as a hostname
                 hostnames.append(part)
 
         return hostnames
 
     def __setup_json_grid(self):
-        # Create a new widget for the JSON grid layout
         json_widget = GUI_Factory.create_widget(
             self.main_widget, "input_widget", main_style, 220, 825, 250
         )
         json_grid = QtWidgets.QGridLayout(json_widget)
 
-        # Create a label for JSON file selection
         json_label = GUI_Factory.create_label(
             "Select Device Configuration File:", "input_label"
         )
         json_label.setMinimumWidth(350)
 
-        # Create a dropdown using ComboBoxWithDynamicArrow for JSON files
         self.json_file_dropdown = GUI_Factory.create_combobox(
             self.main_widget, font_size=22
         )
         self.json_file_dropdown.setObjectName("json_dropdown")
 
-        # Create an instance of the json_file class and get the list of files
-
         self.os_version_dropdown = GUI_Factory.create_combobox(
             self.main_widget, font_size=22
         )
 
-        # Populate the JSON dropdown with the list of files, set default value to Dell.json
         self.json_file_dropdown.addItems(
             sorted(self.json_handler.file_list)
         )  # Sort the file list
@@ -301,15 +287,10 @@ class MainPage:
             self.json_file_dropdown.setCurrentText("Dell.json")
             self.__load_os_versions("Dell.json")
 
-        # Create a label to show the OS version
         os_label = GUI_Factory.create_label("Select OS Version:", "input_label")
 
-        # Create a dropdown for OS versions using ComboBoxWithDynamicArrow
         self.os_version_dropdown.setObjectName("os_version_dropdown")
 
-        # Load the default JSON and populate the OS versions
-
-        # Connect the JSON dropdown's change event to update the OS version dropdown
         self.json_file_dropdown.currentTextChanged.connect(self.update_os_versions)
 
         self.connect_botton = GUI_Factory.create_button(
@@ -332,18 +313,15 @@ class MainPage:
         json_grid.addWidget(self.debug_button, 3, 0)
         json_grid.addWidget(os_edit_button, 3, 1)
 
-        # Add the json_widget (with the grid layout) to the main grid
-        self.main_grid.addWidget(
-            json_widget, 2, 0
-        )  # Place in row 2, spanning 2 columns
+        self.main_grid.addWidget(json_widget, 2, 0)
 
     def __load_os_versions(self, json_file):
         """Load OS versions from the selected JSON file into the OS version dropdown."""
         try:
             self.json_handler.read_json_file(json_file)
             os_keys = self.json_handler.get_os_keys()
-            self.os_version_dropdown.clear()  # Clear existing items
-            self.os_version_dropdown.addItems(os_keys)  # Add new OS keys
+            self.os_version_dropdown.clear()
+            self.os_version_dropdown.addItems(os_keys)
 
             # Set the default selection to "os-10"
             if "os-10" in os_keys and json_file == "Dell.json":
@@ -354,27 +332,27 @@ class MainPage:
                 "File Not Found",
                 f"The specified JSON file could not be found: {e}",
             )
-            self.os_version_dropdown.clear()  # Clear choices on error
+            self.os_version_dropdown.clear()
         except Error.InvalidJsonFile as e:
             GUI_Factory.create_critical_message_box(
                 self._window_parent, "Invalid JSON", f"The JSON file is invalid: {e}"
             )
-            self.os_version_dropdown.clear()  # Clear choices on error
+            self.os_version_dropdown.clear()
         except Exception as e:
             GUI_Factory.create_critical_message_box(
                 self._window_parent, "Error", f"An unexpected error occurred: {e}"
             )
-            self.os_version_dropdown.clear()  # Clear choices on error
+            self.os_version_dropdown.clear()
 
     def update_os_versions(self):
         """Update the OS version dropdown based on the selected JSON file."""
         selected_file = self.json_file_dropdown.currentText()
         if selected_file == "":
             return
-        self.__load_os_versions(selected_file)  # Load OS versions for the selected file
+        self.__load_os_versions(selected_file)
 
     def __show_input_dialog(self):
-        # Create and show the input dialog
+
         dialog = VariableConfigurePage(
             self.main_widget, self.connection_manager.get_curr_conf()
         )
@@ -386,38 +364,33 @@ class MainPage:
         """Show the OS Template Edit Dialog and reload the JSON and OS version dropdowns upon closing."""
         dialog = OSTemplateConfigurePage(self.main_widget)
 
-        # Execute the dialog and wait for it to close
         dialog.exec_()
 
-        # Reload the JSON files and update the dropdowns
-        self.json_handler.get_list_of_file()  # Refresh the file list
-        self.update_json_file_dropdown()  # Update the JSON dropdown
+        self.json_handler.get_list_of_file()
+        self.update_json_file_dropdown()
 
-        # Check if the dropdown is not empty before loading OS versions
         if self.json_file_dropdown.currentText() != "":
-            self.update_os_versions()  # Refresh the OS versions based on the selected JSON file
+            self.update_os_versions()
 
     def update_json_file_dropdown(self):
         """Update the JSON file dropdown with the latest file list."""
-        self.json_file_dropdown.clear()  # Clear existing items
-        self.json_file_dropdown.addItems(
-            sorted(self.json_handler.get_list_of_file())
-        )  # Add sorted new file list
+        self.json_file_dropdown.clear()
+        self.json_file_dropdown.addItems(sorted(self.json_handler.get_list_of_file()))
 
     def __update_port_lineedit(self, port):
-        self.port_input.setText(str(port))  # Set the port input
+        self.port_input.setText(str(port))
 
     def __on_serial_selected(self):
         """Handle clearing hostname and port when Serial is selected."""
-        self.hostname_input.clear()  # Clear hostname field
-        self.port_input.clear()  # Clear port field
+        self.hostname_input.clear()
+        self.port_input.clear()
 
     def __create_connection(self):
         """Main function to create a connection to the device."""
-        # Check for required fields
+
         if not self.__check_required_fields():
             return
-        # Split the hostnames input into a list
+
         hostnames_input = self.hostname_input.text().strip()
         hostnames = self.parse_hostnames(hostnames_input)
         if hostnames == []:
@@ -427,7 +400,7 @@ class MainPage:
             return
 
         for hostname in hostnames:
-            self.device_queue.put(hostname.strip())  # Add each hostname to the queue
+            self.device_queue.put(hostname.strip())
 
         self.process_next_device()
 
@@ -439,7 +412,7 @@ class MainPage:
             )
             return
 
-        hostname = self.device_queue.get()  # Get the next hostname from the queue
+        hostname = self.device_queue.get()
         self.connected_hostname = hostname
         connection_params = {
             "hostname": hostname,
@@ -450,7 +423,6 @@ class MainPage:
             "connection_type": self.connection_type_button_group.checkedButton().text(),
         }
 
-        # Check if the connection type is Serial
         if connection_params["connection_type"] == "Serial":
             selected_serial_port = self.serial_port_combo_box.currentText()
             selected_baudrate = self.baudrate_combo_box.currentText()
@@ -461,7 +433,7 @@ class MainPage:
         command_dict_json = self.__get_command_dict(selected_os_version).copy()
         defult_command_regex = self.json_handler.get_regex(selected_os_version)
         self.connection_manager.set_command_regex(defult_command_regex)
-        # Create the loading window
+
         self._loading_window = GUI_Factory.create_loading_window(
             self._window_parent,
             message=f"Connecting to {self.connected_hostname}, Please wait",
@@ -470,7 +442,6 @@ class MainPage:
         )
         self._loading_window.show()
 
-        # Create and start the new connection thread
         self.connection_thread = DataCollectorThread(
             params=connection_params,
             connection_manager=self.connection_manager,
@@ -478,7 +449,6 @@ class MainPage:
             is_done_create_img=False,
         )
 
-        # Connect signals
         self.connection_thread.connection_successful.connect(
             self.on_connection_successful
         )
@@ -487,13 +457,11 @@ class MainPage:
         self.connection_thread.image_generated.connect(self.on_image_generated)
         self.connection_thread.finished.connect(self.on_device_process_finished)
 
-        self.connection_thread.start()  # Start the thread
+        self.connection_thread.start()
 
     def on_device_process_finished(self):
         """Handle completion of the current device's data collection."""
-        # Hide the loading window after the data collection is done
         self._loading_window.accept()  # Close loading window
-        # This method won't be called now; instead, the logic is in on_data_collected
 
     def on_connection_successful(self, params):
         """Handle successful connection."""
@@ -519,23 +487,21 @@ class MainPage:
         GUI_Factory.create_critical_message_box(
             self._window_parent, "Connection Error", error_message
         )
-        # Do not close the loading window, just update the status
         self._loading_window.update_label(
             "Error occurred. Moving to the next device..."
         )
         self._loading_window.setEnabled(True)  # Allow interaction after error
 
-        # Continue to process the next device
         self.process_next_device()
 
     def on_image_generated(self):
         self._result_page.set_result_grid()
-        self._result_page.exec_()  # Show the result page
+        self._result_page.exec_()
         self.process_next_device()
 
     def __check_required_fields(self):
         """Check if all required fields are filled."""
-        # Gather connection parameters
+
         connection_params = {
             "hostname": self.hostname_input.text().strip(),
             "port": self.port_input.text().strip(),
@@ -543,7 +509,6 @@ class MainPage:
             "password": self.password_input.text().strip(),
         }
 
-        # If the selected connection type is Serial, ensure that the serial port and baudrate are checked instead
         if self.connection_type_button_group.checkedButton().text() == "Serial":
             serial_port = self.serial_port_combo_box.currentText()
             baudrate = self.baudrate_combo_box.currentText()
@@ -554,27 +519,23 @@ class MainPage:
                     "Missing Input",
                     "Please select a Serial Port and Baudrate.",
                 )
-                return (
-                    False  # Serial Port and Baudrate are required for Serial connection
-                )
+                return False
 
-            # Skip checking hostname and port for Serial
             return True
 
-        # Otherwise, validate hostname, port, username, and password for SSH/Telnet
         missing_fields = [key for key, value in connection_params.items() if not value]
 
         if missing_fields:
-            # Alert for missing fields
+
             missing_fields_str = ", ".join(missing_fields)
             GUI_Factory.create_warning_message_box(
                 self._window_parent,
                 "Missing Input",
                 f"The following fields are required: {missing_fields_str}",
             )
-            return False  # Indicate that not all required fields are filled
+            return False
 
-        return True  # All required fields are filled
+        return True
 
     def __get_selected_os_version(self):
         """Get the selected OS version from the dropdown and validate it."""
@@ -586,7 +547,7 @@ class MainPage:
                 "Missing OS Version",
                 "Please select an OS version before attempting to connect.",
             )
-            return None  # Indicate that the selection was invalid
+            return None
 
         return selected_os_version
 
@@ -600,7 +561,7 @@ class MainPage:
                     "Invalid OS Version",
                     f"No commands found for the selected OS version: {os_version}.",
                 )
-                return None  # Indicate that no commands were found
+                return None
             return command_dict_json
         except Error.JsonOSTemplateError as e:
             GUI_Factory.create_critical_message_box(
@@ -608,13 +569,15 @@ class MainPage:
                 "OS Template Error",
                 f"Error processing commands for OS version: {str(e)}",
             )
-            return None  # Indicate an error occurred
+            return None
 
     def terminate_connections(self):
         """Terminate all connections and clear the queue."""
 
         while not self.device_queue.empty():
-            self.device_queue.get_nowait()  # Clear the queue
+            self.device_queue.get_nowait()
+        if self.connection_thread.isRunning():
+            self.connection_thread.terminate()
 
         GUI_Factory.create_info_message_box(
             self._window_parent, "Terminated", "All connections have been terminated."

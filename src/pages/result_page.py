@@ -17,8 +17,8 @@ class ResultPage:
         self.result_page_dialog.setObjectName("main_bg_color")
         self.result_page_dialog.setWindowTitle(f"Result Viewer of {connected_hostname}")
         self._result = result
-        self.text_to_picture = text_to_pic()  # Instance of text_to_pic
-        self.temp_image_paths = []  # To store paths of temp images
+        self.text_to_picture = text_to_pic()
+        self.temp_image_paths = []
         self.main_grid = QtWidgets.QGridLayout()
         self.set_configure_grid()
         self.set_save_all_button_grid()
@@ -58,36 +58,30 @@ class ResultPage:
         if dialog.exec_() == QtWidgets.QDialog.Accepted:
             user_input = dialog.get_input()
             print(user_input)
-            # Set new parameters for image generation
             self.text_to_picture.set_parameters(user_input)
 
-            # Clean up old temporary images before generating new ones
             self.cleanup_temp_images()
 
-            # Clear the list of temp image paths after deleting old images
             self.temp_image_paths.clear()
 
-            # Generate new images based on the updated configuration
             self.generate_all_image()
 
-            # Rebuild the result grid with the updated temp image paths
             self.reset_result_grid()
 
     def reset_result_grid(self):
         """Clears the result grid and sets it up again with updated image paths."""
-        # Remove the current widgets in the grid
+
         for i in reversed(range(self.main_grid.count())):
             widget = self.main_grid.itemAt(i).widget()
             if widget is not None:
-                widget.deleteLater()  # Ensure the widget is properly deleted
+                widget.deleteLater()
 
-        # Recreate the result grid layout with updated temp image paths
         self.set_configure_grid()
         self.set_result_grid()
+        self.set_save_all_button_grid()
 
     def set_result_grid(self):
-        # Create the main grid layout
-        # Create a widget to hold the results
+
         self.scroll_area = QtWidgets.QScrollArea()
 
         result_widget = GUI_Factory.create_widget(
@@ -95,48 +89,39 @@ class ResultPage:
         )
         results_layout = QtWidgets.QGridLayout(result_widget)
 
-        # Create a scroll area
         self.scroll_area.setWidgetResizable(True)
-        self.scroll_area.setWidget(
-            result_widget
-        )  # Set the result widget as the scroll area content
+        self.scroll_area.setWidget(result_widget)
 
-        # Populate the results content with buttons for each result
         i = 0
         for title, result in self._result.items():
-            # Initialize the object name variable
-            object_name = "single_result_widget"  # Default to normal status
 
-            # Check for CPU and Memory usage titles
+            object_name = "single_result_widget"
+
             if "show cpu usage" in title.lower():
-                cpu_status = data_handling.analyze_cpu_utilization(
-                    result
-                )  # Method to check CPU
+                cpu_status = data_handling.analyze_cpu_utilization(result)
                 if cpu_status == 0:
                     title = title + " (normal)"
                 elif cpu_status == 1:
-                    object_name = "warning_result_widget"  # Warning
+                    object_name = "warning_result_widget"
                     title = title + " (quite high)"
                 elif cpu_status == 2:
-                    object_name = "danger_result_widget"  # Danger
+                    object_name = "danger_result_widget"
                     title = title + " (high)"
 
             elif "show memory usage" in title.lower():
-                memory_status = data_handling.analyze_memory_utilization(
-                    result
-                )  # Method to check Memory
+                memory_status = data_handling.analyze_memory_utilization(result)
                 if cpu_status == 0:
                     title = title + " (normal)"
                 elif memory_status == 1:
-                    object_name = "warning_result_widget"  # Warning
+                    object_name = "warning_result_widget"
                     title = title + " (quite high)"
                 elif memory_status == 2:
-                    object_name = "danger_result_widget"  # Danger
+                    object_name = "danger_result_widget"
                     title = title + " (high)"
             if "An error occurred while executing the" in result:
                 object_name = "result_widget_error"
                 title = title.replace("(normal)", "(error)")
-            # Create the sub widget with the determined object name
+
             sub_widget = GUI_Factory.create_widget(
                 self._widget_parent,
                 object_name,
@@ -164,11 +149,9 @@ class ResultPage:
                         text, title
                     )
                 )
-                sub_grid.addWidget(
-                    save_text_button, 1, 0, 1, 2
-                )  # Span across both columns
+                sub_grid.addWidget(save_text_button, 1, 0, 1, 2)
             else:
-                # Create a button to preview the image
+
                 preview_button = GUI_Factory.create_button(
                     f"Preview {title} Image", "result_button_preview"
                 )
@@ -179,7 +162,6 @@ class ResultPage:
                 )
                 sub_grid.addWidget(preview_button, 1, 0, 1, 2)
 
-                # Create a button to save the image
                 save_image_button = GUI_Factory.create_button(
                     f"Save Image", "result_button_save_image"
                 )
@@ -190,7 +172,6 @@ class ResultPage:
                 )
                 sub_grid.addWidget(save_image_button, 2, 0)
 
-                # Create a button to save the text
                 save_text_button = GUI_Factory.create_button(
                     f"Save Text", "result_button_save_text"
                 )
@@ -199,15 +180,13 @@ class ResultPage:
                         text, title
                     )
                 )
-                sub_grid.addWidget(save_text_button, 2, 1)  # Add to the right column
+                sub_grid.addWidget(save_text_button, 2, 1)
 
             results_layout.addWidget(sub_widget, i, 0)
             i += 1
 
-        # Add the scroll area to the main grid layout
         self.main_grid.addWidget(self.scroll_area, 1, 0)
 
-        # Set the main layout to the dialog
         self.result_page_dialog.setLayout(self.main_grid)
 
     def set_save_all_button_grid(self):
@@ -231,9 +210,9 @@ class ResultPage:
     def save_text(self, text, title):
         """Open a file dialog to save the text."""
         options = QtWidgets.QFileDialog.Options()
-        # Get the current working directory
+
         default_path = os.getcwd()
-        # Set default file name
+
         default_file_name = f"{self.connected_hostname} {title}.txt"
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.result_page_dialog,
@@ -244,15 +223,15 @@ class ResultPage:
         )
         if file_path:
             with open(file_path, "w") as file:
-                file.write(text)  # Save the text to the selected path
+                file.write(text)
 
     def save_image(self, image_path, title):
         """Open a file dialog to save the image."""
         options = QtWidgets.QFileDialog.Options()
-        # Get the current working directory
+
         default_path = os.getcwd()
-        # Set default file name based on the title
-        default_file_name = f"{self.connected_hostname} {title}.png"  # Assuming you want to save it as a PNG
+
+        default_file_name = f"{self.connected_hostname} {title}.png"
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.result_page_dialog,
             f"Save {title} Image",
@@ -261,12 +240,10 @@ class ResultPage:
             options=options,
         )
         if file_path:
-            # Copy the temporary image to the new location
+
             with open(image_path, "rb") as src_file:
                 with open(file_path, "wb") as dst_file:
-                    dst_file.write(
-                        src_file.read()
-                    )  # Save the image to the selected path
+                    dst_file.write(src_file.read())
 
     def generate_all_image(
         self,
@@ -280,18 +257,15 @@ class ResultPage:
 
         image = self.text_to_picture.create_text_image(text)
 
-        # Create a temporary file
         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
         temp_file_path = temp_file.name
 
-        # Save the image to the temporary file
-        cv2.imwrite(temp_file_path, image)  # Save the image
-        temp_file.close()  # Close the temp file so it can be accessed later
+        cv2.imwrite(temp_file_path, image)
+        temp_file.close()
 
-        # Store the temp file path for cleanup
         self.temp_image_paths.append(temp_file_path)
 
-        return temp_file_path  # Return the path to the temporary image
+        return temp_file_path
 
     def cleanup_temp_images(self):
         """Delete all temporary image files created."""
@@ -301,16 +275,16 @@ class ResultPage:
 
     def preview_image(self, image_path: str):
         """Open the image using the default image viewer."""
-        # Check if the image file exists
+
         if os.path.exists(image_path):
             try:
-                current_os = platform.system()  # Get the OS name
+                current_os = platform.system()
                 if current_os == "Linux":
-                    subprocess.Popen(["xdg-open", image_path])  # For Linux
+                    subprocess.Popen(["xdg-open", image_path])
                 elif current_os == "Darwin":
-                    subprocess.Popen(["open", image_path])  # For macOS
+                    subprocess.Popen(["open", image_path])
                 elif current_os == "Windows":
-                    subprocess.Popen(["start", image_path], shell=True)  # For Windows
+                    subprocess.Popen(["start", image_path], shell=True)
                 else:
                     GUI_Factory.create_warning_message_box(
                         self._widget_parent,
@@ -341,15 +315,15 @@ class ResultPage:
         )
 
         if folder_path:
-            # Loop through all image paths and save each image in the selected folder
+
             for i, image_path in enumerate(self.temp_image_paths):
-                # Create a default filename for each image
-                title = list(self._result.keys())[i]  # Get the corresponding title
+
+                title = list(self._result.keys())[i]
                 filename = f"{self.connected_hostname} {title}.png"
                 file_path = os.path.join(folder_path, filename)
 
                 try:
-                    # Copy the image file to the selected folder
+
                     with open(image_path, "rb") as src_file:
                         with open(file_path, "wb") as dst_file:
                             dst_file.write(src_file.read())
@@ -373,14 +347,14 @@ class ResultPage:
         )
 
         if folder_path:
-            # Loop through all text results and save each one in the selected folder
+
             for title, text in self._result.items():
-                # Create a default filename for each text file
+
                 filename = f"{self.connected_hostname} {title}.txt"
                 file_path = os.path.join(folder_path, filename)
 
                 try:
-                    # Write the text result to a file in the selected folder
+
                     with open(file_path, "w") as file:
                         file.write(text)
                 except Exception as e:
@@ -394,5 +368,5 @@ class ResultPage:
     def exec_(self):
         """Show the result dialog and cleanup temp images on close."""
         result = self.result_page_dialog.exec_()
-        self.cleanup_temp_images()  # Clean up temp images when dialog is closed
+        self.cleanup_temp_images()
         return result

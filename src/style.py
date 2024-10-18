@@ -7,15 +7,16 @@ main_style = """
     border: 2px solid black;
     border-radius: 10px;
     padding: 5px;
-    background-color: #4D4D4D;
+    background-color: #5C5C5C; 
     color: white;
+    font-weight: bold;
 }
 
 #enable_pass_label {
     border: 2px solid black;
     border-radius: 10px;
     padding: 5px;
-    background-color: #4D4D4D;
+    background-color: #5C5C5C;
     font-size: 18px;
     color: white;
 }
@@ -43,7 +44,7 @@ main_style = """
     border: 2px solid #4CAF50;
     border-radius: 10px;
     padding: 10px 20px;
-    font-size: 16px;
+    font-size: 20px;
 }
 
 #popup_dialog_button:hover {
@@ -54,12 +55,21 @@ main_style = """
     background-color: #388E3C;
 }
 #createCommandButton {
+    background-color: #1E90FF;  
+    color: white; 
+    border: 2px solid #1E90FF;
+    border-radius: 10px;  
+    padding: 10px 20px; 
 }
 
 #createCommandButton:hover {
+    background-color: #1C86EE;  
+    border-color: #1C86EE;  
 }
 
 #createCommandButton:active {
+    background-color: #1874CD; 
+    border-color: #1874CD; 
 }
 #input_widget {
     background-color: #252525;
@@ -80,7 +90,7 @@ main_style = """
     border-radius: 10px;
     padding: 3px;
     color: white;
-    background-color: #4D4D4D;
+    background-color: #5C5C5C;
     font: 16px;
     min-width: 160px
 }
@@ -236,6 +246,14 @@ QToolTip {
     font-size: 16px;
 }
 
+#result_button_preview:hover {
+    background-color: #1976D2;
+}
+
+#result_button_preview:pressed {
+    background-color: #1565C0;
+}
+
 #result_button_save_image {
     background-color: #FFA500;
     color: white;
@@ -243,6 +261,14 @@ QToolTip {
     border-radius: 10px;
     padding: 10px 20px;
     font-size: 16px;
+}
+
+#result_button_save_image:hover {
+    background-color: #FF8C00;
+}
+
+#result_button_save_image:pressed {
+    background-color: #FF7F00;
 }
 
 #result_button_save_text {
@@ -254,11 +280,20 @@ QToolTip {
     font-size: 16px;
 }
 
+#result_button_save_text:hover {
+    background-color: #87CEEB;
+}
+
+#result_button_save_text:pressed {
+    background-color: #00BFFF;
+}
+
 #single_result_widget {
-    background-color: #252525;
-    border: 2px solid black;
+    background-color: #2C3E50;
+    border: 4px solid #1F2A35; 
     border-radius: 10px;
     color: white;
+    padding: 10px;
 }
 
 QScrollArea {
@@ -419,35 +454,35 @@ QScrollBar::add-page:horizontal, QScrollBar::sub-page:horizontal {
     display: block;
 }
 #save_all_image_button {
-    background-color: #FFA500;
+    background-color: #8A2BE2;
     color: white;
-    border: 2px solid #FFA500;
+    border: 2px solid #8A2BE2;
     border-radius: 10px;
     padding: 10px 20px;
     font-size: 16px;
 }
 
 #save_all_image_button:hover {
-    background-color: #FF8C00;
+    background-color: #7A1FCB;
 }
 
 #save_all_image_button:pressed {
-    background-color: #FF7F00;
+    background-color: #6A0FB0;
 }
 #save_all_text_button {
-    background-color: #ADD8E6;
-    color: black;
-    border: 2px solid #ADD8E6;
+    background-color: #20B2AA;
+    color: white;
+    border: 2px solid #20B2AA;
     border-radius: 10px;
     padding: 10px 20px;
     font-size: 16px;
 }
 
 #save_all_text_button:hover {
-    background-color: #87CEEB;
+    background-color: #1B9E95;
 }
 
 #save_all_text_button:pressed {
-    background-color: #00BFFF;
+    background-color: #17857E;
 }
     """
