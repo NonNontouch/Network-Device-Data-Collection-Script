@@ -231,10 +231,11 @@ main_style = """
 
 
 QToolTip {
-    font-size: 16px;
-    padding: 5px;
-    background-color: #4D4D4D;
-    color: white;
+    background-color: #333333;  /* Dark background */
+    color: white;  /* White text */
+    border: 1px solid #4CAF50;  /* Optional: green border to match the icon */
+    padding: 5px;  /* Padding for better readability */
+    font-size: 14px;  /* Set the font size */
 }
 
 #result_button_preview {
