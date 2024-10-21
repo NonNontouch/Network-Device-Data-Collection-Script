@@ -60,6 +60,7 @@ main_style = """
     border: 2px solid #1E90FF;
     border-radius: 10px;  
     padding: 10px 20px; 
+    font-size: 16px;
 }
 
 #createCommandButton:hover {

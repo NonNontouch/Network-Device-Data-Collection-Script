@@ -91,21 +91,19 @@ class serial_connection:
             except OSError:
                 raise Error.ConnectionLossConnect(command)
 
-            if not _output:  # Check for empty output
+        
                 retries += 1
                 if retries > self._MAX_RETRIES:
                     raise Error.CommandTimeoutError(command)
-                sleep(self._RETRY_DELAY)  # Use command timeout for waiting
-                continue  # Continue to the next iteration
+            
+            
 
-            # Handle "More" prompt
             if "More" in _output or "more" in _output:
                 self.connect.write(b" ")
                 _output = self._data_handling.remove_more_keyword(_output)
             cmd_output += _output
-            retries = 0  # Reset retries on valid output
+        
 
-            # Check for prompt to break the loop
             if self._data_handling.find_prompt(_output, self.find_prompt_regex):
                 break
 
@@ -233,12 +231,10 @@ class serial_connection:
 
     def is_connection_alive(self):
         try:
-            # Send a null byte (or a newline) to check if the connection is alive
             self.connect.write(b"\n")
             self.connect.read_until(b"\n")
             return True
         except (EOFError, ConnectionResetError, ConnectionAbortedError, OSError):
-            # If any of these exceptions are raised, the connection is not alive
             return False
 
     def close_connection(self):

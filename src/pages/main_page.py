@@ -267,7 +267,7 @@ class MainPage:
         json_grid = QtWidgets.QGridLayout(json_widget)
 
         json_label = GUI_Factory.create_label(
-            "Select Device Configuration File:", "input_label"
+            "Select Device Command File:", "input_label"
         )
         json_label.setMinimumWidth(350)
 
@@ -297,7 +297,7 @@ class MainPage:
             "Connect", "popup_dialog_button", main_style
         )
         os_edit_button = GUI_Factory.create_button(
-            "Edit OS Template", "edit_os_template_button", main_style
+            "Edit Command Template", "edit_os_template_button", main_style
         )
         self.connect_botton.clicked.connect(self.__create_connection)
         self.debug_button = GUI_Factory.create_button(

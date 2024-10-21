@@ -31,10 +31,6 @@ class DebugWindow(QtWidgets.QDialog):
             self.text_edit.verticalScrollBar().maximum()
         )
 
-    def flush(self):
-        """Flush method for the stdout redirection."""
-        pass  # No need to implement flush for QTextEdit
-
     def closeEvent(self, event):
         """Restore stdout when the debug window is closed."""
         sys.stdout = self.original_stdout  # Restore original stdout

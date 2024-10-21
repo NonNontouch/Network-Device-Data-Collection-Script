@@ -472,7 +472,6 @@ class connection_manager:
     def save_config(self, file_path: str):
         """Save the current connection parameters to a JSON file, merging with existing settings."""
 
-        # Prepare new configuration
         new_config = {
             "timeout": self.timeout,
             "login_wait_time": self.login_wait_time,
@@ -485,5 +484,3 @@ class connection_manager:
             "stopbits": self.stopbits,
         }
         self.config.save_config(new_config)
-
-        # Update existing config with new config values
