@@ -211,13 +211,11 @@ class ResultPage:
         """Open a file dialog to save the text."""
         options = QtWidgets.QFileDialog.Options()
 
-        default_path = os.getcwd()
-
         default_file_name = f"{self.connected_hostname} {title}.txt"
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.result_page_dialog,
             f"Save {title} Text",
-            os.path.join(default_path, default_file_name),
+            default_file_name,
             "Text Files (*.txt);;All Files (*)",
             options=options,
         )
@@ -229,13 +227,11 @@ class ResultPage:
         """Open a file dialog to save the image."""
         options = QtWidgets.QFileDialog.Options()
 
-        default_path = os.getcwd()
-
         default_file_name = f"{self.connected_hostname} {title}.png"
         file_path, _ = QtWidgets.QFileDialog.getSaveFileName(
             self.result_page_dialog,
             f"Save {title} Image",
-            os.path.join(default_path, default_file_name),
+            default_file_name,
             "Images (*.png *.jpg *.bmp);;All Files (*)",
             options=options,
         )
@@ -249,6 +245,8 @@ class ResultPage:
         self,
     ):
         for title, result in self._result.items():
+            if title == "show tech-support":
+                continue
             self.generate_image(result)
 
     def generate_image(self, text: str) -> str:
@@ -310,7 +308,6 @@ class ResultPage:
         folder_path = QtWidgets.QFileDialog.getExistingDirectory(
             self.result_page_dialog,
             "Select Folder to Save All Images",
-            os.getcwd(),
             options=options,
         )
 
@@ -342,7 +339,6 @@ class ResultPage:
         folder_path = QtWidgets.QFileDialog.getExistingDirectory(
             self.result_page_dialog,
             "Select Folder to Save All Text",
-            os.getcwd(),
             options=options,
         )
 
