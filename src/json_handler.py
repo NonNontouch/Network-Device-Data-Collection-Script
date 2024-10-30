@@ -71,16 +71,25 @@ class json_file:
 
         except FileNotFoundError:
             print(f"Error: File '{file_path}' not found.")
-            raise Error.JsonFileNotFound(file_path)
+            raise Exception("JsonFileNotFound", file_path)
         except json.JSONDecodeError:
             print(f"Error: Invalid JSON in file '{file_path}'.")
-            raise Error.InvalidJsonFile(file_path)
+            raise Exception("InvalidJsonFile", file_path)
 
-        # Update existing data with the current os_template
-        existing_data.update(self.os_template)
+        # Function to update existing nested dictionaries without overwriting
+        def deep_update(source, updates):
+            for key, value in updates.items():
+                if isinstance(value, dict) and key in source:
+                    source[key] = deep_update(source[key], value)
+                else:
+                    source[key] = value
+            return source
+
+        # Update existing data with os_template without overwriting nested structures like "regex"
+        updated_data = deep_update(existing_data, self.os_template)
 
         # Sort the existing data by OS keys before writing it back
-        sorted_data = dict(sorted(existing_data.items()))
+        sorted_data = dict(sorted(updated_data.items()))
 
         try:
             with open(file_path, "w") as f:
@@ -88,7 +97,6 @@ class json_file:
                 print(f"Successfully modified {file_path}")
         except Exception as e:
             print(f"Error writing to file '{file_path}': {e}")
-            raise Error.WriteProbJonFile(file_path)
 
     def get_regex(self, OS: str):
         """Retrieve the regex for the specified OS."""
