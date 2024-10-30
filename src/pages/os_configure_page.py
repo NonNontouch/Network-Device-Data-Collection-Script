@@ -372,14 +372,15 @@ class OSTemplateConfigurePage:
     def delete_command_entry(self, index: int):
         """Delete the command entry at the specified index."""
 
+        start_position = index * 4
+
         for i in range(4):
-            item = self.scroll_area_layout.itemAt(index)
+            item = self.scroll_area_layout.itemAt(start_position)
             if item is not None:
                 widget = item.widget()
-                widget.deleteLater()
+                if widget:
+                    widget.deleteLater()
                 self.scroll_area_layout.removeItem(item)
-
-        self.update_command_list()
 
     def save_changes(self):
         """Save changes to the JSON file."""
@@ -413,6 +414,7 @@ class OSTemplateConfigurePage:
         GUI_Factory.create_info_message_box(
             self._widget_parent, "Save", "Changes saved successfully."
         )
+        self.update_command_list()
 
     def exec_(self):
         return self.OS_template_configure_page_dialog.exec_()
