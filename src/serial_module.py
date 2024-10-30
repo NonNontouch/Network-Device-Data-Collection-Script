@@ -91,18 +91,17 @@ class serial_connection:
             except OSError:
                 raise Error.ConnectionLossConnect(command)
 
-        
+            if not _output:
                 retries += 1
                 if retries > self._MAX_RETRIES:
                     raise Error.CommandTimeoutError(command)
-            
-            
-
+                sleep(self._RETRY_DELAY)
+                continue
+            print(_output,"More" in _output or "more" in _output)
             if "More" in _output or "more" in _output:
                 self.connect.write(b" ")
                 _output = self._data_handling.remove_more_keyword(_output)
             cmd_output += _output
-        
 
             if self._data_handling.find_prompt(_output, self.find_prompt_regex):
                 break
@@ -205,6 +204,7 @@ class serial_connection:
         sleep(0.3)
         console_name = self.connect.read_all().decode("utf-8").splitlines()[-1].strip()
         console_name = self._data_handling.remove_control_char(console_name)
+        print(console_name,self._data_handling.find_prompt(console_name, self.find_prompt_regex))
         return (
             True
             if self._data_handling.find_prompt(console_name, self.find_prompt_regex)
